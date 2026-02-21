@@ -32,15 +32,19 @@ const DEFAULT_SETTINGS = {
 
 // State Management
 const state = {
-    items: [], // Loaded from DB
-    settings: loadJSON(LS_KEYS.settings, DEFAULT_SETTINGS),
-    phrase: loadJSON(LS_KEYS.phrase, []), // array of item ids
-    currentPath: [], // Array of category names for hierarchy navigation
+    items: [],
+    settings: loadJSON(LS_KEYS.settings, {
+        ...DEFAULT_SETTINGS,
+        showGrammarTags: false,
+        speechMode: 'fluent' // fluent | word
+    }),
+    phrase: loadJSON(LS_KEYS.phrase, []),
+    currentPath: [],
     currentCategory: "Todas",
     searchQuery: "",
     voices: [],
     pendingImage: null,
-    routine: [], // Array of items for visual schedule
+    routine: [],
     scanning: {
         active: false,
         index: -1,
@@ -209,6 +213,11 @@ const dom = {
     // Companion
     companion: document.getElementById('companion'),
     companionBubble: document.getElementById('companionBubble'),
+    // Phase 7: Motor & Speech
+    btnPause: document.getElementById('btnPause'),
+    btnStop: document.getElementById('btnStop'),
+    showGrammarTags: document.getElementById('showGrammarTags'),
+    speechMode: document.getElementById('speechMode'),
 };
 
 // Persistence Helpers
@@ -389,6 +398,15 @@ function attachListeners() {
         save();
         render();
     };
+    dom.showGrammarTags.onchange = (e) => {
+        state.settings.showGrammarTags = e.target.checked;
+        document.body.classList.toggle('show-grammar', state.settings.showGrammarTags);
+        save();
+    };
+    dom.speechMode.onchange = (e) => {
+        state.settings.speechMode = e.target.value;
+        save();
+    };
     dom.btnResetRoutine.onclick = () => {
         state.routine = [];
         renderRoutine();
@@ -405,15 +423,25 @@ function attachListeners() {
         renderHistory();
     };
 
-    // Tutor Mode
-    dom.tutorMode.onchange = (e) => {
-        if (e.target.checked) {
+    // Tutor Mode with 3s Hold Security
+    let tutorHoldTimer = null;
+    dom.tutorMode.onpointerdown = (e) => {
+        if (state.tutorMode.active) return; // Only for activation
+        tutorHoldTimer = setTimeout(() => {
             dom.pinModal.showModal();
-            e.target.checked = false; // Reset until verified
-        } else {
+            flashStatus("Liberando Modo Tutor...");
+        }, 3000);
+    };
+    dom.tutorMode.onpointerup = () => clearTimeout(tutorHoldTimer);
+    dom.tutorMode.onpointerleave = () => clearTimeout(tutorHoldTimer);
+
+    dom.tutorMode.onchange = (e) => {
+        if (!e.target.checked) {
             state.tutorMode.active = false;
             document.body.classList.remove('tutor-active');
             renderGrid();
+        } else {
+            e.target.checked = false; // Stay off until verified
         }
     };
 
@@ -433,10 +461,12 @@ function attachListeners() {
         }
     };
 
-    // TTS Voices
-    if (window.speechSynthesis) {
-        window.speechSynthesis.onvoiceschanged = loadVoices;
-    }
+    // Speech Controls
+    dom.btnPause.onclick = () => {
+        if (window.speechSynthesis.paused) window.speechSynthesis.resume();
+        else window.speechSynthesis.pause();
+    };
+    dom.btnStop.onclick = () => window.speechSynthesis.cancel();
 }
 
 // Actions
@@ -471,18 +501,29 @@ function speakText(text) {
     });
 }
 
-function speakPhrase() {
-    const text = state.phrase
-        .map(id => state.items.find(i => i.id === id)?.text)
-        .filter(Boolean)
-        .join(" ");
+async function speakPhrase() {
+    const items = state.phrase
+        .map(id => state.items.find(i => i.id === id))
+        .filter(Boolean);
 
-    if (!text) {
+    if (items.length === 0) {
         flashStatus("Selecciona palabras primero");
         return;
     }
-    speakText(text);
-    logActivity(`Frase completa: ${text}`);
+
+    if (state.settings.speechMode === 'word') {
+        // Word-by-word mode (Pedagogical)
+        for (const item of items) {
+            speakText(item.text);
+            await new Promise(r => setTimeout(r, 800)); // Pause between words
+        }
+    } else {
+        // Fluent mode
+        const text = items.map(i => i.text).join(" ");
+        speakText(text);
+    }
+
+    logActivity(`Frase completa: ${items.map(i => i.text).join(" ")}`);
 }
 
 function handleImageSelect(e) {
@@ -657,28 +698,26 @@ function renderGrid() {
         return matchesCat && matchesSearch && matchesProfile;
     });
 
-    // Add "Back" button if we are in a sub-category context
-    if (state.currentCategory !== "Todas") {
-        const backBtn = createTile({
-            text: "← Volver",
-            category: "Navegación",
-            color: "#64748b",
-            id: "back-nav"
-        }, () => {
-            state.currentCategory = "Todas";
-            render();
-        });
-        dom.grid.appendChild(backBtn);
-    }
+    // 1. Navigation Anchor (Slot 1: Always Home/Back)
+    const navBtn = createTile({
+        text: state.currentCategory === "Todas" ? "🏠 Inicio" : "← Volver",
+        category: "Navegación",
+        color: "#64748b",
+        id: "nav-anchor"
+    }, () => {
+        state.currentCategory = "Todas";
+        render();
+    });
+    dom.grid.appendChild(navBtn);
 
-    filtered.forEach((item, idx) => {
+    // 2. Render stable items
+    filtered.sort((a, b) => a.id.localeCompare(b.id)).forEach((item) => {
         const isHidden = state.tutorMode.hiddenTags.has(item.id);
 
-        // Skip hidden items if tutor mode is ACTIVE (user view)
+        // In User View: Skip hidden items
         if (!state.tutorMode.active && isHidden) return;
 
         const tile = createTile(item, () => onTileClick(item));
-
         if (isHidden) tile.classList.add('hidden-by-tutor');
 
         dom.grid.appendChild(tile);
@@ -692,7 +731,14 @@ function createTile(item, onClick) {
     const tile = document.createElement('div');
     tile.className = 'tile glass-card';
     tile.setAttribute('data-id', item.id);
-    tile.style.borderColor = `${item.color}33`;
+    tile.setAttribute('data-cat', item.category);
+
+    // Grammar Tag (V, S, A, etc.)
+    const tag = document.createElement('div');
+    tag.className = 'grammar-tag';
+    const firstLetter = item.category.charAt(0).toUpperCase();
+    tag.textContent = firstLetter;
+    tile.appendChild(tag);
 
     const imgContainer = document.createElement('div');
     imgContainer.className = 'tile-img';
@@ -945,7 +991,12 @@ function applySettings() {
     // Professional Features
     dom.showRoutine.checked = state.settings.showRoutine || false;
     dom.boardProfile.value = state.settings.boardProfile || "default";
-    dom.routineBar.classList.toggle('hidden', !dom.showRoutine.checked);
+    dom.routineBar.classList.toggle('hidden', !state.settings.showRoutine);
+
+    // Phase 7: Accessibility & Speech
+    dom.showGrammarTags.checked = state.settings.showGrammarTags || false;
+    dom.speechMode.value = state.settings.speechMode || 'fluent';
+    document.body.classList.toggle('show-grammar', state.settings.showGrammarTags);
 }
 
 init();

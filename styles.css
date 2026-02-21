@@ -410,25 +410,74 @@ h3 {
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(var(--tile-size), 1fr));
-  gap: 20px;
-  padding-bottom: 100px;
+  gap: var(--grid-gap);
+  padding: var(--grid-gap);
+  padding-bottom: 120px;
 }
 
 .tile {
   background: white;
   border: var(--border-thick);
   border-radius: var(--radius-lg);
-  padding: 12px;
+  padding: 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   cursor: pointer;
   transition: var(--transition);
   box-shadow: var(--shadow);
   position: relative;
   overflow: hidden;
   aspect-ratio: 1 / 1.1;
+  user-select: none;
+}
+
+/* Grammar Tag Overlay */
+.grammar-tag {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: var(--text-primary);
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 900;
+  padding: 2px 6px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  z-index: 10;
+  display: none;
+  border: 1px solid white;
+}
+
+.show-grammar .grammar-tag {
+  display: block;
+}
+
+/* Category Semantic Colors */
+.tile[data-cat="Personas"] {
+  background: var(--fitz-people-bg);
+  border-color: var(--fitz-people-brd);
+}
+
+.tile[data-cat="Acciones"] {
+  background: var(--fitz-verbs-bg);
+  border-color: var(--fitz-verbs-brd);
+}
+
+.tile[data-cat="Descriptores"] {
+  background: var(--fitz-adj-bg);
+  border-color: var(--fitz-adj-brd);
+}
+
+.tile[data-cat="Nombres"] {
+  background: var(--fitz-noun-bg);
+  border-color: var(--fitz-noun-brd);
+}
+
+.tile[data-cat="Social"] {
+  background: var(--fitz-social-bg);
+  border-color: var(--fitz-social-brd);
 }
 
 .tile:hover {

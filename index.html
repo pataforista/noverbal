@@ -42,6 +42,10 @@
       </div>
 
       <div class="composer-actions">
+        <div class="speech-controls">
+          <button class="btn glass" id="btnPause" title="Pausar Voz">⏸</button>
+          <button class="btn glass danger" id="btnStop" title="Detener Voz">⏹</button>
+        </div>
         <button class="btn primary-action speak-btn" id="btnSpeak">
           <span class="icon">🔊</span>
           <span class="text">Hablar Frase</span>
@@ -180,8 +184,11 @@
             </label>
 
             <label class="field">
-              <span>Velocidad de habla</span>
-              <input id="rate" type="range" min="0.5" max="1.5" step="0.1" />
+              <span>Modo de Lectura</span>
+              <select id="speechMode" class="glass-input">
+                <option value="fluent">Fluida (Oración)</option>
+                <option value="word">Palabra por palabra</option>
+              </select>
             </label>
           </div>
         </div>
@@ -224,6 +231,17 @@
             <div class="text-content">
               <span class="main">Modo de Barrido (Scanning)</span>
               <span class="sub">Cicla automáticamente entre botones (usa Espacio/Enter para seleccionar)</span>
+            </div>
+          </label>
+
+          <label class="field-row">
+            <div class="toggle-wrapper">
+              <input id="showGrammarTags" type="checkbox" />
+              <span class="toggle-slider"></span>
+            </div>
+            <div class="text-content">
+              <span class="main">Etiquetas Gramaticales</span>
+              <span class="sub">Muestra (V, S, A, N, O) sobre cada botón (Motor Planning)</span>
             </div>
           </label>
 
