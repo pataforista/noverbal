@@ -317,38 +317,11 @@ function attachListeners() {
         e.preventDefault();
         addItem();
     };
-    dom.btnLoadLibrary.onclick = (e) => {
+    dom.btnLoadLibrary.onclick = async (e) => {
         e.preventDefault();
-        loadInternalLibrary();
+        await loadInternalLibrary();
     };
     dom.btnExport.onclick = (e) => {
-        // ...
-        async function loadInternalLibrary() {
-            if (!confirm("¿Cargar biblioteca ilustrada? Esto añadirá elementos base a tu tablero.")) return;
-
-            dom.statusText.textContent = "Cargando biblioteca...";
-            try {
-                const response = await fetch('library.json');
-                const libraryItems = await response.json();
-
-                for (const item of libraryItems) {
-                    // Avoid duplicates if ID already exists (optional, but safer)
-                    const exists = state.items.some(i => i.id === item.id);
-                    if (!exists) {
-                        await saveItemDB(item);
-                        state.items.push(item);
-                    }
-                }
-
-                render();
-                renderItemList();
-                dom.statusText.textContent = "¡Biblioteca cargada!";
-                setTimeout(() => dom.statusText.textContent = "Listo para usar", 3000);
-            } catch (err) {
-                console.error("Error loading library:", err);
-                flashStatus("Error al cargar la biblioteca");
-            }
-        }
         e.preventDefault();
         exportData();
     };
@@ -568,6 +541,118 @@ function addItem() {
 function openEditModal() {
     renderItemList();
     dom.editModal.showModal();
+}
+
+async function loadInternalLibrary() {
+    if (!confirm("¿Cargar biblioteca ilustrada? Esto añadirá elementos base a tu tablero.")) return;
+
+    dom.statusText.textContent = "Cargando biblioteca...";
+    try {
+        const response = await fetch('library.json');
+        if (!response.ok) throw new Error('No se pudo cargar library.json');
+
+        const libraryItems = await response.json();
+        for (const item of libraryItems) {
+            const exists = state.items.some(i => i.id === item.id);
+            if (!exists) {
+                await saveItemDB(item);
+                state.items.push(item);
+            }
+        }
+
+        render();
+        renderItemList();
+        dom.statusText.textContent = "¡Biblioteca cargada!";
+        setTimeout(() => { dom.statusText.textContent = "Listo para usar"; }, 3000);
+    } catch (err) {
+        console.error("Error loading library:", err);
+        flashStatus("Error al cargar la biblioteca");
+    }
+}
+
+function exportData() {
+    const payload = {
+        items: state.items,
+        settings: state.settings,
+        phrase: state.phrase,
+        exportedAt: new Date().toISOString()
+    };
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `mitablero-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+
+    flashStatus('Respaldo exportado');
+}
+
+async function importData(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+
+        if (!Array.isArray(parsed.items)) {
+            throw new Error('Formato inválido: items no encontrados');
+        }
+
+        if (!confirm('Importar reemplazará los elementos actuales del tablero. ¿Continuar?')) {
+            dom.importFile.value = '';
+            return;
+        }
+
+        await replaceAllItems(parsed.items);
+
+        state.settings = {
+            ...state.settings,
+            ...(parsed.settings || {})
+        };
+        state.phrase = Array.isArray(parsed.phrase) ? parsed.phrase : [];
+
+        save();
+        applySettings();
+        render();
+        renderItemList();
+
+        flashStatus('Importación completada');
+    } catch (error) {
+        console.error('Import error', error);
+        flashStatus('Error al importar JSON');
+    } finally {
+        dom.importFile.value = '';
+    }
+}
+
+async function replaceAllItems(items) {
+    const sanitized = items
+        .filter(item => item && item.id && item.text)
+        .map(item => ({
+            id: String(item.id),
+            text: String(item.text),
+            category: String(item.category || 'Varios'),
+            color: item.color || '#22c55e',
+            image: item.image || null
+        }));
+
+    const tx = db.transaction(['items'], 'readwrite');
+    const store = tx.objectStore('items');
+    store.clear();
+    sanitized.forEach(item => store.put(item));
+
+    await new Promise((resolve, reject) => {
+        tx.oncomplete = resolve;
+        tx.onerror = () => reject(tx.error);
+        tx.onabort = () => reject(tx.error);
+    });
+
+    state.items = sanitized;
 }
 
 // ARASAAC Integration
