@@ -243,18 +243,31 @@ async function init() {
     const storedItems = await getAllItems();
 
     if (storedItems.length === 0) {
-        // First run: copy defaults to DB
-        for (const item of DEFAULT_ITEMS) {
+        // First run: copy defaults + curated library to DB
+        const initialItems = [...DEFAULT_ITEMS];
+        const libraryItems = await fetchLibraryItems();
+
+        for (const item of libraryItems) {
+            if (!initialItems.some(existing => existing.id === item.id)) {
+                initialItems.push(item);
+            }
+        }
+
+        for (const item of initialItems) {
             await saveItemDB(item);
         }
-        state.items = [...DEFAULT_ITEMS];
+        state.items = initialItems;
     } else {
         state.items = storedItems;
+        await ensureLibraryItemsPresent();
     }
 
     applySettings();
     attachListeners();
     loadVoices();
+    if (window.speechSynthesis) {
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
     render();
 
     if ('serviceWorker' in navigator) {
@@ -450,28 +463,37 @@ function speakText(text) {
     const cleanName = text.toLowerCase().trim()
         .replace(/\s+/g, '_')
         .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    const audioPath = `assets/audio/${cleanName}.mp3`;
 
-    const audio = new Audio(audioPath);
-    audio.play().then(() => {
-        console.log(`🔊 Playing local audio: ${text}`);
-    }).catch(() => {
-        // Fallback to optimized browser TTS
-        if (!window.speechSynthesis) return;
-        window.speechSynthesis.cancel();
+    // Only use pre-recorded clips for single terms.
+    if (!cleanName.includes('_')) {
+        const audioPath = `assets/audio/${cleanName}.mp3`;
+        const audio = new Audio(audioPath);
+        audio.play().then(() => {
+            console.log(`🔊 Playing local audio: ${text}`);
+        }).catch(() => {
+            speakWithTTS(text);
+        });
+        return;
+    }
 
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.rate = state.settings.rate * 0.9;
-        utterance.pitch = 1.0;
+    speakWithTTS(text);
+}
 
-        const voices = window.speechSynthesis.getVoices();
-        const voice = voices.find(v => v.voiceURI === state.settings.voiceURI)
-            || voices.find(v => v.lang.includes('es-MX') || v.name.includes('Premium'))
-            || voices.find(v => v.lang.startsWith('es'));
+function speakWithTTS(text) {
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
 
-        if (voice) utterance.voice = voice;
-        window.speechSynthesis.speak(utterance);
-    });
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = state.settings.rate * 0.9;
+    utterance.pitch = 1.0;
+
+    const voices = window.speechSynthesis.getVoices();
+    const voice = voices.find(v => v.voiceURI === state.settings.voiceURI)
+        || voices.find(v => v.lang.includes('es-MX') || v.name.includes('Premium'))
+        || voices.find(v => v.lang.startsWith('es'));
+
+    if (voice) utterance.voice = voice;
+    window.speechSynthesis.speak(utterance);
 }
 
 async function speakPhrase() {
@@ -548,10 +570,7 @@ async function loadInternalLibrary() {
 
     dom.statusText.textContent = "Cargando biblioteca...";
     try {
-        const response = await fetch('library.json');
-        if (!response.ok) throw new Error('No se pudo cargar library.json');
-
-        const libraryItems = await response.json();
+        const libraryItems = await fetchLibraryItems();
         for (const item of libraryItems) {
             const exists = state.items.some(i => i.id === item.id);
             if (!exists) {
@@ -567,6 +586,34 @@ async function loadInternalLibrary() {
     } catch (err) {
         console.error("Error loading library:", err);
         flashStatus("Error al cargar la biblioteca");
+    }
+}
+
+async function fetchLibraryItems() {
+    const response = await fetch('library.json');
+    if (!response.ok) throw new Error('No se pudo cargar library.json');
+    return response.json();
+}
+
+async function ensureLibraryItemsPresent() {
+    try {
+        const libraryItems = await fetchLibraryItems();
+        let addedCount = 0;
+
+        for (const item of libraryItems) {
+            const exists = state.items.some(existing => existing.id === item.id);
+            if (!exists) {
+                await saveItemDB(item);
+                state.items.push(item);
+                addedCount += 1;
+            }
+        }
+
+        if (addedCount > 0) {
+            flashStatus(`Se añadieron ${addedCount} términos de la biblioteca`);
+        }
+    } catch (err) {
+        console.error('Error ensuring library items:', err);
     }
 }
 

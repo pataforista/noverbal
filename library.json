@@ -144,7 +144,7 @@
         "text": "Enojado",
         "category": "Emociones",
         "color": "#64b5f6",
-        "image": "assets/pictos/enojado.png"
+        "image": "assets/pictos/asco.png"
     },
     {
         "id": "e-4",
@@ -158,7 +158,7 @@
         "text": "Ansiedad",
         "category": "Emociones",
         "color": "#64b5f6",
-        "image": "assets/pictos/ansiedad.png"
+        "image": "assets/pictos/taquicardia.png"
     },
     {
         "id": "c+1",
@@ -179,14 +179,14 @@
         "text": "Diagnóstico",
         "category": "C. Médica",
         "color": "#ffb74d",
-        "image": "assets/pictos/diagnostico.png"
+        "image": "assets/pictos/analisis.png"
     },
     {
         "id": "mh-1",
         "text": "Pánico",
         "category": "Mente+",
         "color": "#64b5f6",
-        "image": "assets/pictos/panico.png"
+        "image": "assets/pictos/asustado.png"
     },
     {
         "id": "mh-2",
