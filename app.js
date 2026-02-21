@@ -599,18 +599,37 @@ async function ensureLibraryItemsPresent() {
     try {
         const libraryItems = await fetchLibraryItems();
         let addedCount = 0;
+        let repairedCount = 0;
+        const byId = new Map(libraryItems.map(item => [item.id, item]));
 
         for (const item of libraryItems) {
-            const exists = state.items.some(existing => existing.id === item.id);
-            if (!exists) {
+            const existing = state.items.find(saved => saved.id === item.id);
+            if (!existing) {
                 await saveItemDB(item);
                 state.items.push(item);
                 addedCount += 1;
+                continue;
+            }
+
+            const fallback = byId.get(existing.id);
+            const repaired = {
+                ...existing,
+                color: existing.color || fallback?.color || '#22c55e',
+                image: existing.image || fallback?.image || null
+            };
+
+            if (repaired.color !== existing.color || repaired.image !== existing.image) {
+                await saveItemDB(repaired);
+                Object.assign(existing, repaired);
+                repairedCount += 1;
             }
         }
 
         if (addedCount > 0) {
             flashStatus(`Se añadieron ${addedCount} términos de la biblioteca`);
+        }
+        if (repairedCount > 0) {
+            flashStatus(`Se repararon ${repairedCount} términos sin color/imagen`);
         }
     } catch (err) {
         console.error('Error ensuring library items:', err);
@@ -865,6 +884,11 @@ function createTile(item, onClick) {
     tile.setAttribute('data-id', item.id);
     tile.setAttribute('data-cat', item.category);
 
+    if (item.color) {
+        tile.style.backgroundColor = item.color;
+        tile.style.borderColor = item.color;
+    }
+
     // Grammar Tag (V, S, A, etc.)
     const tag = document.createElement('div');
     tag.className = 'grammar-tag';
@@ -878,6 +902,7 @@ function createTile(item, onClick) {
     if (item.image) {
         const img = document.createElement('img');
         img.src = item.image;
+        img.alt = item.text;
         img.loading = 'lazy';
         imgContainer.appendChild(img);
     } else {
