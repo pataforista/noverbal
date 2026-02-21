@@ -1,0 +1,268 @@
+[
+    {
+        "id": "s-1",
+        "text": "Sí",
+        "category": "Social",
+        "color": "#f06292",
+        "image": "assets/pictos/si.png"
+    },
+    {
+        "id": "s-2",
+        "text": "No",
+        "category": "Social",
+        "color": "#f06292",
+        "image": "assets/pictos/no.png"
+    },
+    {
+        "id": "s-3",
+        "text": "Hola",
+        "category": "Social",
+        "color": "#f06292",
+        "image": "assets/pictos/hola.png"
+    },
+    {
+        "id": "s-4",
+        "text": "Adiós",
+        "category": "Social",
+        "color": "#f06292",
+        "image": "assets/pictos/adios.png"
+    },
+    {
+        "id": "s-5",
+        "text": "Por favor",
+        "category": "Social",
+        "color": "#f06292",
+        "image": "assets/pictos/por_favor.png"
+    },
+    {
+        "id": "s-6",
+        "text": "Gracias",
+        "category": "Social",
+        "color": "#f06292",
+        "image": "assets/pictos/gracias.png"
+    },
+    {
+        "id": "s-7",
+        "text": "Ayuda",
+        "category": "Social",
+        "color": "#f06292",
+        "image": "assets/pictos/ayuda.png"
+    },
+    {
+        "id": "p-1",
+        "text": "Yo",
+        "category": "Personas",
+        "color": "#fff176",
+        "image": "assets/pictos/yo.png"
+    },
+    {
+        "id": "p-2",
+        "text": "Tú",
+        "category": "Personas",
+        "color": "#fff176",
+        "image": "assets/pictos/tu.png"
+    },
+    {
+        "id": "p-3",
+        "text": "Mamá",
+        "category": "Personas",
+        "color": "#fff176",
+        "image": "assets/pictos/mama.png"
+    },
+    {
+        "id": "p-4",
+        "text": "Papá",
+        "category": "Personas",
+        "color": "#fff176",
+        "image": "assets/pictos/papa.png"
+    },
+    {
+        "id": "p-5",
+        "text": "Familia",
+        "category": "Personas",
+        "color": "#fff176",
+        "image": "assets/pictos/familia.png"
+    },
+    {
+        "id": "a-1",
+        "text": "Querer",
+        "category": "Acciones",
+        "color": "#81c784",
+        "image": "assets/pictos/querer.png"
+    },
+    {
+        "id": "a-2",
+        "text": "Comer",
+        "category": "Acciones",
+        "color": "#81c784",
+        "image": "assets/pictos/comer.png"
+    },
+    {
+        "id": "a-3",
+        "text": "Beber",
+        "category": "Acciones",
+        "color": "#81c784",
+        "image": "assets/pictos/beber.png"
+    },
+    {
+        "id": "a-4",
+        "text": "Dormir",
+        "category": "Acciones",
+        "color": "#81c784",
+        "image": "assets/pictos/dormir.png"
+    },
+    {
+        "id": "a-5",
+        "text": "Jugar",
+        "category": "Acciones",
+        "color": "#81c784",
+        "image": "assets/pictos/jugar.png"
+    },
+    {
+        "id": "a-6",
+        "text": "Respirar",
+        "category": "Acciones",
+        "color": "#81c784",
+        "image": "assets/pictos/respirar.png"
+    },
+    {
+        "id": "e-1",
+        "text": "Feliz",
+        "category": "Emociones",
+        "color": "#64b5f6",
+        "image": "assets/pictos/feliz.png"
+    },
+    {
+        "id": "e-2",
+        "text": "Triste",
+        "category": "Emociones",
+        "color": "#64b5f6",
+        "image": "assets/pictos/triste.png"
+    },
+    {
+        "id": "e-3",
+        "text": "Enojado",
+        "category": "Emociones",
+        "color": "#64b5f6",
+        "image": "assets/pictos/enojado.png"
+    },
+    {
+        "id": "e-4",
+        "text": "Dolor",
+        "category": "Emociones",
+        "color": "#64b5f6",
+        "image": "assets/pictos/dolor.png"
+    },
+    {
+        "id": "e-5",
+        "text": "Ansiedad",
+        "category": "Emociones",
+        "color": "#64b5f6",
+        "image": "assets/pictos/ansiedad.png"
+    },
+    {
+        "id": "c+1",
+        "text": "Síntoma",
+        "category": "C. Médica",
+        "color": "#ffb74d",
+        "image": "assets/pictos/sintoma.png"
+    },
+    {
+        "id": "c+2",
+        "text": "Receta",
+        "category": "C. Médica",
+        "color": "#ffb74d",
+        "image": "assets/pictos/receta.png"
+    },
+    {
+        "id": "c+3",
+        "text": "Diagnóstico",
+        "category": "C. Médica",
+        "color": "#ffb74d",
+        "image": "assets/pictos/diagnostico.png"
+    },
+    {
+        "id": "mh-1",
+        "text": "Pánico",
+        "category": "Mente+",
+        "color": "#64b5f6",
+        "image": "assets/pictos/panico.png"
+    },
+    {
+        "id": "mh-2",
+        "text": "Abrumado",
+        "category": "Mente+",
+        "color": "#636e72",
+        "image": "assets/pictos/abrumado.png"
+    },
+    {
+        "id": "mh-3",
+        "text": "Crisis",
+        "category": "Mente+",
+        "color": "#64b5f6",
+        "image": "assets/pictos/crisis.png"
+    },
+    {
+        "id": "v-1",
+        "text": "Amor",
+        "category": "Vínculos",
+        "color": "#f06292",
+        "image": "assets/pictos/amor.png"
+    },
+    {
+        "id": "v-2",
+        "text": "Abrazo",
+        "category": "Vínculos",
+        "color": "#f06292",
+        "image": "assets/pictos/abrazo.png"
+    },
+    {
+        "id": "v-3",
+        "text": "Cariño",
+        "category": "Vínculos",
+        "color": "#f06292",
+        "image": "assets/pictos/carino.png"
+    },
+    {
+        "id": "sen-1",
+        "text": "Ruido",
+        "category": "Sensorial",
+        "color": "#ffb74d",
+        "image": "assets/pictos/ruido.png"
+    },
+    {
+        "id": "sen-2",
+        "text": "Suave",
+        "category": "Sensorial",
+        "color": "#ffb74d",
+        "image": "assets/pictos/suave.png"
+    },
+    {
+        "id": "sen-3",
+        "text": "Olor",
+        "category": "Sensorial",
+        "color": "#ffb74d",
+        "image": "assets/pictos/olor.png"
+    },
+    {
+        "id": "sos-1",
+        "text": "Emergencia",
+        "category": "S.O.S",
+        "color": "#ffb74d",
+        "image": "assets/pictos/emergencia.png"
+    },
+    {
+        "id": "sos-2",
+        "text": "Peligro",
+        "category": "S.O.S",
+        "color": "#ffb74d",
+        "image": "assets/pictos/peligro.png"
+    },
+    {
+        "id": "sos-3",
+        "text": "Ambulancia",
+        "category": "S.O.S",
+        "color": "#ffb74d",
+        "image": "assets/pictos/ambulancia.png"
+    }
+]

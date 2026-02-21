@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>MiTablero AAC</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="styles.css" />
+  <meta name="theme-color" content="#111827" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap"
+    rel="stylesheet">
+</head>
+
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="dot-container">
+        <div class="dot"></div>
+        <div class="dot-ring"></div>
+      </div>
+      <div>
+        <div class="title">MiTablero AAC</div>
+        <div class="subtitle" id="statusText">Cargando tablero...</div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn glass" id="btnSettings" aria-label="Ajustes">⚙️</button>
+      <button class="btn glass" id="btnEdit" aria-label="Editar tablero">✏️</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="composer glass" aria-label="Frase">
+      <div class="composer-row">
+        <div class="chips" id="chips"></div>
+      </div>
+
+      <div class="composer-actions">
+        <button class="btn primary-action speak-btn" id="btnSpeak">
+          <span class="icon">🔊</span>
+          <span class="text">Hablar Frase</span>
+        </button>
+        <div class="utility-actions">
+          <button class="btn glass secondary" id="btnBackspace" title="Borrar último">⌫</button>
+          <button class="btn glass danger" id="btnClear" title="Limpiar todo">🗑️</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="toolbar" aria-label="Filtros y Búsqueda">
+      <div class="pill-container" id="categoryBar"></div>
+      <div class="search-wrapper">
+        <span class="search-icon">🔍</span>
+        <input class="search-input glass" id="searchBox" placeholder="Buscar palabras o categorías..."
+          autocomplete="off" />
+      </div>
+    </section>
+
+    <section class="routine-bar glass hidden" id="routineBar" aria-label="Rutina Visual">
+      <div class="routine-label">Rutina:</div>
+      <div id="routineItems" class="routine-items"></div>
+      <button class="btn glass danger" id="btnResetRoutine">✕</button>
+    </section>
+
+    <section class="grid" id="grid" aria-label="Tablero"></section>
+
+    <!-- Virtual Companion -->
+    <div id="companion" class="companion-container">
+      <div class="companion-avatar">🌱</div>
+      <div class="companion-bubble hidden" id="companionBubble">¡Hola! Estoy aquí para acompañarte.</div>
+    </div>
+  </main>
+
+  <!-- MODAL: Editor -->
+  <dialog class="modal glass-modal" id="editModal">
+    <form method="dialog" class="modal-card">
+      <div class="modal-head">
+        <div>
+          <div class="modal-title">Configurar Tablero</div>
+          <div class="modal-sub">Gestiona tus elementos de comunicación</div>
+        </div>
+        <button class="btn-close" value="cancel" aria-label="Cerrar">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="editor-grid">
+          <div class="editor-form">
+            <div class="row">
+              <label class="field">
+                <span>Palabra / Frase</span>
+                <input id="itemText" maxlength="40" placeholder="Ej. Agua" required />
+              </label>
+
+              <label class="field">
+                <span>Categoría</span>
+                <input id="itemCategory" maxlength="24" placeholder="Ej. Necesidades" />
+              </label>
+            </div>
+
+            <div class="row">
+              <div class="field">
+                <span>Imagen (Local o ARASAAC)</span>
+                <div class="image-options">
+                  <div class="file-input-wrapper">
+                    <input id="itemImage" type="file" accept="image/*" />
+                    <label for="itemImage" class="btn glass">Subir Archivo</label>
+                  </div>
+                  <div class="arasaac-search-trigger">
+                    <input id="arasaacQuery" class="glass-input" placeholder="Buscar en ARASAAC..." />
+                    <button type="button" class="btn glass" id="btnSearchArasaac">🔍</button>
+                  </div>
+                </div>
+              </div>
+
+              <label class="field">
+                <span>Color de Borde</span>
+                <input id="itemColor" type="color" value="#22c55e" />
+              </label>
+            </div>
+
+            <div id="arasaacResults" class="arasaac-results glass-card hidden">
+              <!-- Results will be injected here -->
+            </div>
+
+            <div class="preview-container">
+              <span>Vista previa</span>
+              <div class="preview glass-card" id="preview">Esperando datos...</div>
+            </div>
+
+            <button class="btn primary full-width" id="btnAddItem">➕ Añadir al Catálogo</button>
+          </div>
+
+          <div class="data-mgmt">
+            <div class="divider text">Respaldo y Datos</div>
+            <div class="row compact">
+              <button class="btn primary-action flex-grow" id="btnLoadLibrary">📚 Cargar Biblioteca Ilustrada</button>
+            </div>
+            <div class="row compact" style="margin-top: 10px;">
+              <button class="btn glass secondary flex-grow" id="btnExport">💾 Exportar JSON</button>
+              <button class="btn glass secondary flex-grow" id="btnImport">📥 Importar JSON</button>
+              <input id="importFile" type="file" accept="application/json" hidden />
+            </div>
+          </div>
+        </div>
+
+        <div class="divider text">Tus Elementos</div>
+        <div class="list" id="itemList"></div>
+      </div>
+
+      <div class="modal-foot">
+        <button class="btn glass" value="cancel">Cerrar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- MODAL: Settings -->
+  <dialog class="modal glass-modal" id="settingsModal">
+    <form method="dialog" class="modal-card">
+      <div class="modal-head">
+        <div>
+          <div class="modal-title">Ajustes del Sistema</div>
+          <div class="modal-sub">Personalización y accesibilidad</div>
+        </div>
+        <button class="btn-close" value="cancel" aria-label="Cerrar">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="settings-section">
+          <h3>Voz y Lectura</h3>
+          <div class="row">
+            <label class="field">
+              <span>Voz</span>
+              <select id="voiceSelect" class="glass-input"></select>
+            </label>
+
+            <label class="field">
+              <span>Velocidad de habla</span>
+              <input id="rate" type="range" min="0.5" max="1.5" step="0.1" />
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>Interfaz y Tablero</h3>
+          <div class="row">
+            <label class="field">
+              <span>Tamaño de botones</span>
+              <input id="tileSize" type="range" min="80" max="160" step="5" />
+            </label>
+
+            <label class="field">
+              <span>Modo de Interacción</span>
+              <select id="tapMode" class="glass-input">
+                <option value="add">1 toque = añadir a frase</option>
+                <option value="speak">1 toque = hablar ítem</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>Perfil de Tablero</span>
+              <select id="boardProfile" class="glass-input">
+                <option value="default">General</option>
+                <option value="home">Casa</option>
+                <option value="school">Escuela / Terapia</option>
+                <option value="sos">Emergencias</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>Accesibilidad</h3>
+          <label class="field-row">
+            <div class="toggle-wrapper">
+              <input id="scanningEnabled" type="checkbox" />
+              <span class="toggle-slider"></span>
+            </div>
+            <div class="text-content">
+              <span class="main">Modo de Barrido (Scanning)</span>
+              <span class="sub">Cicla automáticamente entre botones (usa Espacio/Enter para seleccionar)</span>
+            </div>
+          </label>
+
+          <label class="field-row">
+            <div class="toggle-wrapper">
+              <input id="showRoutine" type="checkbox" />
+              <span class="toggle-slider"></span>
+            </div>
+            <div class="text-content">
+              <span class="main">Mostrar Panel de Rutina</span>
+              <span class="sub">Habilita una barra superior para organizar horarios visuales</span>
+            </div>
+          </label>
+        </div>
+
+        <div class="settings-section">
+          <h3>Seguridad</h3>
+          <label class="field-row">
+            <div class="toggle-wrapper">
+              <input id="lockEdit" type="checkbox" />
+              <span class="toggle-slider"></span>
+            </div>
+            <div class="text-content">
+              <span class="main">Bloquear edición</span>
+              <span class="sub">Evita cambios accidentales en el tablero</span>
+            </div>
+          </label>
+
+          <label class="field-row">
+            <div class="toggle-wrapper">
+              <input id="tutorMode" type="checkbox" />
+              <span class="toggle-slider"></span>
+            </div>
+            <div class="text-content">
+              <span class="main">Modo Tutor (Filtrado)</span>
+              <span class="sub">Oculta o muestra elementos específicos para cada sesión</span>
+            </div>
+          </label>
+        </div>
+
+        <div class="settings-section">
+          <h3>Clínico</h3>
+          <button type="button" class="btn glass warning full-width" id="btnOpenHistory">📊 Ver Bitácora de Uso</button>
+        </div>
+      </div>
+      </div>
+
+      <div class="modal-foot">
+        <button class="btn primary" value="cancel">Guardar Cambios</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- MODAL: History (Specialist Panel) -->
+  <dialog class="modal glass-modal" id="historyModal">
+    <form method="dialog" class="modal-card">
+      <div class="modal-head">
+        <div>
+          <div class="modal-title">Bitácora Clínica</div>
+          <div class="modal-sub">Registro local y privado de actividad</div>
+        </div>
+        <button class="btn-close" value="cancel">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="historyList" class="history-list">
+          <p class="empty-state">No hay registros de actividad aún.</p>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn glass danger" id="btnClearHistory">Borrar Historial</button>
+        <button class="btn primary" value="cancel">Cerrar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- MODAL: PIN (Tutor Mode Security) -->
+  <dialog class="modal glass-modal" id="pinModal">
+    <form method="dialog" class="modal-card mini">
+      <div class="modal-head">
+        <div class="modal-title">PIN de Seguridad</div>
+        <button class="btn-close" value="cancel">✕</button>
+      </div>
+      <div class="modal-body">
+        <p>Ingresa el PIN para entrar al Modo Tutor:</p>
+        <input type="password" id="pinInput" maxlength="4" class="glass-input center" placeholder="****" />
+      </div>
+      <div class="modal-foot">
+        <button class="btn primary full-width" id="btnVerifyPin">Entrar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script type="module" src="app.js"></script>
+</body>
+
+</html>
