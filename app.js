@@ -45,6 +45,7 @@ const state = {
     currentCategory: "Todas",
     searchQuery: "",
     voices: [],
+    editorSearchQuery: "",
     pendingImage: null,
     routine: [],
     scanning: {
@@ -157,6 +158,7 @@ const dom = {
     preview: document.getElementById('preview'),
     btnAddItem: document.getElementById('btnAddItem'),
     itemList: document.getElementById('itemList'),
+    editorSearchBox: document.getElementById('editorSearchBox'),
     // ARASAAC elements
     arasaacQuery: document.getElementById('arasaacQuery'),
     btnSearchArasaac: document.getElementById('btnSearchArasaac'),
@@ -264,8 +266,30 @@ async function init() {
     render();
 
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./service-worker.js')
-            .catch(err => console.error('SW Error:', err));
+        navigator.serviceWorker.register('./service-worker.js').then(reg => {
+            reg.onupdatefound = () => {
+                const installingWorker = reg.installing;
+                installingWorker.onstatechange = () => {
+                    if (installingWorker.state === 'installed') {
+                        if (navigator.serviceWorker.controller) {
+                            // New update available
+                            flashStatus("Nueva actualización disponible. Reiniciando...");
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 1500);
+                        }
+                    }
+                };
+            };
+        }).catch(err => console.error('SW Error:', err));
+
+        // Handle controller change (e.g. when a new SW takes over)
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (refreshing) return;
+            refreshing = true;
+            window.location.reload();
+        });
     }
 
     dom.statusText.textContent = "Listo para usar";
@@ -314,6 +338,11 @@ function attachListeners() {
     dom.searchBox.oninput = (e) => {
         state.searchQuery = e.target.value.toLowerCase();
         renderGrid();
+    };
+
+    dom.editorSearchBox.oninput = (e) => {
+        state.editorSearchQuery = e.target.value.toLowerCase();
+        renderItemList();
     };
 
     if (dom.categoryPrev && dom.categoryNext && dom.categoryBar) {
@@ -984,7 +1013,8 @@ function renderGrid() {
 
     // Filter items based on current category (folder) AND Profile
     let filtered = state.items.filter(item => {
-        const matchesCat = state.currentCategory === "Todas" || item.category === state.currentCategory;
+        const isFav = state.currentCategory === "⭐ Favoritos";
+        const matchesCat = isFav ? item.isFavorite : (state.currentCategory === "Todas" || item.category === state.currentCategory);
         const matchesSearch = item.text.toLowerCase().includes(state.searchQuery) ||
             item.category.toLowerCase().includes(state.searchQuery);
 
@@ -1014,7 +1044,12 @@ function renderGrid() {
     dom.grid.appendChild(navBtn);
 
     // 2. Render stable items
-    filtered.sort((a, b) => a.id.localeCompare(b.id)).forEach((item) => {
+    // Sort items: Favoritos first, then by ID
+    filtered.sort((a, b) => {
+        if (a.isFavorite && !b.isFavorite) return -1;
+        if (!a.isFavorite && b.isFavorite) return 1;
+        return a.id.localeCompare(b.id);
+    }).forEach((item) => {
         const isHidden = state.tutorMode.hiddenTags.has(item.id);
 
         // In User View: Skip hidden items
@@ -1039,6 +1074,18 @@ function createTile(item, onClick) {
     if (item.color) {
         tile.style.backgroundColor = item.color;
         tile.style.borderColor = item.color;
+    }
+
+    // Favorite Star (Only if not navigation)
+    if (item.id !== "nav-anchor") {
+        const fav = document.createElement('div');
+        fav.className = `tile-fav ${item.isFavorite ? 'active' : 'inactive'}`;
+        fav.innerHTML = item.isFavorite ? '⭐' : '☆';
+        fav.onclick = (e) => {
+            e.stopPropagation();
+            toggleFavorite(item.id);
+        };
+        tile.appendChild(fav);
     }
 
     // Grammar Tag (V, S, A, etc.)
@@ -1199,7 +1246,12 @@ function renderCategories() {
     const cats = [...new Set(state.items.map(i => i.category))].sort();
     dom.categoryBar.innerHTML = "";
 
-    ["Todas", ...cats].forEach(cat => {
+    const hasFavs = state.items.some(i => i.isFavorite);
+    const tabs = ["Todas"];
+    if (hasFavs) tabs.push("⭐ Favoritos");
+    tabs.push(...cats);
+
+    tabs.forEach(cat => {
         const pill = document.createElement('button');
         pill.type = 'button';
         pill.className = `pill ${state.currentCategory === cat ? 'active' : ''}`;
@@ -1242,7 +1294,13 @@ function scrollCategories(direction = 1) {
 
 function renderItemList() {
     dom.itemList.innerHTML = "";
-    state.items.forEach(item => {
+
+    const filtered = state.items.filter(item => {
+        return item.text.toLowerCase().includes(state.editorSearchQuery) ||
+            item.category.toLowerCase().includes(state.editorSearchQuery);
+    });
+
+    filtered.forEach(item => {
         const row = document.createElement('div');
         row.className = 'item-row';
         row.innerHTML = `
@@ -1251,7 +1309,12 @@ function renderItemList() {
                     ${item.image ? `<img src="${item.image}">` : '<div style="width:100%; height:100%; background:var(--glass);"></div>'}
                 </div>
                 <div class="item-meta">
-                    <h4>${item.text}</h4>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <h4>${item.text}</h4>
+                        <span style="cursor:pointer; font-size:1.1rem" onclick="toggleFavorite('${item.id}')">
+                            ${item.isFavorite ? '⭐' : '☆'}
+                        </span>
+                    </div>
                     <p>${item.category}</p>
                 </div>
             </div>
@@ -1263,6 +1326,15 @@ function renderItemList() {
         dom.itemList.appendChild(row);
     });
 }
+
+window.toggleFavorite = async (id) => {
+    const item = state.items.find(i => i.id === id);
+    if (!item) return;
+    item.isFavorite = !item.isFavorite;
+    await saveItemDB(item);
+    render();
+    renderItemList();
+};
 
 window.removeItem = async (id) => {
     if (!confirm("¿Seguro que quieres eliminar este elemento?")) return;
