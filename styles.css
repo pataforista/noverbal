@@ -980,3 +980,32 @@ input:checked+.toggle-slider:before {
     grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
   }
 }
+.legal-footer {
+  max-width: 1200px;
+  margin: 0 auto 1.5rem;
+  padding: 1rem 1.25rem;
+  border: var(--border-thick);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+}
+
+.legal-footer h2 {
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.legal-footer p {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.legal-footer a {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.legal-note {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
