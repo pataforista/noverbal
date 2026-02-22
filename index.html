@@ -58,7 +58,11 @@
     </section>
 
     <section class="toolbar" aria-label="Filtros y Búsqueda">
-      <div class="pill-container" id="categoryBar"></div>
+      <div class="category-menu" aria-label="Categorías">
+        <button class="pill-nav" id="categoryPrev" type="button" aria-label="Desplazar categorías a la izquierda">◀</button>
+        <div class="pill-container" id="categoryBar" role="tablist" aria-label="Temas del tablero"></div>
+        <button class="pill-nav" id="categoryNext" type="button" aria-label="Desplazar categorías a la derecha">▶</button>
+      </div>
       <div class="search-wrapper">
         <span class="search-icon">🔍</span>
         <input class="search-input glass" id="searchBox" placeholder="Buscar palabras o categorías..."

@@ -354,6 +354,29 @@ h3 {
   gap: 1rem;
 }
 
+
+.category-menu {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.pill-nav {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: var(--border-thick);
+  background: white;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.pill-nav:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .pill-container {
   display: flex;
   gap: 8px;
@@ -375,11 +398,19 @@ h3 {
   white-space: nowrap;
   font-size: 0.9rem;
   cursor: pointer;
+  font-family: inherit;
 }
 
 .pill.active {
   background: var(--text-primary);
   color: white;
+}
+
+
+.pill:focus-visible,
+.pill-nav:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .search-wrapper {
