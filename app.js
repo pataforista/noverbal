@@ -145,6 +145,7 @@ const dom = {
     categoryPrev: document.getElementById('categoryPrev'),
     categoryNext: document.getElementById('categoryNext'),
     searchBox: document.getElementById('searchBox'),
+    btnClearSearch: document.getElementById('btnClearSearch'),
     btnSpeak: document.getElementById('btnSpeak'),
     btnBackspace: document.getElementById('btnBackspace'),
     btnClear: document.getElementById('btnClear'),
@@ -348,6 +349,14 @@ function attachListeners() {
     dom.searchBox.oninput = (e) => {
         state.searchQuery = e.target.value.toLowerCase();
         renderGrid();
+    };
+
+    dom.btnClearSearch.onclick = () => {
+        state.searchQuery = '';
+        dom.searchBox.value = '';
+        renderGrid();
+        updateSearchClearButton();
+        dom.searchBox.focus();
     };
 
     dom.editorSearchBox.oninput = (e) => {
@@ -963,6 +972,13 @@ function flashStatus(msg) {
     }, 2000);
 }
 
+
+function updateSearchClearButton() {
+    if (!dom.btnClearSearch || !dom.searchBox) return;
+    const hasText = dom.searchBox.value.trim().length > 0;
+    dom.btnClearSearch.classList.toggle('visible', hasText);
+}
+
 // Rendering
 function render() {
     renderGrid();
@@ -995,6 +1011,7 @@ async function renderHistory() {
 
 function renderGrid() {
     dom.grid.innerHTML = "";
+    updateSearchClearButton();
 
     // Filter items based on current category (folder) AND Profile
     let filtered = state.items.filter(item => {
@@ -1032,6 +1049,16 @@ function renderGrid() {
 
     // 2. Render stable items
     // Sort items: Favoritos first, then by ID
+    if (filtered.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'grid-empty glass-card';
+        empty.innerHTML = `
+            <p>No encontramos resultados para "${state.searchQuery || state.currentCategory}".</p>
+            <small>Prueba otra búsqueda o activa más categorías desde Ajustes.</small>
+        `;
+        dom.grid.appendChild(empty);
+    }
+
     filtered.sort((a, b) => {
         if (a.isFavorite && !b.isFavorite) return -1;
         if (!a.isFavorite && b.isFavorite) return 1;

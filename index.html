@@ -52,7 +52,7 @@
   <header class="topbar">
     <div class="brand">
       <img src="icons/icon-192.png" alt="HolAAC Logo" class="header-logo">
-      <div class="subtitle" id="statusText">Cargando...</div>
+      <div class="subtitle" id="statusText" aria-live="polite">Cargando...</div>
     </div>
 
     <div class="actions">
@@ -103,6 +103,8 @@
         <span class="search-icon">🔍</span>
         <input class="search-input glass" id="searchBox" placeholder="Buscar palabras o categorías..."
           autocomplete="off" />
+        <button class="search-clear" id="btnClearSearch" type="button" aria-label="Limpiar búsqueda"
+          title="Limpiar búsqueda">✕</button>
       </div>
     </section>
 
