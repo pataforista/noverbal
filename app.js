@@ -199,6 +199,7 @@ const dom = {
     speechMode: document.getElementById('speechMode'),
     darkMode: document.getElementById('darkMode'),
     headerSpeakToggle: document.getElementById('headerSpeakToggle'),
+    btnThemeToggle: document.getElementById('btnThemeToggle'),
 };
 
 // Persistence Helpers
@@ -210,6 +211,16 @@ function loadJSON(key, fallback) {
         console.error(`Error loading ${key}`, e);
         return fallback;
     }
+}
+
+
+
+function updateThemeToggleIcon() {
+    if (!dom.btnThemeToggle) return;
+    const isDark = !!state.settings.darkMode;
+    dom.btnThemeToggle.textContent = isDark ? '☀️' : '🌙';
+    dom.btnThemeToggle.setAttribute('aria-label', isDark ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro');
+    dom.btnThemeToggle.title = isDark ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro';
 }
 
 function save() {
@@ -271,6 +282,13 @@ async function init() {
 function attachListeners() {
     // Top bar
     dom.btnSettings.onclick = () => dom.settingsModal.showModal();
+    dom.btnThemeToggle.onclick = () => {
+        state.settings.darkMode = !state.settings.darkMode;
+        document.body.classList.toggle('dark-theme', state.settings.darkMode);
+        dom.darkMode.checked = state.settings.darkMode;
+        updateThemeToggleIcon();
+        save();
+    };
     dom.btnEdit.onclick = () => {
         if (state.settings.lockEdit) {
             flashStatus("🔒 Edición bloqueada");
@@ -333,6 +351,14 @@ function attachListeners() {
     };
     dom.importFile.onchange = importData;
 
+    document.querySelectorAll('[data-close-dialog]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const dialogId = btn.getAttribute('data-close-dialog');
+            const dialog = document.getElementById(dialogId);
+            if (dialog?.open) dialog.close();
+        });
+    });
+
     // Settings
     dom.rate.onchange = (e) => {
         state.settings.rate = parseFloat(e.target.value);
@@ -370,6 +396,7 @@ function attachListeners() {
     dom.darkMode.onchange = (e) => {
         state.settings.darkMode = e.target.checked;
         document.body.classList.toggle('dark-theme', state.settings.darkMode);
+        updateThemeToggleIcon();
         save();
     };
 
@@ -475,6 +502,8 @@ function attachListeners() {
 async function repairCoreImages() {
     // List of core items that should ALWAYS have images from assets
     const coreUpdates = [
+        { id: "1", text: "Sí", image: "assets/pictos/si.png" },
+        { id: "2", text: "No", image: "assets/pictos/no.png" },
         { id: "3", text: "Hola", image: "assets/pictos/hola.png" },
         { id: "4", text: "Por favor", image: "assets/pictos/por_favor.png" },
         { id: "5", text: "Agua", image: "assets/pictos/agua.png" },
@@ -486,7 +515,13 @@ async function repairCoreImages() {
     let changed = false;
     for (const update of coreUpdates) {
         const item = state.items.find(i => i.id === update.id);
-        if (item && (!item.image || item.image.includes('null'))) {
+        if (!item) continue;
+
+        const needsRepair = !item.image
+            || item.image.includes('null')
+            || (['1', '2'].includes(update.id) && !String(item.image).includes('/si.png') && !String(item.image).includes('/no.png'));
+
+        if (needsRepair) {
             item.image = update.image;
             await saveItemDB(item);
             changed = true;
@@ -1316,6 +1351,7 @@ function applySettings() {
     dom.headerSpeakToggle.checked = (state.settings.tapMode === 'speak');
     document.body.classList.toggle('show-grammar', state.settings.showGrammarTags);
     document.body.classList.toggle('dark-theme', state.settings.darkMode);
+    updateThemeToggleIcon();
 }
 
 init();
