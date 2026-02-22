@@ -161,6 +161,8 @@ const dom = {
     grid: document.getElementById('grid'),
     chips: document.getElementById('chips'),
     categoryBar: document.getElementById('categoryBar'),
+    categoryPrev: document.getElementById('categoryPrev'),
+    categoryNext: document.getElementById('categoryNext'),
     searchBox: document.getElementById('searchBox'),
     btnSpeak: document.getElementById('btnSpeak'),
     btnBackspace: document.getElementById('btnBackspace'),
@@ -315,6 +317,13 @@ function attachListeners() {
         state.searchQuery = e.target.value.toLowerCase();
         renderGrid();
     };
+
+    if (dom.categoryPrev && dom.categoryNext && dom.categoryBar) {
+        dom.categoryPrev.onclick = () => scrollCategories(-1);
+        dom.categoryNext.onclick = () => scrollCategories(1);
+        dom.categoryBar.addEventListener('scroll', updateCategoryNavState, { passive: true });
+        window.addEventListener('resize', updateCategoryNavState);
+    }
 
     // Editor
     dom.itemImage.onchange = handleImageSelect;
@@ -1037,15 +1046,44 @@ function renderCategories() {
     dom.categoryBar.innerHTML = "";
 
     ["Todas", ...cats].forEach(cat => {
-        const pill = document.createElement('div');
+        const pill = document.createElement('button');
+        pill.type = 'button';
         pill.className = `pill ${state.currentCategory === cat ? 'active' : ''}`;
         pill.textContent = cat;
+        pill.setAttribute('role', 'tab');
+        pill.setAttribute('aria-selected', String(state.currentCategory === cat));
+        pill.setAttribute('tabindex', state.currentCategory === cat ? '0' : '-1');
         pill.onclick = () => {
             state.currentCategory = cat;
             render();
         };
+        pill.onkeydown = (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                pill.click();
+            }
+        };
         dom.categoryBar.appendChild(pill);
     });
+
+    updateCategoryNavState();
+}
+
+function updateCategoryNavState() {
+    if (!dom.categoryBar || !dom.categoryPrev || !dom.categoryNext) return;
+    const maxScroll = dom.categoryBar.scrollWidth - dom.categoryBar.clientWidth;
+    dom.categoryPrev.disabled = dom.categoryBar.scrollLeft <= 0;
+    dom.categoryNext.disabled = dom.categoryBar.scrollLeft >= maxScroll - 1;
+}
+
+function scrollCategories(direction = 1) {
+    if (!dom.categoryBar) return;
+    const step = Math.max(dom.categoryBar.clientWidth * 0.75, 140);
+    dom.categoryBar.scrollBy({
+        left: direction * step,
+        behavior: 'smooth'
+    });
+    setTimeout(updateCategoryNavState, 220);
 }
 
 function renderItemList() {
@@ -1149,6 +1187,7 @@ function applySettings() {
     dom.showRoutine.checked = state.settings.showRoutine || false;
     dom.boardProfile.value = state.settings.boardProfile || "default";
     dom.routineBar.classList.toggle('hidden', !state.settings.showRoutine);
+    updateCategoryNavState();
 
     // Phase 7: Accessibility & Speech
     dom.showGrammarTags.checked = state.settings.showGrammarTags || false;
