@@ -42,13 +42,13 @@
 
 /* Moomins Dark Theme Override */
 .dark-theme {
-  --bg-primary: #1a1b1e;
+  --bg-primary: #0f1115;
   /* Deep night charcoal */
-  --bg-secondary: #25262b;
-  --bg-card: #2c2e33;
-  --text-primary: #e9ecef;
-  --text-secondary: #adb5bd;
-  --accent: #74c0fc;
+  --bg-secondary: #1a1f2b;
+  --bg-card: #232a36;
+  --text-primary: #f8fafc;
+  --text-secondary: #d1d9e6;
+  --accent: #8bd1ff;
   /* Moomin blue */
   --accent-glow: rgba(116, 192, 252, 0.3);
   --border-thick: 3px solid #e9ecef;
@@ -83,7 +83,25 @@
 .dark-theme input,
 .dark-theme select,
 .dark-theme .pill {
-  box-shadow: 4px 4px 0px #e9ecef;
+  box-shadow: 4px 4px 0px #f8fafc;
+}
+
+.dark-theme .btn,
+.dark-theme .pill,
+.dark-theme .glass-input,
+.dark-theme .search-box,
+.dark-theme .chip {
+  color: var(--text-primary);
+}
+
+.dark-theme .tile-text,
+.dark-theme .tile-cat,
+.dark-theme .modal-title,
+.dark-theme .modal-sub,
+.dark-theme .subtitle,
+.dark-theme label,
+.dark-theme .field span {
+  color: var(--text-primary);
 }
 
 .dark-theme .btn:active,
@@ -269,11 +287,12 @@ h3 {
 }
 
 .header-logo {
-  height: 48px;
+  height: clamp(56px, 8vw, 82px);
   width: auto;
-  border-radius: 12px;
-  border: 2px solid var(--text-primary);
-  background: white;
+  border-radius: 0;
+  border: none;
+  background: transparent;
+  object-fit: contain;
 }
 
 .dot-container {
@@ -411,11 +430,18 @@ h3 {
 }
 
 .btn-close {
-  background: none;
-  border: none;
+  background: var(--bg-card);
+  border: 2px solid var(--text-primary);
+  border-radius: 12px;
+  width: 42px;
+  height: 42px;
   font-size: 1.5rem;
   cursor: pointer;
   font-weight: 800;
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Toolbar & Filters */
@@ -1223,4 +1249,31 @@ input:checked+.toggle-slider:before {
 
 .dark-theme .bmc-button-custom:hover {
   box-shadow: 8px 8px 0px #e9ecef;
+}
+
+@media (max-width: 900px) {
+  .topbar {
+    flex-wrap: wrap;
+    padding: 0.85rem 1rem;
+  }
+
+  .actions {
+    width: 100%;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 600px) {
+  .header-toggle-group {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+    margin-right: 0;
+  }
+
+  .actions .btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
 }

@@ -56,6 +56,7 @@
     </div>
 
     <div class="actions">
+      <button class="btn glass" id="btnThemeToggle" aria-label="Cambiar tema" title="Cambiar tema">🌙</button>
       <div class="header-toggle-group" title="Habla Inmediata (Toque de Tile)">
         <span class="toggle-label">Hablar</span>
         <label class="switch mini">
@@ -128,7 +129,7 @@
           <div class="modal-title">Configurar Tablero</div>
           <div class="modal-sub">Gestiona tus elementos de comunicación</div>
         </div>
-        <button class="btn-close" value="cancel" aria-label="Cerrar">✕</button>
+        <button type="button" class="btn-close" data-close-dialog="editModal" aria-label="Cerrar">✕</button>
       </div>
 
       <div class="modal-body">
@@ -210,7 +211,7 @@
           <div class="modal-title">Ajustes del Sistema</div>
           <div class="modal-sub">Personalización y accesibilidad</div>
         </div>
-        <button class="btn-close" value="cancel" aria-label="Cerrar">✕</button>
+        <button type="button" class="btn-close" data-close-dialog="settingsModal" aria-label="Cerrar">✕</button>
       </div>
 
       <div class="modal-body">
@@ -376,7 +377,7 @@
           <div class="modal-title">Bitácora Clínica</div>
           <div class="modal-sub">Registro local y privado de actividad</div>
         </div>
-        <button class="btn-close" value="cancel">✕</button>
+        <button type="button" class="btn-close" data-close-dialog="historyModal">✕</button>
       </div>
       <div class="modal-body">
         <div id="historyList" class="history-list">
@@ -395,7 +396,7 @@
     <form method="dialog" class="modal-card mini">
       <div class="modal-head">
         <div class="modal-title">PIN de Seguridad</div>
-        <button class="btn-close" value="cancel">✕</button>
+        <button type="button" class="btn-close" data-close-dialog="pinModal">✕</button>
       </div>
       <div class="modal-body">
         <p>Ingresa el PIN para entrar al Modo Tutor:</p>
