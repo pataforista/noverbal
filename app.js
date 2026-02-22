@@ -1,6 +1,7 @@
 /**
- * MiTablero AAC - Core Application Logic
- * Premium Accessibility & Interaction
+ * HolAAC! 2026 - Core Application Logic
+ * Autor: Cesar Celada (drceladapsiquiatria@gmail.com)
+ * Proyecto Sin Fines de Lucro
  */
 
 const LS_KEYS = {
@@ -11,14 +12,14 @@ const LS_KEYS = {
 };
 
 const DEFAULT_ITEMS = [
-    { id: "1", text: "Sí", category: "General", color: "#22c55e", image: null },
-    { id: "2", text: "No", category: "General", color: "#ef4444", image: null },
-    { id: "3", text: "Hola", category: "Social", color: "#3b82f6", image: null },
-    { id: "4", text: "Por favor", category: "Social", color: "#a855f7", image: null },
-    { id: "5", text: "Agua", category: "Necesidad", color: "#0ea5e9", image: null },
-    { id: "6", text: "Comida", category: "Necesidad", color: "#f59e0b", image: null },
-    { id: "7", text: "Baño", category: "Necesidad", color: "#64748b", image: null },
-    { id: "8", text: "Dolor", category: "Salud", color: "#f43f5e", image: null },
+    { id: "1", text: "Sí", category: "General", color: "#22c55e", image: "assets/pictos/si.png" },
+    { id: "2", text: "No", category: "General", color: "#ef4444", image: "assets/pictos/no.png" },
+    { id: "3", text: "Hola", category: "Social", color: "#3b82f6", image: "assets/pictos/hola.png" },
+    { id: "4", text: "Por favor", category: "Social", color: "#a855f7", image: "assets/pictos/por_favor.png" },
+    { id: "5", text: "Agua", category: "Necesidad", color: "#0ea5e9", image: "assets/pictos/agua.png" },
+    { id: "6", text: "Comida", category: "Necesidad", color: "#f59e0b", image: "assets/pictos/comida.png" },
+    { id: "7", text: "Baño", category: "Necesidad", color: "#64748b", image: "assets/pictos/bano.png" },
+    { id: "8", text: "Dolor", category: "Salud", color: "#f43f5e", image: "assets/pictos/dolor.png" },
 ];
 
 const DEFAULT_SETTINGS = {
@@ -36,7 +37,8 @@ const state = {
     settings: loadJSON(LS_KEYS.settings, {
         ...DEFAULT_SETTINGS,
         showGrammarTags: false,
-        speechMode: 'fluent' // fluent | word
+        speechMode: 'fluent', // fluent | word
+        darkMode: false
     }),
     phrase: loadJSON(LS_KEYS.phrase, []),
     currentPath: [],
@@ -130,31 +132,6 @@ async function clearHistoryDB() {
     store.clear();
 }
 
-function updateCompanion(reactionType) {
-    const avatar = dom.companion.querySelector('.companion-avatar');
-    const bubble = dom.companionBubble;
-
-    let emoji = "🌱";
-    let message = "";
-
-    switch (reactionType) {
-        case 'social': emoji = "✨"; message = "¡Qué bueno verte saludar!"; break;
-        case 'tristeza': emoji = "🫂"; message = "Estoy aquí contigo. Respira hondo."; break;
-        case 'enojo': emoji = "🌬️"; message = "Está bien estar enojado. Vamos a calmarnos."; break;
-        case 'necesidad': emoji = "💪"; message = "Te escucho. Vamos a resolverlo."; break;
-        case 'frase': emoji = "🌟"; message = "¡Increíble! Formaste una frase completa."; break;
-        default: emoji = "🌱"; message = "¡Sigue así!"; break;
-    }
-
-    avatar.textContent = emoji;
-    bubble.textContent = message;
-    bubble.classList.remove('hidden');
-
-    setTimeout(() => {
-        bubble.classList.add('hidden');
-    }, 4000);
-}
-
 // DOM Cache
 const dom = {
     statusText: document.getElementById('statusText'),
@@ -220,6 +197,8 @@ const dom = {
     btnStop: document.getElementById('btnStop'),
     showGrammarTags: document.getElementById('showGrammarTags'),
     speechMode: document.getElementById('speechMode'),
+    darkMode: document.getElementById('darkMode'),
+    headerSpeakToggle: document.getElementById('headerSpeakToggle'),
 };
 
 // Persistence Helpers
@@ -265,6 +244,7 @@ async function init() {
     }
 
     applySettings();
+    await repairCoreImages(); // Force update core items with images
     attachListeners();
     loadVoices();
     if (window.speechSynthesis) {
@@ -364,8 +344,14 @@ function attachListeners() {
         save();
         renderGrid();
     };
+    dom.headerSpeakToggle.onchange = (e) => {
+        state.settings.tapMode = e.target.checked ? 'speak' : 'add';
+        dom.tapMode.value = state.settings.tapMode;
+        save();
+    };
     dom.tapMode.onchange = (e) => {
         state.settings.tapMode = e.target.value;
+        dom.headerSpeakToggle.checked = (state.settings.tapMode === 'speak');
         save();
     };
     dom.lockEdit.onchange = (e) => {
@@ -379,6 +365,11 @@ function attachListeners() {
     };
     dom.voiceSelect.onchange = (e) => {
         state.settings.voiceURI = e.target.value;
+        save();
+    };
+    dom.darkMode.onchange = (e) => {
+        state.settings.darkMode = e.target.checked;
+        document.body.classList.toggle('dark-theme', state.settings.darkMode);
         save();
     };
 
@@ -462,9 +453,77 @@ function attachListeners() {
         else window.speechSynthesis.pause();
     };
     dom.btnStop.onclick = () => window.speechSynthesis.cancel();
+
+    // Companion interaction
+    dom.companion.onclick = () => {
+        const phrases = [
+            "¡Lo estás haciendo muy bien!",
+            "Estoy aquí para escucharte.",
+            "Tómate tu tiempo, no hay prisa.",
+            "Cada palabra cuenta.",
+            "¿Cómo te sientes hoy?",
+            "¡Me encanta ayudarte!",
+            "Tus ideas son importantes."
+        ];
+        const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
+        updateCompanion('custom', randomPhrase);
+        speakText(randomPhrase);
+    };
 }
 
 // Actions
+async function repairCoreImages() {
+    // List of core items that should ALWAYS have images from assets
+    const coreUpdates = [
+        { id: "3", text: "Hola", image: "assets/pictos/hola.png" },
+        { id: "4", text: "Por favor", image: "assets/pictos/por_favor.png" },
+        { id: "5", text: "Agua", image: "assets/pictos/agua.png" },
+        { id: "6", text: "Comida", image: "assets/pictos/comida.png" },
+        { id: "7", text: "Baño", image: "assets/pictos/bano.png" },
+        { id: "8", text: "Dolor", image: "assets/pictos/dolor.png" }
+    ];
+
+    let changed = false;
+    for (const update of coreUpdates) {
+        const item = state.items.find(i => i.id === update.id);
+        if (item && (!item.image || item.image.includes('null'))) {
+            item.image = update.image;
+            await saveItemDB(item);
+            changed = true;
+        }
+    }
+    if (changed) render();
+}
+
+function updateCompanion(reactionType, customMsg) {
+    const avatar = dom.companion.querySelector('.companion-avatar');
+    const bubble = dom.companionBubble;
+
+    let emoji = "🌱";
+    let message = customMsg || "";
+
+    if (!customMsg) {
+        switch (reactionType) {
+            case 'social': emoji = "✨"; message = "¡Qué bueno verte saludar!"; break;
+            case 'tristeza': emoji = "🫂"; message = "Estoy aquí contigo. Respira hondo."; break;
+            case 'enojo': emoji = "🌬️"; message = "Está bien estar enojado. Vamos a calmarnos."; break;
+            case 'necesidad': emoji = "💪"; message = "Te escucho. Vamos a resolverlo."; break;
+            case 'frase': emoji = "🌟"; message = "¡Increíble! Formaste una frase completa."; break;
+            default: emoji = "🌱"; message = "¡Sigue así!"; break;
+        }
+    } else {
+        emoji = "🌟";
+    }
+
+    avatar.textContent = emoji;
+    bubble.textContent = message;
+    bubble.classList.remove('hidden');
+
+    setTimeout(() => {
+        bubble.classList.add('hidden');
+    }, 4000);
+}
+
 function speakText(text) {
     if (!text) return;
 
@@ -543,6 +602,9 @@ function handleImageSelect(e) {
 }
 
 function addItem() {
+    const isEdit = dom.btnAddItem.hasAttribute('data-edit-id');
+    if (isEdit) return updateItem();
+
     const text = dom.itemText.value.trim();
     if (!text) return;
 
@@ -555,8 +617,8 @@ function addItem() {
     };
 
     state.items.unshift(item);
-    saveItemDB(item); // Guardar en IndexedDB
-    save(); // Guardar settings y phrase en localStorage
+    saveItemDB(item);
+    save();
 
     // Reset form
     dom.itemText.value = "";
@@ -568,6 +630,52 @@ function addItem() {
     render();
     renderItemList();
 }
+
+function updateItem() {
+    const id = dom.btnAddItem.getAttribute('data-edit-id');
+    const item = state.items.find(i => i.id === id);
+    if (!item) return;
+
+    item.text = dom.itemText.value.trim();
+    item.category = dom.itemCategory.value.trim() || "Varios";
+    item.color = dom.itemColor.value;
+    if (state.pendingImage) item.image = state.pendingImage;
+
+    saveItemDB(item);
+    save();
+
+    // Reset form
+    dom.itemText.value = "";
+    dom.itemCategory.value = "";
+    dom.itemImage.value = "";
+    dom.btnAddItem.textContent = "➕ Añadir al Catálogo";
+    dom.btnAddItem.removeAttribute('data-edit-id');
+    dom.preview.textContent = "¡Actualizado!";
+    state.pendingImage = null;
+
+    render();
+    renderItemList();
+}
+
+window.editItem = (id) => {
+    const item = state.items.find(i => i.id === id);
+    if (!item) return;
+
+    dom.itemText.value = item.text;
+    dom.itemCategory.value = item.category;
+    dom.itemColor.value = item.color;
+    if (item.image) {
+        dom.preview.innerHTML = `<img src="${item.image}" style="max-height:100px; border-radius:10px;">`;
+    } else {
+        dom.preview.textContent = "Sin imagen";
+    }
+
+    dom.btnAddItem.textContent = "💾 Guardar Cambios";
+    dom.btnAddItem.setAttribute('data-edit-id', id);
+
+    // Scroll to top of editor
+    dom.editModal.querySelector('.modal-body').scrollTop = 0;
+};
 
 function openEditModal() {
     renderItemList();
@@ -940,6 +1048,17 @@ function createTile(item, onClick) {
     return tile;
 }
 
+// Reset Editor State when modal closes
+dom.editModal.addEventListener('close', () => {
+    dom.itemText.value = "";
+    dom.itemCategory.value = "";
+    dom.itemImage.value = "";
+    dom.btnAddItem.textContent = "➕ Añadir al Catálogo";
+    dom.btnAddItem.removeAttribute('data-edit-id');
+    dom.preview.textContent = "Esperando datos...";
+    state.pendingImage = null;
+});
+
 function onTileClick(item) {
     // Tutor Mode Action: Toggle hidden status
     if (state.tutorMode.active) {
@@ -1102,6 +1221,7 @@ function renderItemList() {
                 </div>
             </div>
             <div class="item-actions">
+                <button class="btn glass secondary" onclick="editItem('${item.id}')">Modificar</button>
                 <button class="btn glass danger" onclick="removeItem('${item.id}')">Eliminar</button>
             </div>
         `;
@@ -1192,7 +1312,10 @@ function applySettings() {
     // Phase 7: Accessibility & Speech
     dom.showGrammarTags.checked = state.settings.showGrammarTags || false;
     dom.speechMode.value = state.settings.speechMode || 'fluent';
+    dom.darkMode.checked = state.settings.darkMode || false;
+    dom.headerSpeakToggle.checked = (state.settings.tapMode === 'speak');
     document.body.classList.toggle('show-grammar', state.settings.showGrammarTags);
+    document.body.classList.toggle('dark-theme', state.settings.darkMode);
 }
 
 init();

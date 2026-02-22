@@ -6,9 +6,41 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>MiTablero AAC</title>
+
+  <title>HolAAC! - Comunicación Aumentativa</title>
+  <meta name="description"
+    content="HolAAC! es un tablero de comunicación aumentativa y alternativa (SAAC) diseñado para personas con autismo, afasia y otras necesidades de comunicación. Gratuito y offline-first.">
+  <meta name="keywords"
+    content="HolAAC, AAC, SAAC, comunicación aumentativa, autismo, afasia, parálisis cerebral, accesibilidad">
+  <meta name="author" content="César Celada">
+
+  <!-- Open Graph / Discovery -->
+  <meta property="og:title" content="HolAAC! - Herramienta de Comunicación">
+  <meta property="og:description" content="Comunicación accesible y gratuita para todos. Diseñada por César Celada.">
+  <meta property="og:image" content="icons/icon-512.png">
+  <meta property="og:type" content="website">
+
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "HolAAC!",
+      "operatingSystem": "Web",
+      "applicationCategory": "CommunicationApplication",
+      "description": "Tablero de comunicación aumentativa y alternativa (SAAC) para personas con necesidades especiales.",
+      "author": {
+        "@type": "Person",
+        "name": "César Celada"
+      },
+      "url": "https://github.com/pataforista/noverbal"
+    }
+  </script>
+
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" type="image/png" href="icons/favicon-32.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png">
+
   <meta name="theme-color" content="#111827" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -19,17 +51,18 @@
 <body>
   <header class="topbar">
     <div class="brand">
-      <div class="dot-container">
-        <div class="dot"></div>
-        <div class="dot-ring"></div>
-      </div>
-      <div>
-        <div class="title">MiTablero AAC</div>
-        <div class="subtitle" id="statusText">Cargando tablero...</div>
-      </div>
+      <img src="icons/icon-192.png" alt="HolAAC Logo" class="header-logo">
+      <div class="subtitle" id="statusText">Cargando...</div>
     </div>
 
     <div class="actions">
+      <div class="header-toggle-group" title="Habla Inmediata (Toque de Tile)">
+        <span class="toggle-label">Hablar</span>
+        <label class="switch mini">
+          <input type="checkbox" id="headerSpeakToggle">
+          <span class="slider round"></span>
+        </label>
+      </div>
       <button class="btn glass" id="btnSettings" aria-label="Ajustes">⚙️</button>
       <button class="btn glass" id="btnEdit" aria-label="Editar tablero">✏️</button>
     </div>
@@ -59,9 +92,11 @@
 
     <section class="toolbar" aria-label="Filtros y Búsqueda">
       <div class="category-menu" aria-label="Categorías">
-        <button class="pill-nav" id="categoryPrev" type="button" aria-label="Desplazar categorías a la izquierda">◀</button>
+        <button class="pill-nav" id="categoryPrev" type="button"
+          aria-label="Desplazar categorías a la izquierda">◀</button>
         <div class="pill-container" id="categoryBar" role="tablist" aria-label="Temas del tablero"></div>
-        <button class="pill-nav" id="categoryNext" type="button" aria-label="Desplazar categorías a la derecha">▶</button>
+        <button class="pill-nav" id="categoryNext" type="button"
+          aria-label="Desplazar categorías a la derecha">▶</button>
       </div>
       <div class="search-wrapper">
         <span class="search-icon">🔍</span>
@@ -203,7 +238,7 @@
         </div>
 
         <div class="settings-section">
-          <h3>Interfaz y Tablero</h3>
+          <h3>Interfaz y Estilo</h3>
           <div class="row">
             <label class="field">
               <span>Tamaño de botones</span>
@@ -228,6 +263,17 @@
               </select>
             </label>
           </div>
+
+          <label class="field-row">
+            <div class="toggle-wrapper">
+              <input id="darkMode" type="checkbox" />
+              <span class="toggle-slider"></span>
+            </div>
+            <div class="text-content">
+              <span class="main">Tema Obscuro (Moomins Style)</span>
+              <span class="sub">Activa una paleta relajante y premium</span>
+            </div>
+          </label>
         </div>
 
         <div class="settings-section">
@@ -289,6 +335,25 @@
               <span class="sub">Oculta o muestra elementos específicos para cada sesión</span>
             </div>
           </label>
+        </div>
+
+        <div class="settings-section">
+          <h3>Acerca de HolAAC!</h3>
+          <div class="glass-card info-box" style="padding: 15px; font-size: 0.85rem;">
+            <p><strong>Autor:</strong> Cesar Celada</p>
+            <p><strong>Contacto:</strong> <a
+                href="mailto:drceladapsiquiatria@gmail.com">drceladapsiquiatria@gmail.com</a></p>
+            <p><strong>Repositorio:</strong> <a href="https://github.com/pataforista/noverbal" target="_blank">Ver en
+                GitHub</a></p>
+            <p style="margin-top: 5px;">Este proyecto es sin fines de lucro. Si deseas apoyar su desarrollo y
+              mantenimiento, puedes donar aquí:</p>
+            <a href="https://buymeacoffee.com/herramente" target="_blank" class="bmc-button-custom">
+              <span class="bmc-icon">☕</span>
+              <span>Invítame un café</span>
+            </a>
+            <p style="margin-top: 10px; opacity: 0.7; font-style: italic;">Aviso: Uso clínico bajo supervisión
+              profesional sugerido.</p>
+          </div>
         </div>
 
         <div class="settings-section">

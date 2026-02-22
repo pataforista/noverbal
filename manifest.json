@@ -1,11 +1,11 @@
 {
-  "name": "MiTablero AAC",
-  "short_name": "MiTablero",
-  "description": "Tablero de comunicación aumentativa y alternativa (SAAC) offline-first.",
+  "name": "HolAAC! - Comunicación Aumentativa",
+  "short_name": "HolAAC!",
+  "description": "Tablero de comunicación aumentativa y alternativa (SAAC) para autismo, afasia y necesidades especiales.",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#0b1220",
-  "theme_color": "#0b1220",
+  "background_color": "#fdf6e3",
+  "theme_color": "#ff7675",
   "orientation": "any",
   "icons": [
     {

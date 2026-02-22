@@ -1,4 +1,4 @@
-const CACHE_NAME = "mitablero-aac-v1";
+const CACHE_NAME = "holaac-v1";
 const ASSETS = [
     "./",
     "./index.html",
