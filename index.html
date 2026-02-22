@@ -114,12 +114,29 @@
 
     <section class="grid" id="grid" aria-label="Tablero"></section>
 
-    <!-- Virtual Companion -->
-    <div id="companion" class="companion-container">
-      <div class="companion-avatar">🌱</div>
-      <div class="companion-bubble hidden" id="companionBubble">¡Hola! Estoy aquí para acompañarte.</div>
-    </div>
   </main>
+
+  <!-- MODAL: Intro Setup -->
+  <dialog class="modal glass-modal" id="introModal">
+    <form method="dialog" class="modal-card">
+      <div class="modal-head">
+        <div>
+          <div class="modal-title">Bienvenida inicial</div>
+          <div class="modal-sub">Elige qué temas estarán activos en tu tablero</div>
+        </div>
+      </div>
+
+      <div class="modal-body">
+        <p class="intro-copy">Puedes activar o desactivar categorías ahora, y volver a cambiarlas luego en Ajustes.</p>
+        <div id="introCategoryList" class="category-toggle-list"></div>
+      </div>
+
+      <div class="modal-foot">
+        <button type="button" class="btn glass" id="btnIntroSelectAll">Activar todo</button>
+        <button class="btn primary" id="btnSaveIntro">Guardar y continuar</button>
+      </div>
+    </form>
+  </dialog>
 
   <!-- MODAL: Editor -->
   <dialog class="modal glass-modal" id="editModal">
@@ -249,7 +266,7 @@
           <div class="row">
             <label class="field">
               <span>Tamaño de botones</span>
-              <input id="tileSize" type="range" min="80" max="160" step="5" />
+              <input id="tileSize" type="range" min="100" max="220" step="5" />
             </label>
 
             <label class="field">
@@ -281,6 +298,11 @@
               <span class="sub">Activa una paleta relajante y premium</span>
             </div>
           </label>
+
+          <div class="field">
+            <span>Categorías activas</span>
+            <div id="activeCategoryList" class="category-toggle-list"></div>
+          </div>
         </div>
 
         <div class="settings-section">

@@ -9,6 +9,8 @@ const LS_KEYS = {
     settings: "aac_settings_v2",
     phrase: "aac_phrase_v2",
     hiddenTags: "aac_hidden_tags_v2",
+    activeCategories: "aac_active_categories_v1",
+    introSeen: "aac_intro_seen_v1",
 };
 
 const DEFAULT_ITEMS = [
@@ -25,10 +27,11 @@ const DEFAULT_ITEMS = [
 const DEFAULT_SETTINGS = {
     voiceURI: "",
     rate: 1.0,
-    tileSize: 112,
+    tileSize: 140,
     tapMode: "add", // add | speak
     lockEdit: false,
     scanningEnabled: false,
+    activeCategories: [],
 };
 
 // State Management
@@ -191,9 +194,6 @@ const dom = {
     pinModal: document.getElementById('pinModal'),
     pinInput: document.getElementById('pinInput'),
     btnVerifyPin: document.getElementById('btnVerifyPin'),
-    // Companion
-    companion: document.getElementById('companion'),
-    companionBubble: document.getElementById('companionBubble'),
     // Phase 7: Motor & Speech
     btnPause: document.getElementById('btnPause'),
     btnStop: document.getElementById('btnStop'),
@@ -202,6 +202,11 @@ const dom = {
     darkMode: document.getElementById('darkMode'),
     headerSpeakToggle: document.getElementById('headerSpeakToggle'),
     btnThemeToggle: document.getElementById('btnThemeToggle'),
+    introModal: document.getElementById('introModal'),
+    introCategoryList: document.getElementById('introCategoryList'),
+    activeCategoryList: document.getElementById('activeCategoryList'),
+    btnIntroSelectAll: document.getElementById('btnIntroSelectAll'),
+    btnSaveIntro: document.getElementById('btnSaveIntro'),
 };
 
 // Persistence Helpers
@@ -256,6 +261,7 @@ async function init() {
         await ensureLibraryItemsPresent();
     }
 
+    ensureActiveCategories();
     applySettings();
     await repairCoreImages(); // Force update core items with images
     attachListeners();
@@ -305,7 +311,11 @@ async function init() {
 
 function attachListeners() {
     // Top bar
-    dom.btnSettings.onclick = () => dom.settingsModal.showModal();
+    dom.btnSettings.onclick = () => {
+        const card = dom.settingsModal?.querySelector('.modal-card');
+        if (card) card.scrollTop = 0;
+        dom.settingsModal.showModal();
+    };
     dom.btnThemeToggle.onclick = () => {
         state.settings.darkMode = !state.settings.darkMode;
         document.body.classList.toggle('dark-theme', state.settings.darkMode);
@@ -429,6 +439,20 @@ function attachListeners() {
         save();
     };
 
+    dom.btnIntroSelectAll.onclick = () => {
+        const categories = getAllCategories();
+        state.settings.activeCategories = [...categories];
+        renderCategoryToggles();
+    };
+
+    dom.btnSaveIntro.onclick = (e) => {
+        e.preventDefault();
+        localStorage.setItem(LS_KEYS.introSeen, '1');
+        save();
+        if (dom.introModal.open) dom.introModal.close();
+        render();
+    };
+
     // Professional Features Listeners
     dom.showRoutine.onchange = (e) => {
         state.settings.showRoutine = e.target.checked;
@@ -509,22 +533,6 @@ function attachListeners() {
         else window.speechSynthesis.pause();
     };
     dom.btnStop.onclick = () => window.speechSynthesis.cancel();
-
-    // Companion interaction
-    dom.companion.onclick = () => {
-        const phrases = [
-            "¡Lo estás haciendo muy bien!",
-            "Estoy aquí para escucharte.",
-            "Tómate tu tiempo, no hay prisa.",
-            "Cada palabra cuenta.",
-            "¿Cómo te sientes hoy?",
-            "¡Me encanta ayudarte!",
-            "Tus ideas son importantes."
-        ];
-        const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
-        updateCompanion('custom', randomPhrase);
-        speakText(randomPhrase);
-    };
 }
 
 // Actions
@@ -559,33 +567,8 @@ async function repairCoreImages() {
     if (changed) render();
 }
 
-function updateCompanion(reactionType, customMsg) {
-    const avatar = dom.companion.querySelector('.companion-avatar');
-    const bubble = dom.companionBubble;
-
-    let emoji = "🌱";
-    let message = customMsg || "";
-
-    if (!customMsg) {
-        switch (reactionType) {
-            case 'social': emoji = "✨"; message = "¡Qué bueno verte saludar!"; break;
-            case 'tristeza': emoji = "🫂"; message = "Estoy aquí contigo. Respira hondo."; break;
-            case 'enojo': emoji = "🌬️"; message = "Está bien estar enojado. Vamos a calmarnos."; break;
-            case 'necesidad': emoji = "💪"; message = "Te escucho. Vamos a resolverlo."; break;
-            case 'frase': emoji = "🌟"; message = "¡Increíble! Formaste una frase completa."; break;
-            default: emoji = "🌱"; message = "¡Sigue así!"; break;
-        }
-    } else {
-        emoji = "🌟";
-    }
-
-    avatar.textContent = emoji;
-    bubble.textContent = message;
-    bubble.classList.remove('hidden');
-
-    setTimeout(() => {
-        bubble.classList.add('hidden');
-    }, 4000);
+function updateCompanion() {
+    // Guía virtual eliminada por decisión de producto.
 }
 
 function speakText(text) {
@@ -986,7 +969,9 @@ function render() {
     renderPhrase();
     renderCategories();
     renderRoutine();
+    renderCategoryToggles();
 }
+
 
 async function renderHistory() {
     const history = await getAllHistory();
@@ -1018,6 +1003,8 @@ function renderGrid() {
         const matchesSearch = item.text.toLowerCase().includes(state.searchQuery) ||
             item.category.toLowerCase().includes(state.searchQuery);
 
+        const matchesActiveCategory = isCategoryActive(item.category);
+
         // Profile logic: Filter by category groups
         let matchesProfile = true;
         if (state.settings.boardProfile === 'home') {
@@ -1028,7 +1015,7 @@ function renderGrid() {
             matchesProfile = ['S.O.S', 'Salud', 'Salud+', 'Emociones'].includes(item.category);
         }
 
-        return matchesCat && matchesSearch && matchesProfile;
+        return matchesCat && matchesSearch && matchesProfile && matchesActiveCategory;
     });
 
     // 1. Navigation Anchor (Slot 1: Always Home/Back)
@@ -1197,7 +1184,9 @@ function addToRoutine(item) {
     if (state.routine.length >= 10) state.routine.shift();
     state.routine.push(item);
     renderRoutine();
+    renderCategoryToggles();
 }
+
 
 function renderRoutine() {
     dom.routineItems.innerHTML = "";
@@ -1243,7 +1232,7 @@ window.removeChip = (id) => {
 };
 
 function renderCategories() {
-    const cats = [...new Set(state.items.map(i => i.category))].sort();
+    const cats = getAllCategories().filter(cat => isCategoryActive(cat));
     dom.categoryBar.innerHTML = "";
 
     const hasFavs = state.items.some(i => i.isFavorite);
@@ -1273,6 +1262,83 @@ function renderCategories() {
     });
 
     updateCategoryNavState();
+}
+
+function getAllCategories() {
+    return [...new Set(state.items.map(i => i.category))].sort();
+}
+
+function ensureActiveCategories() {
+    const allCategories = getAllCategories();
+    const stored = Array.isArray(state.settings.activeCategories) ? state.settings.activeCategories : [];
+
+    if (stored.length === 0) {
+        state.settings.activeCategories = [...allCategories];
+        save();
+        return;
+    }
+
+    const sanitized = stored.filter(cat => allCategories.includes(cat));
+    if (sanitized.length !== stored.length) {
+        state.settings.activeCategories = sanitized.length ? sanitized : [...allCategories];
+        save();
+    }
+}
+
+function isCategoryActive(category) {
+    const active = state.settings.activeCategories || [];
+    return active.length === 0 || active.includes(category);
+}
+
+function renderCategoryToggles() {
+    const containers = [dom.introCategoryList, dom.activeCategoryList].filter(Boolean);
+    if (containers.length === 0) return;
+
+    const categories = getAllCategories();
+
+    containers.forEach(container => {
+        container.innerHTML = '';
+        categories.forEach(category => {
+            const label = document.createElement('label');
+            label.className = 'field-row category-toggle-item';
+
+            const checked = isCategoryActive(category);
+            if (checked) label.classList.add('is-active');
+
+            label.innerHTML = `
+                <div class="toggle-wrapper">
+                    <input type="checkbox" data-category="${category}" aria-label="Activar categoría ${category}" ${checked ? 'checked' : ''} />
+                    <span class="toggle-slider"></span>
+                </div>
+                <div class="text-content">
+                    <span class="main">${category}</span>
+                    <span class="sub state-text">${checked ? 'Activa' : 'Inactiva'}</span>
+                </div>
+            `;
+
+            const checkbox = label.querySelector('input');
+            const stateText = label.querySelector('.state-text');
+            checkbox.onchange = (e) => {
+                const current = new Set(state.settings.activeCategories || []);
+                if (e.target.checked) current.add(category);
+                else current.delete(category);
+
+                label.classList.toggle('is-active', e.target.checked);
+                stateText.textContent = e.target.checked ? 'Activa' : 'Inactiva';
+
+                state.settings.activeCategories = [...current];
+                save();
+
+                if (!isCategoryActive(state.currentCategory)) {
+                    state.currentCategory = 'Todas';
+                }
+
+                render();
+            };
+
+            container.appendChild(label);
+        });
+    });
 }
 
 function updateCategoryNavState() {
@@ -1421,9 +1487,14 @@ function applySettings() {
     dom.speechMode.value = state.settings.speechMode || 'fluent';
     dom.darkMode.checked = state.settings.darkMode || false;
     dom.headerSpeakToggle.checked = (state.settings.tapMode === 'speak');
+    ensureActiveCategories();
     document.body.classList.toggle('show-grammar', state.settings.showGrammarTags);
     document.body.classList.toggle('dark-theme', state.settings.darkMode);
     updateThemeToggleIcon();
+
+    if (!localStorage.getItem(LS_KEYS.introSeen)) {
+        dom.introModal.showModal();
+    }
 }
 
 init();
