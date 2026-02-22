@@ -194,9 +194,6 @@ const dom = {
     pinModal: document.getElementById('pinModal'),
     pinInput: document.getElementById('pinInput'),
     btnVerifyPin: document.getElementById('btnVerifyPin'),
-    // Companion
-    companion: document.getElementById('companion'),
-    companionBubble: document.getElementById('companionBubble'),
     // Phase 7: Motor & Speech
     btnPause: document.getElementById('btnPause'),
     btnStop: document.getElementById('btnStop'),
@@ -314,7 +311,11 @@ async function init() {
 
 function attachListeners() {
     // Top bar
-    dom.btnSettings.onclick = () => dom.settingsModal.showModal();
+    dom.btnSettings.onclick = () => {
+        const card = dom.settingsModal?.querySelector('.modal-card');
+        if (card) card.scrollTop = 0;
+        dom.settingsModal.showModal();
+    };
     dom.btnThemeToggle.onclick = () => {
         state.settings.darkMode = !state.settings.darkMode;
         document.body.classList.toggle('dark-theme', state.settings.darkMode);
@@ -532,22 +533,6 @@ function attachListeners() {
         else window.speechSynthesis.pause();
     };
     dom.btnStop.onclick = () => window.speechSynthesis.cancel();
-
-    // Companion interaction
-    dom.companion.onclick = () => {
-        const phrases = [
-            "¡Lo estás haciendo muy bien!",
-            "Estoy aquí para escucharte.",
-            "Tómate tu tiempo, no hay prisa.",
-            "Cada palabra cuenta.",
-            "¿Cómo te sientes hoy?",
-            "¡Me encanta ayudarte!",
-            "Tus ideas son importantes."
-        ];
-        const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
-        updateCompanion('custom', randomPhrase);
-        speakText(randomPhrase);
-    };
 }
 
 // Actions
@@ -582,33 +567,8 @@ async function repairCoreImages() {
     if (changed) render();
 }
 
-function updateCompanion(reactionType, customMsg) {
-    const avatar = dom.companion.querySelector('.companion-avatar');
-    const bubble = dom.companionBubble;
-
-    let emoji = "🌱";
-    let message = customMsg || "";
-
-    if (!customMsg) {
-        switch (reactionType) {
-            case 'social': emoji = "✨"; message = "¡Qué bueno verte saludar!"; break;
-            case 'tristeza': emoji = "🫂"; message = "Estoy aquí contigo. Respira hondo."; break;
-            case 'enojo': emoji = "🌬️"; message = "Está bien estar enojado. Vamos a calmarnos."; break;
-            case 'necesidad': emoji = "💪"; message = "Te escucho. Vamos a resolverlo."; break;
-            case 'frase': emoji = "🌟"; message = "¡Increíble! Formaste una frase completa."; break;
-            default: emoji = "🌱"; message = "¡Sigue así!"; break;
-        }
-    } else {
-        emoji = "🌟";
-    }
-
-    avatar.textContent = emoji;
-    bubble.textContent = message;
-    bubble.classList.remove('hidden');
-
-    setTimeout(() => {
-        bubble.classList.add('hidden');
-    }, 4000);
+function updateCompanion() {
+    // Guía virtual eliminada por decisión de producto.
 }
 
 function speakText(text) {
