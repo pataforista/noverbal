@@ -64,6 +64,7 @@
           <span class="slider round"></span>
         </label>
       </div>
+      <button class="btn glass" id="btnWriting" aria-label="Módulo de escritura" title="Módulo de escritura">⌨️</button>
       <button class="btn glass" id="btnSettings" aria-label="Ajustes">⚙️</button>
       <button class="btn glass" id="btnEdit" aria-label="Editar tablero">✏️</button>
     </div>
@@ -88,6 +89,27 @@
           <button class="btn glass secondary" id="btnBackspace" title="Borrar último">⌫</button>
           <button class="btn glass danger" id="btnClear" title="Limpiar todo">🗑️</button>
         </div>
+      </div>
+    </section>
+
+    <section class="writing-panel glass hidden" id="writingPanel" aria-label="Módulo de Escritura">
+      <div class="writing-header">
+        <span class="writing-title">✍️ Escritura libre</span>
+        <button class="btn-close" id="btnCloseWriting" aria-label="Cerrar escritura">✕</button>
+      </div>
+      <textarea
+        id="writingInput"
+        class="writing-textarea glass-input"
+        placeholder="Escribe aquí lo que quieres decir..."
+        rows="3"
+        aria-label="Texto para leer en voz alta"
+      ></textarea>
+      <div class="writing-actions">
+        <button class="btn glass danger" id="btnClearWriting" title="Limpiar texto">🗑️ Limpiar</button>
+        <button class="btn primary-action writing-speak-btn" id="btnSpeakWriting">
+          <span class="icon">🔊</span>
+          <span class="text">Leer texto</span>
+        </button>
       </div>
     </section>
 

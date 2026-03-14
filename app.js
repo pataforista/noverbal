@@ -203,6 +203,13 @@ const dom = {
     darkMode: document.getElementById('darkMode'),
     headerSpeakToggle: document.getElementById('headerSpeakToggle'),
     btnThemeToggle: document.getElementById('btnThemeToggle'),
+    // Writing Module
+    btnWriting: document.getElementById('btnWriting'),
+    writingPanel: document.getElementById('writingPanel'),
+    writingInput: document.getElementById('writingInput'),
+    btnSpeakWriting: document.getElementById('btnSpeakWriting'),
+    btnClearWriting: document.getElementById('btnClearWriting'),
+    btnCloseWriting: document.getElementById('btnCloseWriting'),
     introModal: document.getElementById('introModal'),
     introCategoryList: document.getElementById('introCategoryList'),
     activeCategoryList: document.getElementById('activeCategoryList'),
@@ -311,6 +318,32 @@ async function init() {
 }
 
 function attachListeners() {
+    // Writing Module
+    dom.btnWriting.onclick = () => {
+        dom.writingPanel.classList.toggle('hidden');
+        if (!dom.writingPanel.classList.contains('hidden')) {
+            dom.writingInput.focus();
+        }
+    };
+    dom.btnCloseWriting.onclick = () => dom.writingPanel.classList.add('hidden');
+    dom.btnClearWriting.onclick = () => {
+        dom.writingInput.value = '';
+        dom.writingInput.focus();
+    };
+    dom.btnSpeakWriting.onclick = () => {
+        const text = dom.writingInput.value.trim();
+        if (!text) { flashStatus("Escribe algo primero"); return; }
+        speakWithTTS(text);
+        logActivity(`Escritura: ${text}`);
+    };
+    // Also allow Ctrl+Enter to speak from textarea
+    dom.writingInput.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            e.preventDefault();
+            dom.btnSpeakWriting.click();
+        }
+    });
+
     // Top bar
     dom.btnSettings.onclick = () => {
         const card = dom.settingsModal?.querySelector('.modal-card');
