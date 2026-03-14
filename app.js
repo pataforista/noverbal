@@ -304,10 +304,19 @@ async function init() {
     applySettings();
     await repairCoreImages(); // Force update core items with images
     attachListeners();
-    loadVoices();
+
+    // Setup voice loading BEFORE initial load
     if (window.speechSynthesis) {
         window.speechSynthesis.onvoiceschanged = loadVoices;
     }
+
+    // Try loading voices immediately, then again with a delay if needed
+    loadVoices();
+    if (state.voices.length === 0 && window.speechSynthesis) {
+        // If voices aren't loaded yet, wait a bit and try again
+        setTimeout(loadVoices, 100);
+    }
+
     render();
 
     if ('serviceWorker' in navigator) {
@@ -668,20 +677,40 @@ function speakText(text) {
 }
 
 function speakWithTTS(text) {
-    if (!window.speechSynthesis) return;
-    window.speechSynthesis.cancel();
+    if (!window.speechSynthesis) {
+        console.error('❌ SpeechSynthesis not supported');
+        return;
+    }
 
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = state.settings.rate * 0.9;
-    utterance.pitch = 1.0;
+    try {
+        window.speechSynthesis.cancel();
 
-    const voices = window.speechSynthesis.getVoices();
-    const voice = voices.find(v => v.voiceURI === state.settings.voiceURI)
-        || voices.find(v => v.lang.includes('es-MX') || v.name.includes('Premium'))
-        || voices.find(v => v.lang.startsWith('es'));
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = state.settings.rate * 0.9;
+        utterance.pitch = 1.0;
 
-    if (voice) utterance.voice = voice;
-    window.speechSynthesis.speak(utterance);
+        const voices = window.speechSynthesis.getVoices();
+        if (voices.length === 0) {
+            console.warn('⚠️ No voices available, using default');
+            window.speechSynthesis.speak(utterance);
+            return;
+        }
+
+        // Try to find the selected voice, then Spanish, then any available
+        const voice = voices.find(v => v.voiceURI === state.settings.voiceURI)
+            || voices.find(v => v.lang.includes('es-MX') || v.name.includes('Premium'))
+            || voices.find(v => v.lang.startsWith('es'))
+            || voices[0];
+
+        if (voice) {
+            utterance.voice = voice;
+            console.log(`🔊 Speaking with: ${voice.name}`);
+        }
+
+        window.speechSynthesis.speak(utterance);
+    } catch (e) {
+        console.error('❌ TTS Error:', e);
+    }
 }
 
 async function speakPhrase() {
@@ -1596,7 +1625,15 @@ window.removeItem = async (id) => {
 };
 
 function loadVoices() {
-    state.voices = window.speechSynthesis.getVoices();
+    if (!window.speechSynthesis) return;
+
+    const voices = window.speechSynthesis.getVoices();
+    if (voices.length === 0) {
+        console.warn('⚠️ No voices available yet, will retry...');
+        return;
+    }
+
+    state.voices = voices;
     dom.voiceSelect.innerHTML = "";
 
     // Sort Spanish voices first
@@ -1613,6 +1650,8 @@ function loadVoices() {
         if (voice.voiceURI === state.settings.voiceURI) opt.selected = true;
         dom.voiceSelect.appendChild(opt);
     });
+
+    console.log(`✅ Loaded ${voices.length} voices`);
 }
 
 // Scanning Logic
