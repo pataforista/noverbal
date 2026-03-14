@@ -1323,7 +1323,13 @@ window.removeChip = (id) => {
 };
 
 function renderCategories() {
-    const cats = getAllCategories().filter(cat => isCategoryActive(cat));
+    const cats = getAllCategories()
+        .filter(cat => isCategoryActive(cat))
+        .sort((a, b) => {
+            const orderA = CATEGORY_METADATA[a]?.order ?? 999;
+            const orderB = CATEGORY_METADATA[b]?.order ?? 999;
+            return orderA - orderB;
+        });
     dom.categoryBar.innerHTML = "";
 
     const hasFavs = state.items.some(i => i.isFavorite);

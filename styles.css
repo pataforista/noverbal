@@ -1903,6 +1903,133 @@ input:checked+.toggle-slider:before {
   }
 }
 
+/* ── About & Donation Section ───────────────────────────────────────── */
+.about-card {
+  background: var(--md-surface-container);
+  border: var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--md-spacing-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--md-spacing-lg);
+}
+
+.about-author-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--md-spacing-md);
+}
+
+.about-author-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.about-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--md-on-surface);
+  margin: 0;
+}
+
+.about-role {
+  font-size: 0.8rem;
+  color: var(--md-on-surface-variant);
+  margin: 0;
+}
+
+.about-links {
+  display: flex;
+  gap: var(--md-spacing-sm);
+}
+
+.about-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  background: var(--md-surface-container-high);
+  border: var(--border);
+  text-decoration: none;
+  font-size: 1rem;
+  transition: var(--transition);
+}
+
+.about-link:hover {
+  background: var(--md-primary);
+  transform: scale(1.1);
+}
+
+.donation-section {
+  border-top: var(--border);
+  padding-top: var(--md-spacing-lg);
+}
+
+.donation-tagline {
+  font-size: 0.85rem;
+  color: var(--md-on-surface-variant);
+  margin: 0 0 var(--md-spacing-md);
+  line-height: 1.5;
+}
+
+/* ── Legal Disclaimer ───────────────────────────────────────────────── */
+.disclaimer-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--md-spacing-sm);
+  background: var(--md-surface-container);
+  border: var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.disclaimer-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--md-spacing-md);
+  padding: var(--md-spacing-md) var(--md-spacing-lg);
+  border-bottom: 1px solid var(--md-outline-variant);
+}
+
+.disclaimer-item:last-child {
+  border-bottom: none;
+}
+
+.disclaimer-clinical {
+  background: color-mix(in srgb, var(--md-error) 8%, transparent);
+  border-left: 3px solid var(--md-error);
+}
+
+.disclaimer-icon {
+  font-size: 1.3rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.disclaimer-item strong {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--md-on-surface);
+  margin-bottom: 4px;
+}
+
+.disclaimer-item p {
+  font-size: 0.8rem;
+  color: var(--md-on-surface-variant);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.disclaimer-item a {
+  color: var(--md-primary);
+  text-underline-offset: 2px;
+}
+
 /* Enhanced Category Navigation */
 .category-picker-grid {
   display: grid;
