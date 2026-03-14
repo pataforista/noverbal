@@ -310,11 +310,13 @@ async function init() {
         window.speechSynthesis.onvoiceschanged = loadVoices;
     }
 
-    // Try loading voices immediately, then again with a delay if needed
+    // Try loading voices immediately, then again with delays if needed
     loadVoices();
     if (state.voices.length === 0 && window.speechSynthesis) {
-        // If voices aren't loaded yet, wait a bit and try again
+        // If voices aren't loaded yet, wait a bit and try again (with backoff)
         setTimeout(loadVoices, 100);
+        setTimeout(loadVoices, 500);
+        setTimeout(loadVoices, 1000);
     }
 
     render();
@@ -373,6 +375,10 @@ function attachListeners() {
     dom.btnSpeakWriting.onclick = () => {
         const text = dom.writingInput.value.trim();
         if (!text) { flashStatus("Escribe algo primero"); return; }
+        if (!window.speechSynthesis) {
+            flashStatus("⚠️ Síntesis de voz no disponible en este navegador");
+            return;
+        }
         speakWithTTS(text);
         logActivity(`Escritura: ${text}`);
     };
@@ -691,7 +697,7 @@ function speakWithTTS(text) {
 
         const voices = window.speechSynthesis.getVoices();
         if (voices.length === 0) {
-            console.warn('⚠️ No voices available, using default');
+            console.warn('⚠️ No voices available, using system default');
             window.speechSynthesis.speak(utterance);
             return;
         }
@@ -704,7 +710,9 @@ function speakWithTTS(text) {
 
         if (voice) {
             utterance.voice = voice;
-            console.log(`🔊 Speaking with: ${voice.name}`);
+            console.log(`🔊 Speaking with: ${voice.name} (${voice.lang})`);
+        } else {
+            console.warn('⚠️ No suitable voice found, using default');
         }
 
         window.speechSynthesis.speak(utterance);
@@ -1625,7 +1633,12 @@ window.removeItem = async (id) => {
 };
 
 function loadVoices() {
-    if (!window.speechSynthesis) return;
+    if (!window.speechSynthesis) {
+        dom.voiceSelect.innerHTML = '<option value="">Síntesis de voz no disponible</option>';
+        dom.voiceSelect.disabled = true;
+        console.warn('⚠️ SpeechSynthesis not supported in this browser');
+        return;
+    }
 
     const voices = window.speechSynthesis.getVoices();
     if (voices.length === 0) {
@@ -1650,6 +1663,12 @@ function loadVoices() {
         if (voice.voiceURI === state.settings.voiceURI) opt.selected = true;
         dom.voiceSelect.appendChild(opt);
     });
+
+    // Ensure at least one voice is selected
+    if (dom.voiceSelect.selectedIndex === -1 && dom.voiceSelect.options.length > 0) {
+        dom.voiceSelect.selectedIndex = 0;
+        state.settings.voiceURI = dom.voiceSelect.options[0].value;
+    }
 
     console.log(`✅ Loaded ${voices.length} voices`);
 }
