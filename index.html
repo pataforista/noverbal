@@ -49,128 +49,131 @@
 </head>
 
 <body>
-  <header class="topbar">
+  <header class="topbar" role="banner">
     <div class="brand">
-      <img src="icons/icon-192.png" alt="HolAAC Logo" class="header-logo">
-      <div class="subtitle" id="statusText" aria-live="polite">Cargando...</div>
+      <img src="icons/icon-192.png" alt="HolAAC! - Comunicación Aumentativa" class="header-logo">
+      <div class="subtitle" id="statusText" aria-live="polite" aria-atomic="true">Cargando...</div>
     </div>
 
-    <div class="actions">
-      <button class="btn glass" id="btnThemeToggle" aria-label="Cambiar tema" title="Cambiar tema">🌙</button>
-      <div class="header-toggle-group" title="Habla Inmediata (Toque de Tile)">
+    <nav class="actions" role="toolbar" aria-label="Controles principales">
+      <button class="btn" id="btnThemeToggle" aria-label="Cambiar tema oscuro/claro" title="Cambiar tema">🌙</button>
+      <div class="header-toggle-group" role="group" aria-label="Modo de habla inmediata">
         <span class="toggle-label">Hablar</span>
         <label class="switch mini">
-          <input type="checkbox" id="headerSpeakToggle">
-          <span class="slider round"></span>
+          <input type="checkbox" id="headerSpeakToggle" aria-label="Activar habla inmediata">
+          <span class="slider round" aria-hidden="true"></span>
         </label>
       </div>
-      <button class="btn glass" id="btnWriting" aria-label="Módulo de escritura" title="Módulo de escritura">⌨️</button>
-      <button class="btn glass" id="btnSettings" aria-label="Ajustes">⚙️</button>
-      <button class="btn glass" id="btnEdit" aria-label="Editar tablero">✏️</button>
-    </div>
+      <button class="btn" id="btnWriting" aria-label="Abrir módulo de escritura libre" title="Escritura">⌨️</button>
+      <button class="btn" id="btnSettings" aria-label="Abrir ajustes y configuración">⚙️</button>
+      <button class="btn" id="btnEdit" aria-label="Editar el tablero de comunicación">✏️</button>
+    </nav>
   </header>
 
   <main class="layout">
-    <section class="composer glass" aria-label="Frase">
+    <section class="composer" aria-label="Compostor de frase">
       <div class="composer-row">
-        <div class="chips" id="chips"></div>
+        <div class="chips" id="chips" role="region" aria-label="Palabras seleccionadas" aria-live="polite"></div>
       </div>
 
       <div class="composer-actions">
-        <div class="speech-controls">
-          <button class="btn glass" id="btnPause" title="Pausar Voz">⏸</button>
-          <button class="btn glass danger" id="btnStop" title="Detener Voz">⏹</button>
+        <div class="speech-controls" role="group" aria-label="Controles de reproducción">
+          <button class="btn" id="btnPause" aria-label="Pausar reproducción de voz">⏸</button>
+          <button class="btn danger" id="btnStop" aria-label="Detener reproducción de voz">⏹</button>
         </div>
-        <button class="btn primary-action speak-btn" id="btnSpeak">
-          <span class="icon">🔊</span>
+        <button class="btn primary-action speak-btn" id="btnSpeak" aria-label="Leer la frase completa">
+          <span class="icon" aria-hidden="true">🔊</span>
           <span class="text">Hablar Frase</span>
         </button>
-        <div class="utility-actions">
-          <button class="btn glass secondary" id="btnBackspace" title="Borrar último">⌫</button>
-          <button class="btn glass danger" id="btnClear" title="Limpiar todo">🗑️</button>
+        <div class="utility-actions" role="group" aria-label="Funciones de edición">
+          <button class="btn" id="btnBackspace" aria-label="Borrar última palabra">⌫</button>
+          <button class="btn danger" id="btnClear" aria-label="Limpiar toda la frase">🗑️</button>
         </div>
       </div>
     </section>
 
-    <section class="writing-panel glass hidden" id="writingPanel" aria-label="Módulo de Escritura">
+    <section class="writing-panel hidden" id="writingPanel" aria-label="Módulo de escritura libre">
       <div class="writing-header">
-        <span class="writing-title">✍️ Escritura libre</span>
-        <button class="btn-close" id="btnCloseWriting" aria-label="Cerrar escritura">✕</button>
+        <h2 class="writing-title">✍️ Escritura libre</h2>
+        <button class="btn-close" id="btnCloseWriting" aria-label="Cerrar módulo de escritura">✕</button>
       </div>
       <textarea
         id="writingInput"
-        class="writing-textarea glass-input"
+        class="writing-textarea"
         placeholder="Escribe aquí lo que quieres decir..."
         rows="3"
-        aria-label="Texto para leer en voz alta"
+        aria-label="Área de texto para escritura libre"
+        aria-describedby="writingHelp"
       ></textarea>
+      <p id="writingHelp" class="sr-only">Escribe tu mensaje aquí. Puedes usar Ctrl+Enter para leer el texto.</p>
       <div class="writing-actions">
-        <button class="btn glass danger" id="btnClearWriting" title="Limpiar texto">🗑️ Limpiar</button>
-        <button class="btn primary-action writing-speak-btn" id="btnSpeakWriting">
-          <span class="icon">🔊</span>
+        <button class="btn danger" id="btnClearWriting" aria-label="Limpiar todo el texto">🗑️ Limpiar</button>
+        <button class="btn primary-action writing-speak-btn" id="btnSpeakWriting" aria-label="Leer el texto en voz alta">
+          <span class="icon" aria-hidden="true">🔊</span>
           <span class="text">Leer texto</span>
         </button>
       </div>
     </section>
 
-    <section class="toolbar" aria-label="Filtros y Búsqueda">
-      <div class="category-menu" aria-label="Categorías">
+    <section class="toolbar" aria-label="Filtros de categoría y búsqueda">
+      <nav class="category-menu" role="group" aria-label="Navegación de categorías">
         <button class="pill-nav" id="categoryPrev" type="button"
-          aria-label="Desplazar categorías a la izquierda">◀</button>
-        <div class="pill-container" id="categoryBar" role="tablist" aria-label="Temas del tablero"></div>
+          aria-label="Mostrar categorías anteriores">◀</button>
+        <div class="pill-container" id="categoryBar" role="tablist" aria-label="Categorías disponibles"></div>
         <button class="pill-nav" id="categoryNext" type="button"
-          aria-label="Desplazar categorías a la derecha">▶</button>
-      </div>
-      <div class="search-wrapper">
-        <span class="search-icon">🔍</span>
-        <input class="search-input glass" id="searchBox" placeholder="Buscar palabras o categorías..."
+          aria-label="Mostrar categorías siguientes">▶</button>
+      </nav>
+      <div class="search-wrapper" role="search">
+        <span class="search-icon" aria-hidden="true">🔍</span>
+        <input class="search-input" id="searchBox" type="search"
+          placeholder="Buscar palabras o categorías..."
+          aria-label="Buscar elementos del tablero"
           autocomplete="off" />
-        <button class="search-clear" id="btnClearSearch" type="button" aria-label="Limpiar búsqueda"
-          title="Limpiar búsqueda">✕</button>
+        <button class="search-clear" id="btnClearSearch" type="button" aria-label="Limpiar búsqueda">✕</button>
       </div>
     </section>
 
-    <section class="routine-bar glass hidden" id="routineBar" aria-label="Rutina Visual">
+    <section class="routine-bar hidden" id="routineBar" aria-label="Panel de rutina visual" role="region" aria-live="polite">
       <div class="routine-label">Rutina:</div>
-      <div id="routineItems" class="routine-items"></div>
-      <button class="btn glass danger" id="btnResetRoutine">✕</button>
+      <div id="routineItems" class="routine-items" role="list"></div>
+      <button class="btn danger" id="btnResetRoutine" aria-label="Limpiar rutina actual">✕</button>
     </section>
 
-    <section class="grid" id="grid" aria-label="Tablero"></section>
+    <section class="grid" id="grid" role="region" aria-label="Tablero de comunicación" aria-live="polite"></section>
 
   </main>
 
   <!-- MODAL: Intro Setup -->
-  <dialog class="modal glass-modal" id="introModal">
+  <dialog class="modal" id="introModal">
     <form method="dialog" class="modal-card">
       <div class="modal-head">
         <div>
-          <div class="modal-title">Bienvenida inicial</div>
-          <div class="modal-sub">Elige qué temas estarán activos en tu tablero</div>
+          <h1 class="modal-title">Bienvenida a HolAAC!</h1>
+          <p class="modal-sub">Elige qué temas estarán activos en tu tablero</p>
         </div>
       </div>
 
       <div class="modal-body">
         <p class="intro-copy">Puedes activar o desactivar categorías ahora, y volver a cambiarlas luego en Ajustes.</p>
-        <div id="introCategoryList" class="category-toggle-list"></div>
+        <div id="introCategoryList" class="category-toggle-list" role="group" aria-label="Selección de categorías"></div>
       </div>
 
       <div class="modal-foot">
-        <button type="button" class="btn glass" id="btnIntroSelectAll">Activar todo</button>
+        <button type="button" class="btn" id="btnIntroSelectAll">Activar todo</button>
         <button class="btn primary" id="btnSaveIntro">Guardar y continuar</button>
       </div>
     </form>
   </dialog>
 
   <!-- MODAL: Editor -->
-  <dialog class="modal glass-modal" id="editModal">
+  <dialog class="modal" id="editModal">
     <form method="dialog" class="modal-card">
       <div class="modal-head">
         <div>
-          <div class="modal-title">Configurar Tablero</div>
-          <div class="modal-sub">Gestiona tus elementos de comunicación</div>
+          <h1 class="modal-title">Configurar Tablero</h1>
+          <p class="modal-sub">Gestiona tus elementos de comunicación</p>
         </div>
-        <button type="button" class="btn-close" data-close-dialog="editModal" aria-label="Cerrar">✕</button>
+        <button type="button" class="btn-close" data-close-dialog="editModal" aria-label="Cerrar editor de tablero">✕</button>
       </div>
 
       <div class="modal-body">
@@ -251,14 +254,14 @@
   </dialog>
 
   <!-- MODAL: Settings -->
-  <dialog class="modal glass-modal" id="settingsModal">
+  <dialog class="modal" id="settingsModal">
     <form method="dialog" class="modal-card">
       <div class="modal-head">
         <div>
-          <div class="modal-title">Ajustes del Sistema</div>
-          <div class="modal-sub">Personalización y accesibilidad</div>
+          <h1 class="modal-title">Ajustes del Sistema</h1>
+          <p class="modal-sub">Personalización y accesibilidad</p>
         </div>
-        <button type="button" class="btn-close" data-close-dialog="settingsModal" aria-label="Cerrar">✕</button>
+        <button type="button" class="btn-close" data-close-dialog="settingsModal" aria-label="Cerrar ajustes">✕</button>
       </div>
 
       <div class="modal-body">
@@ -422,14 +425,14 @@
   </dialog>
 
   <!-- MODAL: History (Specialist Panel) -->
-  <dialog class="modal glass-modal" id="historyModal">
+  <dialog class="modal" id="historyModal">
     <form method="dialog" class="modal-card">
       <div class="modal-head">
         <div>
-          <div class="modal-title">Bitácora Clínica</div>
-          <div class="modal-sub">Registro local y privado de actividad</div>
+          <h1 class="modal-title">Bitácora Clínica</h1>
+          <p class="modal-sub">Registro local y privado de actividad</p>
         </div>
-        <button type="button" class="btn-close" data-close-dialog="historyModal">✕</button>
+        <button type="button" class="btn-close" data-close-dialog="historyModal" aria-label="Cerrar bitácora">✕</button>
       </div>
       <div class="modal-body">
         <div id="historyList" class="history-list">
@@ -444,15 +447,16 @@
   </dialog>
 
   <!-- MODAL: PIN (Tutor Mode Security) -->
-  <dialog class="modal glass-modal" id="pinModal">
+  <dialog class="modal" id="pinModal">
     <form method="dialog" class="modal-card mini">
       <div class="modal-head">
-        <div class="modal-title">PIN de Seguridad</div>
-        <button type="button" class="btn-close" data-close-dialog="pinModal">✕</button>
+        <h2 class="modal-title">PIN de Seguridad</h2>
+        <button type="button" class="btn-close" data-close-dialog="pinModal" aria-label="Cancelar entrada de PIN">✕</button>
       </div>
       <div class="modal-body">
-        <p>Ingresa el PIN para entrar al Modo Tutor:</p>
-        <input type="password" id="pinInput" maxlength="4" class="glass-input center" placeholder="****" />
+        <p>Ingresa el PIN de 4 dígitos para entrar al Modo Tutor:</p>
+        <input type="password" id="pinInput" maxlength="4" class="center" placeholder="****"
+          aria-label="Código PIN de seguridad" inputmode="numeric" />
       </div>
       <div class="modal-foot">
         <button class="btn primary full-width" id="btnVerifyPin">Entrar</button>

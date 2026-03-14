@@ -1573,6 +1573,33 @@ input:checked+.toggle-slider:before {
   flex: 1;
 }
 
+/* Screen Reader Only - for accessibility */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Legacy Glass Morphism Support (mapped to MD3) */
+.glass,
+.glass-input,
+.glass-card {
+  background: var(--md-surface-container-low);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--md-outline-variant);
+}
+
+.glass-card {
+  border-radius: var(--md-radius-lg);
+  padding: var(--md-spacing-lg);
+}
+
 /* Animations */
 @keyframes popIn {
   from {
