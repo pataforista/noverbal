@@ -24,6 +24,37 @@ const DEFAULT_ITEMS = [
     { id: "8", text: "Dolor", category: "Salud", color: "#f43f5e", image: "assets/pictos/dolor.png" },
 ];
 
+// Enhanced Category Metadata with Icons and Colors
+const CATEGORY_METADATA = {
+    // Sociales y Emocionales
+    "Social": { icon: "👋", color: "#3b82f6", order: 1 },
+    "Emociones": { icon: "😊", color: "#ec4899", order: 2 },
+    "Personas": { icon: "👨‍👩‍👧", color: "#f59e0b", order: 3 },
+
+    // Necesidades Básicas
+    "Necesidad": { icon: "🤝", color: "#0ea5e9", order: 10 },
+    "Comida": { icon: "🍽️", color: "#f97316", order: 11 },
+    "Salud": { icon: "⚕️", color: "#ef4444", order: 12 },
+    "S.O.S": { icon: "🆘", color: "#dc2626", order: 13 },
+
+    // Acciones y Movimiento
+    "Acciones": { icon: "🎯", color: "#81c784", order: 20 },
+    "Lugares": { icon: "🏠", color: "#8b5cf6", order: 21 },
+
+    // Objetos y Conceptos
+    "Objetos": { icon: "📦", color: "#06b6d4", order: 30 },
+    "Sensorial": { icon: "👃", color: "#a1e230", order: 31 },
+
+    // Bienestar Mental
+    "Mente+": { icon: "🧠", color: "#6366f1", order: 40 },
+    "Vínculos": { icon: "💕", color: "#f472b6", order: 41 },
+
+    // Otros
+    "General": { icon: "⭐", color: "#22c55e", order: 50 },
+    "C. Médica": { icon: "📋", color: "#84cc16", order: 51 },
+    "Varios": { icon: "📌", color: "#64748b", order: 99 },
+};
+
 const DEFAULT_SETTINGS = {
     voiceURI: "",
     rate: 1.0,
@@ -1300,11 +1331,21 @@ function renderCategories() {
     if (hasFavs) tabs.push("⭐ Favoritos");
     tabs.push(...cats);
 
+    // Add category picker button
+    const pickerBtn = document.createElement('button');
+    pickerBtn.type = 'button';
+    pickerBtn.className = 'pill category-picker-btn';
+    pickerBtn.textContent = '📂 Categorías';
+    pickerBtn.setAttribute('role', 'button');
+    pickerBtn.setAttribute('aria-label', 'Abrir selector de categorías');
+    pickerBtn.onclick = () => showCategoryPicker();
+    dom.categoryBar.appendChild(pickerBtn);
+
     tabs.forEach(cat => {
         const pill = document.createElement('button');
         pill.type = 'button';
         pill.className = `pill ${state.currentCategory === cat ? 'active' : ''}`;
-        pill.textContent = cat;
+        pill.innerHTML = getCategoryIcon(cat) + ' ' + (cat === "⭐ Favoritos" ? "Favoritos" : cat);
         pill.setAttribute('role', 'tab');
         pill.setAttribute('aria-selected', String(state.currentCategory === cat));
         pill.setAttribute('tabindex', state.currentCategory === cat ? '0' : '-1');
@@ -1322,6 +1363,76 @@ function renderCategories() {
     });
 
     updateCategoryNavState();
+}
+
+function getCategoryIcon(category) {
+    if (category === "Todas") return "🏠";
+    if (category === "⭐ Favoritos") return "⭐";
+    const meta = CATEGORY_METADATA[category];
+    return meta ? meta.icon : "📌";
+}
+
+function showCategoryPicker() {
+    const cats = getAllCategories()
+        .sort((a, b) => {
+            const orderA = CATEGORY_METADATA[a]?.order || 999;
+            const orderB = CATEGORY_METADATA[b]?.order || 999;
+            return orderA - orderB;
+        });
+
+    // Create modal dynamically
+    const modal = document.createElement('dialog');
+    modal.className = 'modal';
+    modal.id = 'categoryPickerModal';
+
+    const form = document.createElement('form');
+    form.method = 'dialog';
+    form.className = 'modal-card category-modal';
+
+    const header = document.createElement('div');
+    header.className = 'modal-head';
+    header.innerHTML = `
+        <div>
+            <h1 class="modal-title">📂 Selecciona una Categoría</h1>
+            <p class="modal-sub">Elige el tema para ver elementos relacionados</p>
+        </div>
+        <button type="button" class="btn-close" aria-label="Cerrar selector de categorías">✕</button>
+    `;
+
+    const body = document.createElement('div');
+    body.className = 'modal-body';
+
+    const grid = document.createElement('div');
+    grid.className = 'category-picker-grid';
+
+    cats.forEach(cat => {
+        const meta = CATEGORY_METADATA[cat] || { icon: "📌", color: "#64748b" };
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = `category-card ${state.currentCategory === cat ? 'active' : ''}`;
+        card.style.borderColor = meta.color;
+        card.innerHTML = `
+            <span class="category-icon">${meta.icon}</span>
+            <span class="category-name">${cat}</span>
+        `;
+        card.onclick = (e) => {
+            e.preventDefault();
+            state.currentCategory = cat;
+            modal.close();
+            render();
+        };
+        grid.appendChild(card);
+    });
+
+    body.appendChild(grid);
+    form.appendChild(header);
+    form.appendChild(body);
+    modal.appendChild(form);
+    document.body.appendChild(modal);
+
+    modal.querySelector('.btn-close').onclick = () => modal.close();
+    modal.addEventListener('close', () => modal.remove());
+    modal.showModal();
 }
 
 function getAllCategories() {
@@ -1354,7 +1465,12 @@ function renderCategoryToggles() {
     const containers = [dom.introCategoryList, dom.activeCategoryList].filter(Boolean);
     if (containers.length === 0) return;
 
-    const categories = getAllCategories();
+    const categories = getAllCategories()
+        .sort((a, b) => {
+            const orderA = CATEGORY_METADATA[a]?.order || 999;
+            const orderB = CATEGORY_METADATA[b]?.order || 999;
+            return orderA - orderB;
+        });
 
     containers.forEach(container => {
         container.innerHTML = '';
@@ -1365,13 +1481,14 @@ function renderCategoryToggles() {
             const checked = isCategoryActive(category);
             if (checked) label.classList.add('is-active');
 
+            const meta = CATEGORY_METADATA[category] || { icon: "📌" };
             label.innerHTML = `
                 <div class="toggle-wrapper">
                     <input type="checkbox" data-category="${category}" aria-label="Activar categoría ${category}" ${checked ? 'checked' : ''} />
                     <span class="toggle-slider"></span>
                 </div>
                 <div class="text-content">
-                    <span class="main">${category}</span>
+                    <span class="main">${meta.icon} ${category}</span>
                     <span class="sub state-text">${checked ? 'Activa' : 'Inactiva'}</span>
                 </div>
             `;
