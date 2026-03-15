@@ -1023,12 +1023,15 @@ function renderArasaacResults(pictos) {
     }
 
     pictos.slice(0, 30).forEach(picto => {
-        const thumb = document.createElement('div');
+        const thumb = document.createElement('button');
+        thumb.type = 'button';
         thumb.className = 'arasaac-thumb';
         const imgUrl = `https://static.arasaac.org/pictograms/${picto._id}/${picto._id}_300.png`;
+        const keyword = picto.keywords[0]?.keyword || 'Icono';
 
-        thumb.innerHTML = `<img src="${imgUrl}" alt="${picto.keywords[0]?.keyword || 'Icono'}" loading="lazy">`;
-        thumb.onclick = () => selectArasaacPictogram(picto._id, picto.keywords[0]?.keyword);
+        thumb.innerHTML = `<img src="${imgUrl}" alt="${keyword}" loading="lazy">`;
+        thumb.setAttribute('aria-label', `Seleccionar pictograma ${keyword}`);
+        thumb.onclick = () => selectArasaacPictogram(picto._id, keyword);
 
         dom.arasaacResults.appendChild(thumb);
     });
@@ -1181,10 +1184,12 @@ function renderGrid() {
 }
 
 function createTile(item, onClick) {
-    const tile = document.createElement('div');
+    const tile = document.createElement('button');
+    tile.type = 'button';
     tile.className = 'tile glass-card';
     tile.setAttribute('data-id', item.id);
     tile.setAttribute('data-cat', item.category);
+    tile.setAttribute('aria-label', `${item.text}. Categoría ${item.category}`);
 
     if (item.color) {
         tile.style.backgroundColor = item.color;
@@ -1193,9 +1198,12 @@ function createTile(item, onClick) {
 
     // Favorite Star (Only if not navigation)
     if (item.id !== "nav-anchor") {
-        const fav = document.createElement('div');
+        const fav = document.createElement('button');
+        fav.type = 'button';
         fav.className = `tile-fav ${item.isFavorite ? 'active' : 'inactive'}`;
         fav.innerHTML = item.isFavorite ? '⭐' : '☆';
+        fav.setAttribute('aria-pressed', item.isFavorite ? 'true' : 'false');
+        fav.setAttribute('aria-label', item.isFavorite ? `Quitar ${item.text} de favoritos` : `Añadir ${item.text} a favoritos`);
         fav.onclick = (e) => {
             e.stopPropagation();
             toggleFavorite(item.id);
