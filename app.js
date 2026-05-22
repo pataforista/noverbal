@@ -713,6 +713,7 @@ function speakWithTTS(text) {
         window.speechSynthesis.cancel();
 
         const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'es';
         utterance.rate = state.settings.rate * 0.9;
         utterance.pitch = 1.0;
 
@@ -723,17 +724,17 @@ function speakWithTTS(text) {
             return;
         }
 
-        // Try to find the selected voice, then Spanish, then any available
-        const voice = voices.find(v => v.voiceURI === state.settings.voiceURI)
-            || voices.find(v => v.lang.includes('es-MX') || v.name.includes('Premium'))
-            || voices.find(v => v.lang.startsWith('es'))
-            || voices[0];
+        // Try selected voice, then es-MX/Premium Spanish, then any Spanish voice
+        const spanishVoices = voices.filter(v => v.lang.startsWith('es'));
+        const voice = voices.find(v => v.voiceURI === state.settings.voiceURI && v.lang.startsWith('es'))
+            || spanishVoices.find(v => v.lang.includes('es-MX') || v.name.includes('Premium'))
+            || spanishVoices[0];
 
         if (voice) {
             utterance.voice = voice;
             console.log(`🔊 Speaking with: ${voice.name} (${voice.lang})`);
         } else {
-            console.warn('⚠️ No suitable voice found, using default');
+            console.warn('⚠️ No Spanish voice found, speaking with lang=es hint');
         }
 
         window.speechSynthesis.speak(utterance);
@@ -1661,14 +1662,17 @@ function loadVoices() {
     state.voices = voices;
     dom.voiceSelect.innerHTML = "";
 
-    // Sort Spanish voices first
-    const sorted = state.voices.sort((a, b) => {
-        if (a.lang.startsWith('es') && !b.lang.startsWith('es')) return -1;
-        if (!a.lang.startsWith('es') && b.lang.startsWith('es')) return 1;
-        return a.name.localeCompare(b.name);
-    });
+    // Only show Spanish voices, sorted alphabetically
+    const spanishVoices = voices
+        .filter(v => v.lang.startsWith('es'))
+        .sort((a, b) => a.name.localeCompare(b.name));
 
-    sorted.forEach(voice => {
+    if (spanishVoices.length === 0) {
+        console.warn('⚠️ No Spanish voices found on this device');
+        dom.voiceSelect.innerHTML = '<option value="">Sin voces en español disponibles</option>';
+    }
+
+    spanishVoices.forEach(voice => {
         const opt = document.createElement('option');
         opt.value = voice.voiceURI;
         opt.textContent = `${voice.name} (${voice.lang})`;
@@ -1676,13 +1680,13 @@ function loadVoices() {
         dom.voiceSelect.appendChild(opt);
     });
 
-    // Ensure at least one voice is selected
+    // Ensure at least one Spanish voice is selected
     if (dom.voiceSelect.selectedIndex === -1 && dom.voiceSelect.options.length > 0) {
         dom.voiceSelect.selectedIndex = 0;
         state.settings.voiceURI = dom.voiceSelect.options[0].value;
     }
 
-    console.log(`✅ Loaded ${voices.length} voices`);
+    console.log(`✅ Loaded ${spanishVoices.length} Spanish voices (${voices.length} total)`);
 }
 
 // Scanning Logic
