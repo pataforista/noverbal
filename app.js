@@ -335,30 +335,38 @@ async function init() {
     render();
 
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./service-worker.js').then(reg => {
-            reg.onupdatefound = () => {
-                const installingWorker = reg.installing;
-                installingWorker.onstatechange = () => {
-                    if (installingWorker.state === 'installed') {
-                        if (navigator.serviceWorker.controller) {
-                            // New update available
-                            flashStatus("Nueva actualización disponible. Reiniciando...");
-                            setTimeout(() => {
-                                window.location.reload();
-                            }, 1500);
-                        }
-                    }
-                };
-            };
-        }).catch(err => console.error('SW Error:', err));
-
-        // Handle controller change (e.g. when a new SW takes over)
+        // Whether a SW was already controlling this page when it loaded. We only
+        // auto-reload on a *replacement* worker, never on the very first install.
+        const hadController = !!navigator.serviceWorker.controller;
         let refreshing = false;
         navigator.serviceWorker.addEventListener('controllerchange', () => {
-            if (refreshing) return;
+            if (refreshing || !hadController) return;
             refreshing = true;
             window.location.reload();
         });
+
+        navigator.serviceWorker.register('./service-worker.js').then(reg => {
+            // Force a check for a newer worker whenever the app is reopened or
+            // brought back to the foreground, plus periodically for long sessions.
+            const checkForUpdate = () => reg.update().catch(() => {});
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') checkForUpdate();
+            });
+            setInterval(checkForUpdate, 60 * 60 * 1000);
+
+            reg.addEventListener('updatefound', () => {
+                const installingWorker = reg.installing;
+                if (!installingWorker) return;
+                installingWorker.addEventListener('statechange', () => {
+                    // A new version finished installing while an old one was in
+                    // control. It will activate (skipWaiting) and trigger
+                    // controllerchange, which reloads the page.
+                    if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        flashStatus("Nueva versión disponible, actualizando...");
+                    }
+                });
+            });
+        }).catch(err => console.error('SW Error:', err));
     }
 
     dom.statusText.textContent = "Listo para usar";
