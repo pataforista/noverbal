@@ -5,7 +5,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
   <title>HolAAC! - Comunicación Aumentativa</title>
   <meta name="description"
@@ -41,7 +41,7 @@
   <link rel="icon" type="image/png" href="icons/favicon-32.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png">
 
-  <meta name="theme-color" content="#111827" />
+  <meta name="theme-color" content="#fffbfe" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap"
@@ -344,6 +344,12 @@
               <span class="main">Modo de Barrido (Scanning)</span>
               <span class="sub">Cicla automáticamente entre botones (usa Espacio/Enter para seleccionar)</span>
             </div>
+          </label>
+
+          <label class="field">
+            <span>Velocidad de barrido: <span id="scanSpeedValue">2.0</span> s por botón</span>
+            <input id="scanSpeed" type="range" min="1" max="6" step="0.5" value="2"
+              aria-label="Segundos que cada botón permanece resaltado en modo barrido" />
           </label>
 
           <label class="field-row">

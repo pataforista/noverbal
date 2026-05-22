@@ -1,4 +1,4 @@
-const CACHE_NAME = "holaac-v2";
+const CACHE_NAME = "holaac-v3";
 const ASSETS = [
     "./",
     "./index.html",
@@ -49,21 +49,26 @@ self.addEventListener("fetch", (event) => {
             if (cachedResponse) return cachedResponse;
 
             return fetch(event.request).then((networkResponse) => {
-                // Cache local assets dynamically (pictos, audio, etc)
-                if (event.request.url.includes("/assets/")) {
-                    const responseClone = networkResponse.clone();
-                    caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
-                }
-
-                // Cache external assets like fonts
-                if (event.request.url.includes("fonts.gstatic.com") || event.request.url.includes("fonts.googleapis.com")) {
-                    const responseClone = networkResponse.clone();
-                    caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
+                // Only cache successful responses (avoid storing 404s)
+                if (networkResponse && networkResponse.ok) {
+                    const url = event.request.url;
+                    const cacheable = url.includes("/assets/")
+                        || url.includes("fonts.gstatic.com")
+                        || url.includes("fonts.googleapis.com");
+                    if (cacheable) {
+                        const responseClone = networkResponse.clone();
+                        caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
+                    }
                 }
                 return networkResponse;
             }).catch(() => {
-                // Fallback for offline mode if asset is not in cache
-                return caches.match("./index.html");
+                // Offline fallback: only serve the app shell for navigations.
+                // Other requests (audio, images) fail cleanly so the app can
+                // use its own fallbacks (e.g. TTS instead of a missing clip).
+                if (event.request.mode === "navigate") {
+                    return caches.match("./index.html");
+                }
+                return Response.error();
             });
         })
     );
