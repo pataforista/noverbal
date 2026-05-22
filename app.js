@@ -55,6 +55,14 @@ const CATEGORY_METADATA = {
     "Varios": { icon: "📌", color: "#64748b", order: 99 },
 };
 
+// Board profiles map to REAL category names present in the library.
+// Keep these in sync with CATEGORY_METADATA / library.json categories.
+const PROFILE_CATEGORIES = {
+    home: ['General', 'Necesidad', 'Comida', 'Emociones', 'Social', 'Acciones', 'Lugares', 'Objetos', 'Personas', 'Sensorial'],
+    school: ['General', 'Personas', 'Acciones', 'Social', 'Emociones', 'Mente+', 'Sensorial', 'Objetos'],
+    sos: ['S.O.S', 'Salud', 'C. Médica', 'Emociones', 'Necesidad', 'Personas'],
+};
+
 const DEFAULT_SETTINGS = {
     voiceURI: "",
     rate: 1.0,
@@ -62,6 +70,7 @@ const DEFAULT_SETTINGS = {
     tapMode: "add", // add | speak
     lockEdit: false,
     scanningEnabled: false,
+    scanSpeed: 2, // seconds per step in scanning mode
     activeCategories: [],
 };
 
@@ -205,6 +214,8 @@ const dom = {
     tapMode: document.getElementById('tapMode'),
     lockEdit: document.getElementById('lockEdit'),
     scanningEnabled: document.getElementById('scanningEnabled'),
+    scanSpeed: document.getElementById('scanSpeed'),
+    scanSpeedValue: document.getElementById('scanSpeedValue'),
     // Import/Export
     btnExport: document.getElementById('btnExport'),
     btnImport: document.getElementById('btnImport'),
@@ -516,6 +527,14 @@ function attachListeners() {
         save();
         renderGrid();
     };
+    if (dom.scanSpeed) {
+        dom.scanSpeed.oninput = (e) => {
+            state.settings.scanSpeed = parseFloat(e.target.value);
+            if (dom.scanSpeedValue) dom.scanSpeedValue.textContent = state.settings.scanSpeed.toFixed(1);
+            save();
+            if (state.scanning.active) startScanning();
+        };
+    }
     dom.voiceSelect.onchange = (e) => {
         state.settings.voiceURI = e.target.value;
         save();
@@ -1126,15 +1145,9 @@ function renderGrid() {
 
         const matchesActiveCategory = isCategoryActive(item.category);
 
-        // Profile logic: Filter by category groups
-        let matchesProfile = true;
-        if (state.settings.boardProfile === 'home') {
-            matchesProfile = ['General', 'Lugares', 'Cosas', 'Necesidad'].includes(item.category);
-        } else if (state.settings.boardProfile === 'school') {
-            matchesProfile = ['Personas', 'Acciones', 'Mente+', 'Social'].includes(item.category);
-        } else if (state.settings.boardProfile === 'sos') {
-            matchesProfile = ['S.O.S', 'Salud', 'Salud+', 'Emociones'].includes(item.category);
-        }
+        // Profile logic: Filter by category groups (real category names)
+        const profileCats = PROFILE_CATEGORIES[state.settings.boardProfile];
+        const matchesProfile = !profileCats || profileCats.includes(item.category);
 
         return matchesCat && matchesSearch && matchesProfile && matchesActiveCategory;
     });
@@ -1163,11 +1176,10 @@ function renderGrid() {
         dom.grid.appendChild(empty);
     }
 
-    filtered.sort((a, b) => {
-        if (a.isFavorite && !b.isFavorite) return -1;
-        if (!a.isFavorite && b.isFavorite) return 1;
-        return a.id.localeCompare(b.id);
-    }).forEach((item) => {
+    // Stable order regardless of favorite status, so words keep a
+    // consistent position (motor planning). Favorites are still
+    // reachable via the "⭐ Favoritos" tab.
+    filtered.sort((a, b) => a.id.localeCompare(b.id)).forEach((item) => {
         const isHidden = state.tutorMode.hiddenTags.has(item.id);
 
         // In User View: Skip hidden items
@@ -1274,16 +1286,6 @@ function onTileClick(item) {
         }
         localStorage.setItem(LS_KEYS.hiddenTags, JSON.stringify([...state.tutorMode.hiddenTags]));
         renderGrid();
-        return;
-    }
-
-    // Check if this item acts as a folder (category name)
-    const isFolder = state.items.some(i => i.category === item.text);
-
-    if (isFolder && state.currentCategory === "Todas") {
-        state.currentCategory = item.text;
-        speakText(item.text); // Audio feedback for category
-        render();
         return;
     }
 
@@ -1691,11 +1693,12 @@ function startScanning() {
     state.scanning.active = true;
     highlightTile(tiles[0]);
 
+    const stepMs = Math.round((state.settings.scanSpeed || 2) * 1000);
     state.scanning.timer = setInterval(() => {
         state.scanning.index = (state.scanning.index + 1) % tiles.length;
         tiles.forEach(t => t.classList.remove('scanning-focus'));
         highlightTile(tiles[state.scanning.index]);
-    }, 2000); // 2 second cycle
+    }, stepMs);
 }
 
 function stopScanning() {
@@ -1724,6 +1727,11 @@ function applySettings() {
     dom.tapMode.value = state.settings.tapMode;
     dom.lockEdit.checked = state.settings.lockEdit;
     dom.scanningEnabled.checked = state.settings.scanningEnabled || false;
+    if (dom.scanSpeed) {
+        const sp = state.settings.scanSpeed || 2;
+        dom.scanSpeed.value = sp;
+        if (dom.scanSpeedValue) dom.scanSpeedValue.textContent = Number(sp).toFixed(1);
+    }
 
     // Professional Features
     dom.showRoutine.checked = state.settings.showRoutine || false;
