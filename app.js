@@ -275,7 +275,9 @@ function loadJSON(key, fallback) {
 function updateThemeToggleIcon() {
     if (!dom.btnThemeToggle) return;
     const isDark = !!state.settings.darkMode;
-    dom.btnThemeToggle.textContent = isDark ? '☀️' : '🌙';
+    const icon = dom.btnThemeToggle.querySelector('.btn-icon');
+    if (icon) icon.textContent = isDark ? '☀️' : '🌙';
+    else dom.btnThemeToggle.textContent = isDark ? '☀️' : '🌙';
     dom.btnThemeToggle.setAttribute('aria-label', isDark ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro');
     dom.btnThemeToggle.title = isDark ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro';
 }

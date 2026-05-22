@@ -2199,3 +2199,75 @@ input:checked+.toggle-slider:before {
     font-size: 0.75rem;
   }
 }
+
+/* ---- Ease-of-use: labeled icon buttons + onboarding guide ---- */
+.btn--labeled {
+  gap: 8px;
+  padding: 12px 18px;
+}
+
+.btn--labeled .btn-icon {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.btn--labeled .btn-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.toggle-label {
+  white-space: nowrap;
+}
+
+/* Welcome "how to use" guide */
+.intro-guide {
+  background: var(--md-primary-container);
+  color: var(--md-on-primary-container);
+  border-radius: var(--md-radius-lg);
+  padding: var(--md-spacing-lg);
+  margin-bottom: var(--md-spacing-lg);
+}
+
+.intro-guide-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  margin: 0 0 10px;
+}
+
+.intro-steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.intro-steps li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.intro-step-emoji {
+  font-size: 1.5rem;
+  flex: 0 0 auto;
+}
+
+.intro-tip {
+  margin: 12px 0 0;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+/* On small screens keep header button labels but tighten spacing */
+@media (max-width: 600px) {
+  .btn--labeled {
+    padding: 10px 14px;
+  }
+}
