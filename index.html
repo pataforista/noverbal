@@ -57,17 +57,25 @@
     </div>
 
     <nav class="actions" role="toolbar" aria-label="Controles principales">
-      <button class="btn" id="btnThemeToggle" aria-label="Cambiar tema oscuro/claro" title="Cambiar tema">🌙</button>
+      <button class="btn btn--labeled" id="btnThemeToggle" aria-label="Cambiar entre tema claro y oscuro" title="Cambiar tema">
+        <span class="btn-icon" aria-hidden="true">🌙</span><span class="btn-label">Tema</span>
+      </button>
       <div class="header-toggle-group" role="group" aria-label="Modo de habla inmediata">
-        <span class="toggle-label">Hablar</span>
+        <span class="toggle-label">Hablar al tocar</span>
         <label class="switch mini">
-          <input type="checkbox" id="headerSpeakToggle" aria-label="Activar habla inmediata">
+          <input type="checkbox" id="headerSpeakToggle" aria-label="Activar habla inmediata: cada palabra suena al tocarla">
           <span class="slider round" aria-hidden="true"></span>
         </label>
       </div>
-      <button class="btn" id="btnWriting" aria-label="Abrir módulo de escritura libre" title="Escritura">⌨️</button>
-      <button class="btn" id="btnSettings" aria-label="Abrir ajustes y configuración">⚙️</button>
-      <button class="btn" id="btnEdit" aria-label="Editar el tablero de comunicación">✏️</button>
+      <button class="btn btn--labeled" id="btnWriting" aria-label="Abrir teclado para escribir libremente" title="Escribir">
+        <span class="btn-icon" aria-hidden="true">⌨️</span><span class="btn-label">Escribir</span>
+      </button>
+      <button class="btn btn--labeled" id="btnSettings" aria-label="Abrir ajustes y configuración" title="Ajustes">
+        <span class="btn-icon" aria-hidden="true">⚙️</span><span class="btn-label">Ajustes</span>
+      </button>
+      <button class="btn btn--labeled" id="btnEdit" aria-label="Editar el tablero de comunicación" title="Editar">
+        <span class="btn-icon" aria-hidden="true">✏️</span><span class="btn-label">Editar</span>
+      </button>
     </nav>
   </header>
 
@@ -79,16 +87,24 @@
 
       <div class="composer-actions">
         <div class="speech-controls" role="group" aria-label="Controles de reproducción">
-          <button class="btn" id="btnPause" aria-label="Pausar reproducción de voz">⏸</button>
-          <button class="btn danger" id="btnStop" aria-label="Detener reproducción de voz">⏹</button>
+          <button class="btn btn--labeled" id="btnPause" aria-label="Pausar o reanudar la voz">
+            <span class="btn-icon" aria-hidden="true">⏸</span><span class="btn-label">Pausa</span>
+          </button>
+          <button class="btn danger btn--labeled" id="btnStop" aria-label="Detener la voz">
+            <span class="btn-icon" aria-hidden="true">⏹</span><span class="btn-label">Detener</span>
+          </button>
         </div>
-        <button class="btn primary-action speak-btn" id="btnSpeak" aria-label="Leer la frase completa">
+        <button class="btn primary-action speak-btn" id="btnSpeak" aria-label="Leer la frase completa en voz alta">
           <span class="icon" aria-hidden="true">🔊</span>
           <span class="text">Hablar Frase</span>
         </button>
         <div class="utility-actions" role="group" aria-label="Funciones de edición">
-          <button class="btn" id="btnBackspace" aria-label="Borrar última palabra">⌫</button>
-          <button class="btn danger" id="btnClear" aria-label="Limpiar toda la frase">🗑️</button>
+          <button class="btn btn--labeled" id="btnBackspace" aria-label="Borrar la última palabra">
+            <span class="btn-icon" aria-hidden="true">⌫</span><span class="btn-label">Borrar</span>
+          </button>
+          <button class="btn danger btn--labeled" id="btnClear" aria-label="Limpiar toda la frase">
+            <span class="btn-icon" aria-hidden="true">🗑️</span><span class="btn-label">Limpiar</span>
+          </button>
         </div>
       </div>
     </section>
@@ -155,7 +171,16 @@
       </div>
 
       <div class="modal-body">
-        <p class="intro-copy">Puedes activar o desactivar categorías ahora, y volver a cambiarlas luego en Ajustes.</p>
+        <div class="intro-guide">
+          <h2 class="intro-guide-title">Cómo se usa, en 3 pasos</h2>
+          <ol class="intro-steps">
+            <li><span class="intro-step-emoji" aria-hidden="true">👆</span> Toca las palabras que quieras decir.</li>
+            <li><span class="intro-step-emoji" aria-hidden="true">📝</span> Se juntan arriba y forman tu frase.</li>
+            <li><span class="intro-step-emoji" aria-hidden="true">🔊</span> Pulsa <strong>«Hablar Frase»</strong> para escucharla.</li>
+          </ol>
+          <p class="intro-tip"><strong>Consejo:</strong> activa <strong>«Hablar al tocar»</strong> arriba si prefieres que cada palabra suene apenas la tocas.</p>
+        </div>
+        <p class="intro-copy">Abajo eliges qué temas verás. Podrás cambiarlos cuando quieras desde <strong>Ajustes ⚙️</strong>.</p>
         <div id="introCategoryList" class="category-toggle-list" role="group" aria-label="Selección de categorías"></div>
       </div>
 
