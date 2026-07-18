@@ -104,6 +104,56 @@ La URL de Google Fonts está dentro de `cache.addAll` (service-worker.js:25): si
 
 ---
 
+## 6. Navegación: análisis y comparación con apps CAA de referencia
+
+### Cómo se navega hoy en HolAAC!
+
+Un solo nivel: pestañas horizontales de categoría (+ modal selector), buscador, y un tablero que muestra la categoría elegida en un scroll vertical. La primera casilla del tablero es siempre "🏠 Inicio / ← Volver". Superpuesto a eso: "categorías activas" (Ajustes), perfiles de tablero (Casa/Escuela/SOS, en Ajustes) y favoritos.
+
+### Hallazgos
+
+- **N-1 (P1) · Scroll infinito en vez de páginas con posiciones fijas.** "Todas" son 324 casillas en un scroll; "Acciones" son 55. Las apps CAA de referencia evitan el scroll: usan rejillas paginadas con posiciones fijas, porque el gesto de scroll es difícil con motricidad reducida y porque la posición estable de cada palabra es la base del aprendizaje motor (motor planning). En HolAAC! la posición de una palabra cambia según la pestaña, la búsqueda y las categorías activas.
+- **N-2 (P1) · No hay vocabulario nuclear persistente.** Proloquo2Go, TD Snap Core First y LAMP mantienen las palabras de alta frecuencia (yo, tú, querer, más, ayuda, sí, no) **siempre visibles en el mismo lugar**, en cualquier vista. En HolAAC! "Sí/No" viven en la categoría General y desaparecen al entrar a cualquier otra. Es la brecha práctica más importante frente a los referentes: obliga a navegar para decir lo más frecuente.
+- **N-3 (P1) · Cuatro mecanismos superpuestos de filtrado.** Pestañas, modal de categorías, "categorías activas" y perfiles se combinan de formas difíciles de predecir (un perfil puede excluir una categoría activa; las pestañas desaparecen según el filtro). Para el cuidador es difícil razonar "por qué no veo esta palabra". Los referentes tienen **un** mecanismo principal (carpetas) más, opcionalmente, niveles de vocabulario progresivo.
+- **N-4 (P1) · El botón Atrás del sistema cierra la app.** No hay integración con `history.pushState/popstate`: en una PWA instalada en Android, el gesto/botón Atrás — el reflejo natural para salir de una categoría — cierra HolAAC! en vez de volver a "Todas".
+- **N-5 (P1) · Cambiar de contexto exige 3+ toques dentro de Ajustes.** Los perfiles (Casa/Escuela/SOS) son una buena idea (tableros por escenario, como en TouchChat), pero están enterrados en Ajustes. En una conversación real nadie abre un modal de configuración; y el perfil **SOS**, por definición, debería estar a un toque de distancia siempre.
+- **N-6 (P1) · Barrido lineal inviable en listas grandes.** El barrido recorre casilla por casilla toda la lista filtrada: en "Todas", a 2 s por paso, un ciclo completo tarda más de 10 minutos. Las apps orientadas a conmutador (AsTeRICS Grid, TD Snap) usan barrido **fila-columna**: primero se resalta la fila, luego la casilla. Además el `scrollIntoView` continuo hace que la pantalla no pare de moverse.
+- **N-7 (P2) · Casilla de navegación desaprovechada.** El primer slot del tablero —la posición más valiosa— muestra "🏠 Inicio" incluso estando ya en Inicio (botón muerto), y "← Volver" en realidad significa "ir a Todas".
+- **N-8 (P2) · Sin indicador de ubicación.** La categoría actual solo se distingue por la pestaña resaltada, que puede estar desplazada fuera de la vista horizontal. Falta un título/breadcrumb sobre el tablero.
+- **N-9 (P2) · Estrella de favorito en la vista de comunicación.** Cada casilla lleva un botón de 32 px (bajo el mínimo táctil de 44–48 px) que a la vez invita al toque accidental en usuarios con motricidad gruesa. Los referentes reservan ese tipo de acciones al modo edición.
+- **N-10 (P2) · Gesto oculto.** Mantener pulsada una casilla la pronuncia (`contextmenu`), pero nada lo anuncia y el gesto es poco fiable en iOS Safari.
+
+### Comparación práctica
+
+| Capacidad | HolAAC! hoy | Cboard (libre) | AsTeRICS Grid (libre) | Proloquo2Go / TD Snap (comercial) |
+|---|---|---|---|---|
+| Organización | 1 nivel (categorías) | Carpetas anidadas | Rejillas enlazadas, páginas fijas | Carpetas + core fijo |
+| Posiciones estables | No (scroll + filtros) | Sí | Sí | Sí (principio central) |
+| Vocabulario nuclear siempre visible | No | Parcial | Configurable | Sí |
+| Botón Atrás del sistema | Cierra la app | Navega | Navega | Navega (nativo) |
+| Barrido | Lineal, toda la lista | Lineal | **Fila-columna, altamente configurable** | Fila-columna |
+| Cambio de contexto/tablero | 3+ toques (Ajustes) | 1–2 toques | 1–2 toques | 1–2 toques |
+| Búsqueda instantánea | **Sí** | Limitada | Limitada | Sí |
+| Arranque sin cuenta/instalación | **Sí** | Requiere cuenta para guardar | Sí | Compra + configuración |
+| Audio pregrabado + TTS | **Sí** | TTS | TTS/grabación | TTS premium |
+| Bitácora clínica local | **Sí** | No | Parcial | Sí |
+
+**Dónde HolAAC! ya es competitivo:** fricción cero (abrir y usar, sin cuenta), búsqueda inmediata, "hablar al tocar", panel de escritura libre, perfiles clínicos y bitácora — frente a LetMeTalk o a tableros PDF imprimibles, ya es una mejora clara. **Dónde pierde frente a los referentes:** todo lo que depende de constancia espacial y acceso motor —scroll en vez de páginas, sin core fijo, barrido lineal, Atrás que cierra la app. Son exactamente las necesidades del usuario final (no del cuidador), así que conviene priorizarlas.
+
+### Recomendaciones de navegación (en orden de impacto/esfuerzo)
+
+1. **Fila de núcleo fija** visible en toda vista: Sí, No, Ayuda, Querer, Más, Parar, Baño, Dolor (configurable desde el modo tutor). Impacto muy alto, esfuerzo bajo.
+2. **Integrar `history.pushState`**: Atrás del sistema = volver a "Todas"; segunda pulsación = comportamiento normal. Esfuerzo bajo.
+3. **Selector de perfil a 1 toque** en la barra superior + botón SOS siempre visible. Esfuerzo bajo.
+4. **Título de categoría sobre el tablero** (breadcrumb) y eliminar la casilla "Inicio" cuando ya se está en Inicio. Esfuerzo bajo.
+5. **Estrella de favorito solo en modo tutor/edición.** Esfuerzo bajo.
+6. **Paginación con posiciones fijas** (rejilla N×M según `--tile-size`, flechas/gesto para pasar página) en lugar de scroll. Impacto alto en motor planning, esfuerzo medio.
+7. **Barrido fila-columna** limitado a la página visible. Esfuerzo medio; convierte el barrido de decorativo a usable.
+8. **Unificar filtros**: perfiles como mecanismo único de contexto (absorbiendo "categorías activas"), carpetas/categorías como mecanismo único de organización. Esfuerzo medio-alto; simplifica el modelo mental.
+9. A futuro: soporte **Open Board Format (OBF)** para importar/exportar tableros compatibles con Cboard y otros. Esfuerzo alto.
+
+---
+
 ## Plan de trabajo propuesto
 
 | Fase | Contenido | Hallazgos | Esfuerzo |
@@ -111,9 +161,11 @@ La URL de Google Fonts está dentro de `cache.addAll` (service-worker.js:25): si
 | **1 · Correcciones críticas** | try/catch de arranque con degradación, filtro de foco en barrido, encadenado real palabra-por-palabra, eliminación de `innerHTML` inseguro + saneado de import, bitácora con `autoIncrement`, fix `repairCoreImages`, favoritos huérfanos | P0-1, P0-2, P0-3, P0-10, P1-4, P1-5, P1-7 | 1–2 días |
 | **2 · Fundamentos del repo** | `LICENSE` MIT + atribución ARASAAC, `README.md`, mover scripts a `tools/`, `.gitignore` | P0-21, P1-22, P2-25 | ~½ día |
 | **3 · Offline y PWA de verdad** | Precache generado desde `library.json` (o descarga bajo demanda), fuente autoalojada, manifest completo, theme-color dinámico, versión de SW automatizada | P1-13, P1-14, P2-15, P2-16 | 1 día |
-| **4 · Contenido y UX** | Deduplicar "Baño" y defaults, orden numérico/estable, etiquetas gramaticales reales (`pos` en library.json), PIN configurable + candado coherente, contraste automático, `aria-live` ajustado | P1-6, P1-8, P1-9, P1-11, P1-17, P1-18 | 1–2 días |
-| **5 · Calidad sostenible** | Modularizar `app.js`, ESLint, smoke tests Playwright, CI en GitHub Actions con deploy | P2-23, P2-24, P2-12, P2-19, P2-20 | 2–3 días |
+| **4 · Navegación: victorias rápidas** | Fila de núcleo fija, Atrás del sistema con `pushState`, selector de perfil + SOS a 1 toque, breadcrumb de categoría, quitar botón "Inicio" muerto, estrella solo en modo tutor | N-2, N-4, N-5, N-7, N-8, N-9 | 1–2 días |
+| **5 · Contenido y UX** | Deduplicar "Baño" y defaults, orden numérico/estable, etiquetas gramaticales reales (`pos` en library.json), PIN configurable + candado coherente, contraste automático, `aria-live` ajustado | P1-6, P1-8, P1-9, P1-11, P1-17, P1-18 | 1–2 días |
+| **6 · Navegación: rediseño de acceso motor** | Paginación con posiciones fijas (sin scroll), barrido fila-columna sobre la página visible, unificación de perfiles/categorías activas | N-1, N-3, N-6 | 3–4 días |
+| **7 · Calidad sostenible** | Modularizar `app.js`, ESLint, smoke tests Playwright, CI en GitHub Actions con deploy; explorar compatibilidad Open Board Format | P2-23, P2-24, P2-12, P2-19, P2-20 | 2–3 días |
 
-**Criterio de orden:** la Fase 1 elimina los fallos que hoy pueden dejar la app inservible o cortar la voz al usuario final (población especialmente sensible a fallos impredecibles); la Fase 2 es barata y desbloquea la legalidad open source; las Fases 3–5 consolidan la promesa offline, el contenido clínico y la mantenibilidad.
+**Criterio de orden:** la Fase 1 elimina los fallos que hoy pueden dejar la app inservible o cortar la voz al usuario final (población especialmente sensible a fallos impredecibles); la Fase 2 es barata y desbloquea la legalidad open source; la Fase 3 consolida la promesa offline; la Fase 4 cierra con poco esfuerzo la mayor parte de la brecha de practicidad frente a otras apps CAA; las Fases 5–7 consolidan contenido clínico, acceso motor y mantenibilidad.
 
 Cada fase cabe en un PR independiente y revisable; ninguna requiere migración destructiva de datos de usuarios existentes (la Fase 1 sube `dbVersion` a 3 con migración aditiva del store `history`).
