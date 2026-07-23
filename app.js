@@ -72,6 +72,7 @@ const DEFAULT_SETTINGS = {
     scanningEnabled: false,
     scanSpeed: 2, // seconds per step in scanning mode
     activeCategories: [],
+    hapticFeedback: true, // short vibration confirming each tap (where supported)
 };
 
 // State Management
@@ -243,6 +244,7 @@ const dom = {
     showGrammarTags: document.getElementById('showGrammarTags'),
     speechMode: document.getElementById('speechMode'),
     darkMode: document.getElementById('darkMode'),
+    hapticFeedback: document.getElementById('hapticFeedback'),
     headerSpeakToggle: document.getElementById('headerSpeakToggle'),
     btnThemeToggle: document.getElementById('btnThemeToggle'),
     // Writing Module
@@ -282,14 +284,86 @@ function updateThemeToggleIcon() {
     dom.btnThemeToggle.title = isDark ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro';
 }
 
+// Keep the system UI (status bar / address bar) in sync with the app theme.
+function updateThemeColorMeta() {
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', state.settings.darkMode ? '#1c1b1f' : '#fffbfe');
+}
+
 function save() {
     // Items are now in IndexedDB
     localStorage.setItem(LS_KEYS.settings, JSON.stringify(state.settings));
     localStorage.setItem(LS_KEYS.phrase, JSON.stringify(state.phrase));
 }
 
+/* ── Tactile feedback ─────────────────────────────────────────────────
+   Immediate multi-sensory confirmation on every tap. Both channels are
+   opt-outable (haptics via a setting; the ripple via prefers-reduced-motion)
+   because the target audience includes sensory-sensitive users. */
+
+const CAN_VIBRATE = 'vibrate' in navigator;
+const PREFERS_REDUCED_MOTION = window.matchMedia
+    ? window.matchMedia('(prefers-reduced-motion: reduce)')
+    : { matches: false };
+
+function haptic(pattern = 12) {
+    if (!CAN_VIBRATE || !state.settings.hapticFeedback) return;
+    try {
+        navigator.vibrate(pattern);
+    } catch (_) {
+        /* vibrate can throw if the gesture context is lost — ignore */
+    }
+}
+
+// Tappable controls that should emit a Material ripple from the touch point.
+const RIPPLE_SELECTOR = '.tile, .btn, .pill, .pill-nav, .btn-close, .category-card, .routine-item, .arasaac-thumb';
+
+function spawnRipple(host, clientX, clientY) {
+    if (PREFERS_REDUCED_MOTION.matches) return;
+    const rect = host.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    const ripple = document.createElement('span');
+    ripple.className = 'ripple';
+    ripple.style.width = ripple.style.height = `${size}px`;
+    // Center on the pointer (fallback to element center for keyboard activation).
+    const x = (Number.isFinite(clientX) ? clientX : rect.left + rect.width / 2) - rect.left - size / 2;
+    const y = (Number.isFinite(clientY) ? clientY : rect.top + rect.height / 2) - rect.top - size / 2;
+    ripple.style.left = `${x}px`;
+    ripple.style.top = `${y}px`;
+    ripple.addEventListener('animationend', () => ripple.remove(), { once: true });
+    host.appendChild(ripple);
+}
+
+// Bring the top of the communication board back into view after navigation.
+function scrollBoardToTop() {
+    const behavior = PREFERS_REDUCED_MOTION.matches ? 'auto' : 'smooth';
+    window.scrollTo({ top: 0, behavior });
+}
+
+// One delegated listener covers every tappable, present or dynamically added.
+function initTactileFeedback() {
+    document.body.addEventListener('pointerdown', (e) => {
+        if (e.button && e.button !== 0) return; // primary button / touch only
+        const host = e.target.closest(RIPPLE_SELECTOR);
+        if (host && !host.disabled) {
+            spawnRipple(host, e.clientX, e.clientY);
+        }
+        // Haptic covers a slightly wider set of controls (e.g. the favorite star).
+        if (e.target.closest(`${RIPPLE_SELECTOR}, .tile-fav, .chip .remove`)) {
+            haptic();
+        }
+    }, { passive: true });
+}
+
 // Initialization
 async function init() {
+    // On the very first run (no saved preferences yet) honour the OS colour
+    // scheme, matching the behaviour users expect from every modern app.
+    if (localStorage.getItem(LS_KEYS.settings) === null &&
+        window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        state.settings.darkMode = true;
+    }
+
     await initDB();
     const storedItems = await getAllItems();
 
@@ -317,6 +391,7 @@ async function init() {
     applySettings();
     await repairCoreImages(); // Force update core items with images
     attachListeners();
+    initTactileFeedback();
 
     // Setup voice loading BEFORE initial load
     if (window.speechSynthesis) {
@@ -422,6 +497,8 @@ function attachListeners() {
         document.body.classList.toggle('dark-theme', state.settings.darkMode);
         dom.darkMode.checked = state.settings.darkMode;
         updateThemeToggleIcon();
+        updateThemeColorMeta();
+        haptic();
         save();
     };
     dom.btnEdit.onclick = () => {
@@ -553,8 +630,16 @@ function attachListeners() {
         state.settings.darkMode = e.target.checked;
         document.body.classList.toggle('dark-theme', state.settings.darkMode);
         updateThemeToggleIcon();
+        updateThemeColorMeta();
         save();
     };
+    if (dom.hapticFeedback) {
+        dom.hapticFeedback.onchange = (e) => {
+            state.settings.hapticFeedback = e.target.checked;
+            save();
+            if (e.target.checked) haptic(); // confirm the new setting with a buzz
+        };
+    }
 
     dom.btnIntroSelectAll.onclick = () => {
         const categories = getAllCategories();
@@ -1164,14 +1249,17 @@ function renderGrid() {
     });
 
     // 1. Navigation Anchor (Slot 1: Always Home/Back)
+    const atHome = state.currentCategory === "Todas";
     const navBtn = createTile({
-        text: state.currentCategory === "Todas" ? "🏠 Inicio" : "← Volver",
+        text: atHome ? "🏠 Inicio" : "← Volver",
         category: "Navegación",
         color: "#64748b",
         id: "nav-anchor"
     }, () => {
-        state.currentCategory = "Todas";
+        if (!atHome) state.currentCategory = "Todas";
         render();
+        // When already home, this slot doubles as "jump to top" for long boards.
+        scrollBoardToTop();
     });
     dom.grid.appendChild(navBtn);
 
@@ -1416,6 +1504,9 @@ function renderCategories() {
         pill.onclick = () => {
             state.currentCategory = cat;
             render();
+            // Land at the top of the freshly filtered board instead of keeping a
+            // stale scroll position from the previous, possibly longer category.
+            scrollBoardToTop();
         };
         pill.onkeydown = (event) => {
             if (event.key === 'Enter' || event.key === ' ') {
@@ -1484,6 +1575,7 @@ function showCategoryPicker() {
             state.currentCategory = cat;
             modal.close();
             render();
+            scrollBoardToTop();
         };
         grid.appendChild(card);
     });
@@ -1494,8 +1586,13 @@ function showCategoryPicker() {
     modal.appendChild(form);
     document.body.appendChild(modal);
 
+    // Restore focus to whatever opened the picker once it is dismissed (a11y).
+    const opener = document.activeElement;
     modal.querySelector('.btn-close').onclick = () => modal.close();
-    modal.addEventListener('close', () => modal.remove());
+    modal.addEventListener('close', () => {
+        modal.remove();
+        if (opener && typeof opener.focus === 'function') opener.focus();
+    });
     modal.showModal();
 }
 
@@ -1757,11 +1854,13 @@ function applySettings() {
     dom.showGrammarTags.checked = state.settings.showGrammarTags || false;
     dom.speechMode.value = state.settings.speechMode || 'fluent';
     dom.darkMode.checked = state.settings.darkMode || false;
+    if (dom.hapticFeedback) dom.hapticFeedback.checked = state.settings.hapticFeedback !== false;
     dom.headerSpeakToggle.checked = (state.settings.tapMode === 'speak');
     ensureActiveCategories();
     document.body.classList.toggle('show-grammar', state.settings.showGrammarTags);
     document.body.classList.toggle('dark-theme', state.settings.darkMode);
     updateThemeToggleIcon();
+    updateThemeColorMeta();
 
     if (!localStorage.getItem(LS_KEYS.introSeen)) {
         dom.introModal.showModal();

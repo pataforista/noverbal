@@ -277,6 +277,45 @@
   outline-offset: 2px;
 }
 
+/* ── Tactile press feedback (Material ripple) ─────────────────────────
+   Gives an immediate, touch-point confirmation the instant a finger lands,
+   independent of speech-synthesis latency. Injected by app.js on pointerdown
+   for .tile, .btn, .pill, .pill-nav, .btn-close and other tappables. */
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  transform: scale(0);
+  background: currentColor;
+  opacity: 0.22;
+  pointer-events: none;
+  z-index: 4;
+  animation: ripple-spread 0.5s var(--md-easing-standard) forwards;
+}
+
+@keyframes ripple-spread {
+  to {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ripple {
+    display: none;
+  }
+}
+
+/* Ripple-host containers must clip the expanding circle to their own shape. */
+.pill,
+.pill-nav,
+.btn-close,
+.category-card,
+.routine-item,
+.arasaac-thumb {
+  position: relative;
+  overflow: hidden;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.1ms !important;
@@ -673,6 +712,20 @@ h3 {
   text-overflow: ellipsis;
 }
 
+/* Remove the legacy ~300ms tap delay and accidental double-tap zoom on
+   every interactive control — a major source of the "unresponsive" feel. */
+.btn,
+.pill,
+.pill-nav,
+.btn-close,
+.chip,
+.tile-fav,
+.category-card,
+.routine-item,
+.arasaac-thumb {
+  touch-action: manipulation;
+}
+
 /* Buttons - MD3 Style */
 .btn {
   cursor: pointer;
@@ -983,12 +1036,19 @@ h3 {
   align-items: center;
   gap: var(--md-spacing-sm);
   cursor: pointer;
-  transition: var(--transition);
+  /* Targeted, fast transitions instead of `all 0.3s`: the press must feel
+     instant. Transform reacts in ~90ms, shadow/color follow more slowly. */
+  transition:
+    transform 0.09s var(--md-easing-emphasized),
+    box-shadow 0.24s var(--md-easing-standard),
+    background-color 0.3s var(--md-easing-standard);
   box-shadow: var(--md-shadow-1);
   position: relative;
   overflow: hidden;
   aspect-ratio: 1 / 1.18;
   user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
   text-align: left;
 }
 
@@ -998,8 +1058,9 @@ h3 {
 }
 
 .tile:active {
-  transform: scale(0.95);
+  transform: scale(0.94);
   box-shadow: var(--md-shadow-1);
+  transition-duration: 0.05s;
 }
 
 .tile:focus-visible {
