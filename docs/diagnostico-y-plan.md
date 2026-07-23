@@ -4,6 +4,22 @@
 
 HolAAC! está en buen estado general: la biblioteca (324 ítems) es íntegra —sin ids duplicados y sin imágenes rotas—, todas las clases CSS referenciadas existen, y la arquitectura offline (IndexedDB + Service Worker) es razonable. Los hallazgos siguientes se ordenan por prioridad: **P0** = error que afecta al usuario hoy; **P1** = error o riesgo real en escenarios frecuentes; **P2** = mejora/deuda técnica.
 
+Cada hallazgo lleva un estado: **⬜ pendiente**, **🟡 parcial** o **✅ hecho**. Al cerrar uno se anota entre paréntesis el commit/PR y la fecha, para poder continuar sin releer todo el código.
+
+---
+
+## Estado del trabajo (última actualización: 2026-07-23)
+
+**Entregado**
+
+- **Feedback táctil y pulido de interacción** (2026-07-23, rama `claude/navigation-accessibility-review-8leggm`, ver `docs/revision-navegacion-y-feedback.md`): ripple Material desde el punto de contacto, vibración háptica configurable (ajuste «Vibración al tocar»), pulsado instantáneo (transiciones específicas en vez de `all 0.3s` + `touch-action: manipulation`), scroll al inicio del board al cambiar de categoría, y el hueco «Inicio» deja de ser botón muerto. Cierra **N-7** y parte de **N-8**.
+- **Accesibilidad — victorias rápidas** (mismo cambio): `aria-live` retirado del `#grid` (**P1-17 ✅**), `prefers-color-scheme` respetado en el primer arranque (**P2-19 ✅**), `theme-color` dinámico (**P2-12** parcial 🟡), foco restaurado al cerrar el selector de categorías (**P2-20 ✅**).
+
+**Siguientes candidatos sugeridos** (orden de impacto/esfuerzo)
+
+1. **Fase 1 · Correcciones críticas** — sigue siendo la prioridad: arranque con try/catch, filtro de foco en barrido, encadenado real palabra-por-palabra, `innerHTML` inseguro, bitácora con `autoIncrement`, `repairCoreImages`, favoritos huérfanos.
+2. **Fase 4 · Navegación (victorias rápidas restantes)** — vocabulario nuclear fijo (N-2), Atrás del sistema con `history.pushState` (N-4), selector de perfil + SOS a 1 toque (N-5), breadcrumb de categoría (resto de N-8), estrella solo en modo tutor (N-9).
+
 ---
 
 ## 1. Errores funcionales
@@ -57,11 +73,11 @@ La UI promete etiquetas "(V, S, A, N, O)" (index.html:387), pero el código mues
 El PIN del Modo Tutor está hardcodeado como `"0000"` (app.js:633) y el candado "Bloquear edición" se desactiva desde Ajustes sin PIN alguno. La barrera no protege de nada más que de toques accidentales.
 **Corrección:** PIN configurable (guardado con hash en `localStorage`) y exigirlo también para desbloquear edición y para borrar la bitácora.
 
-### P2-12 · Detalles de coherencia
-- La velocidad de voz real es `ajuste × 0.9` (app.js:725): el control miente ligeramente.
-- `<meta name="theme-color">` es estático (index.html:44): la barra del sistema queda clara en tema oscuro.
-- Al importar/exportar JSON no se incluye `hiddenTags` del Modo Tutor, así que un respaldo no restaura la configuración del terapeuta.
-- En `loadVoices`, el fallback de voz (app.js:1692-1695) no llama a `save()`.
+### P2-12 · Detalles de coherencia (🟡 parcial)
+- La velocidad de voz real es `ajuste × 0.9` (app.js:725): el control miente ligeramente. ⬜
+- ✅ ~~`<meta name="theme-color">` es estático: la barra del sistema queda clara en tema oscuro.~~ Ahora es dinámico según el tema (2026-07-23).
+- Al importar/exportar JSON no se incluye `hiddenTags` del Modo Tutor, así que un respaldo no restaura la configuración del terapeuta. ⬜
+- En `loadVoices`, el fallback de voz (app.js:1692-1695) no llama a `save()`. ⬜
 
 ---
 
@@ -87,10 +103,10 @@ La URL de Google Fonts está dentro de `cache.addAll` (service-worker.js:25): si
 
 ## 4. Accesibilidad
 
-- **P1-17 · `aria-live` sobre el tablero completo:** `#grid` tiene `aria-live="polite"` (index.html:159) y se reconstruye entero en cada interacción; los lectores de pantalla anuncian ruido masivo. Quitar `aria-live` del grid (mantenerlo en `#chips` y `#statusText`, que sí son anuncios útiles).
-- **P1-18 · Contraste no garantizado:** el texto de cada casilla se pinta sobre `item.color` arbitrario (incluido el elegido por el usuario). Calcular luminancia y elegir texto claro/oscuro automáticamente.
-- **P2-19 · `prefers-color-scheme` ignorado:** el tema oscuro es solo manual; respetar la preferencia del sistema como valor inicial. (`prefers-reduced-motion` ya está contemplado ✓).
-- **P2-20 · Foco tras cerrar modales dinámicos:** el selector de categorías se destruye al cerrar sin devolver el foco al botón que lo abrió.
+- **P1-17 ✅ · `aria-live` sobre el tablero completo:** `#grid` tenía `aria-live="polite"` y se reconstruye entero en cada interacción; los lectores de pantalla anunciaban ruido masivo. Retirado del grid, conservando `role="region"`/`aria-label`; los anuncios útiles siguen en `#chips` y `#statusText`. (2026-07-23)
+- **P1-18 ⬜ · Contraste no garantizado:** el texto de cada casilla se pinta sobre `item.color` arbitrario (incluido el elegido por el usuario). Calcular luminancia y elegir texto claro/oscuro automáticamente.
+- **P2-19 ✅ · `prefers-color-scheme` ignorado:** ahora se respeta la preferencia del sistema en el primer arranque (sin ajuste guardado). (`prefers-reduced-motion` ya estaba contemplado ✓, y ahora también desactiva el ripple). (2026-07-23)
+- **P2-20 ✅ · Foco tras cerrar modales dinámicos:** el selector de categorías devuelve el foco al control que lo abrió al cerrarse. (2026-07-23)
 
 ---
 
@@ -118,8 +134,8 @@ Un solo nivel: pestañas horizontales de categoría (+ modal selector), buscador
 - **N-4 (P1) · El botón Atrás del sistema cierra la app.** No hay integración con `history.pushState/popstate`: en una PWA instalada en Android, el gesto/botón Atrás — el reflejo natural para salir de una categoría — cierra HolAAC! en vez de volver a "Todas".
 - **N-5 (P1) · Cambiar de contexto exige 3+ toques dentro de Ajustes.** Los perfiles (Casa/Escuela/SOS) son una buena idea (tableros por escenario, como en TouchChat), pero están enterrados en Ajustes. En una conversación real nadie abre un modal de configuración; y el perfil **SOS**, por definición, debería estar a un toque de distancia siempre.
 - **N-6 (P1) · Barrido lineal inviable en listas grandes.** El barrido recorre casilla por casilla toda la lista filtrada: en "Todas", a 2 s por paso, un ciclo completo tarda más de 10 minutos. Las apps orientadas a conmutador (AsTeRICS Grid, TD Snap) usan barrido **fila-columna**: primero se resalta la fila, luego la casilla. Además el `scrollIntoView` continuo hace que la pantalla no pare de moverse.
-- **N-7 (P2) · Casilla de navegación desaprovechada.** El primer slot del tablero —la posición más valiosa— muestra "🏠 Inicio" incluso estando ya en Inicio (botón muerto), y "← Volver" en realidad significa "ir a Todas".
-- **N-8 (P2) · Sin indicador de ubicación.** La categoría actual solo se distingue por la pestaña resaltada, que puede estar desplazada fuera de la vista horizontal. Falta un título/breadcrumb sobre el tablero.
+- **N-7 ✅ (P2) · Casilla de navegación desaprovechada.** El primer slot mostraba "🏠 Inicio" siendo un botón muerto estando ya en Inicio. Ahora, estando en Inicio, ese hueco sirve para volver arriba en tableros largos; en otra categoría sigue siendo "← Volver" a Todas. (2026-07-23) Pendiente aún: replantear el slot como parte del rediseño de navegación (ver Fase 4).
+- **N-8 🟡 (P2) · Sin indicador de ubicación.** Al cambiar de categoría el board ahora vuelve al inicio con scroll suave, reduciendo la desorientación. Sigue faltando un título/breadcrumb explícito sobre el tablero. (parcial 2026-07-23)
 - **N-9 (P2) · Estrella de favorito en la vista de comunicación.** Cada casilla lleva un botón de 32 px (bajo el mínimo táctil de 44–48 px) que a la vez invita al toque accidental en usuarios con motricidad gruesa. Los referentes reservan ese tipo de acciones al modo edición.
 - **N-10 (P2) · Gesto oculto.** Mantener pulsada una casilla la pronuncia (`contextmenu`), pero nada lo anuncia y el gesto es poco fiable en iOS Safari.
 
@@ -145,7 +161,7 @@ Un solo nivel: pestañas horizontales de categoría (+ modal selector), buscador
 1. **Fila de núcleo fija** visible en toda vista: Sí, No, Ayuda, Querer, Más, Parar, Baño, Dolor (configurable desde el modo tutor). Impacto muy alto, esfuerzo bajo.
 2. **Integrar `history.pushState`**: Atrás del sistema = volver a "Todas"; segunda pulsación = comportamiento normal. Esfuerzo bajo.
 3. **Selector de perfil a 1 toque** en la barra superior + botón SOS siempre visible. Esfuerzo bajo.
-4. **Título de categoría sobre el tablero** (breadcrumb) y eliminar la casilla "Inicio" cuando ya se está en Inicio. Esfuerzo bajo.
+4. **Título de categoría sobre el tablero** (breadcrumb) 🟡 —el board ya vuelve arriba al navegar, falta el breadcrumb explícito— y ~~eliminar la casilla "Inicio" cuando ya se está en Inicio~~ ✅ (ahora reutilizada como «volver arriba»). Esfuerzo bajo.
 5. **Estrella de favorito solo en modo tutor/edición.** Esfuerzo bajo.
 6. **Paginación con posiciones fijas** (rejilla N×M según `--tile-size`, flechas/gesto para pasar página) en lugar de scroll. Impacto alto en motor planning, esfuerzo medio.
 7. **Barrido fila-columna** limitado a la página visible. Esfuerzo medio; convierte el barrido de decorativo a usable.
@@ -156,16 +172,17 @@ Un solo nivel: pestañas horizontales de categoría (+ modal selector), buscador
 
 ## Plan de trabajo propuesto
 
-| Fase | Contenido | Hallazgos | Esfuerzo |
-|------|-----------|-----------|----------|
-| **1 · Correcciones críticas** | try/catch de arranque con degradación, filtro de foco en barrido, encadenado real palabra-por-palabra, eliminación de `innerHTML` inseguro + saneado de import, bitácora con `autoIncrement`, fix `repairCoreImages`, favoritos huérfanos | P0-1, P0-2, P0-3, P0-10, P1-4, P1-5, P1-7 | 1–2 días |
-| **2 · Fundamentos del repo** | `LICENSE` MIT + atribución ARASAAC, `README.md`, mover scripts a `tools/`, `.gitignore` | P0-21, P1-22, P2-25 | ~½ día |
-| **3 · Offline y PWA de verdad** | Precache generado desde `library.json` (o descarga bajo demanda), fuente autoalojada, manifest completo, theme-color dinámico, versión de SW automatizada | P1-13, P1-14, P2-15, P2-16 | 1 día |
-| **4 · Navegación: victorias rápidas** | Fila de núcleo fija, Atrás del sistema con `pushState`, selector de perfil + SOS a 1 toque, breadcrumb de categoría, quitar botón "Inicio" muerto, estrella solo en modo tutor | N-2, N-4, N-5, N-7, N-8, N-9 | 1–2 días |
-| **5 · Contenido y UX** | Deduplicar "Baño" y defaults, orden numérico/estable, etiquetas gramaticales reales (`pos` en library.json), PIN configurable + candado coherente, contraste automático, `aria-live` ajustado | P1-6, P1-8, P1-9, P1-11, P1-17, P1-18 | 1–2 días |
-| **6 · Navegación: rediseño de acceso motor** | Paginación con posiciones fijas (sin scroll), barrido fila-columna sobre la página visible, unificación de perfiles/categorías activas | N-1, N-3, N-6 | 3–4 días |
-| **7 · Calidad sostenible** | Modularizar `app.js`, ESLint, smoke tests Playwright, CI en GitHub Actions con deploy; explorar compatibilidad Open Board Format | P2-23, P2-24, P2-12, P2-19, P2-20 | 2–3 días |
+| Fase | Estado | Contenido | Hallazgos | Esfuerzo |
+|------|--------|-----------|-----------|----------|
+| **0 · Feel y accesibilidad rápida** | ✅ hecho (2026-07-23) | Feedback táctil (ripple + háptico), pulsado instantáneo, `touch-action`, scroll al inicio al navegar, `aria-live` del grid, `prefers-color-scheme`, `theme-color` dinámico, foco tras cerrar el selector | N-7, N-8 (parcial), P1-17, P2-19, P2-20, P2-12 (parcial) | — |
+| **1 · Correcciones críticas** | ⬜ pendiente | try/catch de arranque con degradación, filtro de foco en barrido, encadenado real palabra-por-palabra, eliminación de `innerHTML` inseguro + saneado de import, bitácora con `autoIncrement`, fix `repairCoreImages`, favoritos huérfanos | P0-1, P0-2, P0-3, P0-10, P1-4, P1-5, P1-7 | 1–2 días |
+| **2 · Fundamentos del repo** | ⬜ pendiente | `LICENSE` MIT + atribución ARASAAC, `README.md`, mover scripts a `tools/`, `.gitignore` | P0-21, P1-22, P2-25 | ~½ día |
+| **3 · Offline y PWA de verdad** | ⬜ pendiente | Precache generado desde `library.json` (o descarga bajo demanda), fuente autoalojada, manifest completo, ~~theme-color dinámico~~ (✅ hecho en Fase 0), versión de SW automatizada | P1-13, P1-14, P2-15, P2-16 | 1 día |
+| **4 · Navegación: victorias rápidas** | ⬜ pendiente (N-7 ✅) | Fila de núcleo fija, Atrás del sistema con `pushState`, selector de perfil + SOS a 1 toque, breadcrumb de categoría, ~~quitar botón "Inicio" muerto~~ (✅ Fase 0), estrella solo en modo tutor | N-2, N-4, N-5, N-8, N-9 | 1–2 días |
+| **5 · Contenido y UX** | ⬜ pendiente (P1-17 ✅) | Deduplicar "Baño" y defaults, orden numérico/estable, etiquetas gramaticales reales (`pos` en library.json), PIN configurable + candado coherente, contraste automático, ~~`aria-live` ajustado~~ (✅ Fase 0) | P1-6, P1-8, P1-9, P1-11, P1-18 | 1–2 días |
+| **6 · Navegación: rediseño de acceso motor** | ⬜ pendiente | Paginación con posiciones fijas (sin scroll), barrido fila-columna sobre la página visible, unificación de perfiles/categorías activas | N-1, N-3, N-6 | 3–4 días |
+| **7 · Calidad sostenible** | ⬜ pendiente (P2-19, P2-20 ✅) | Modularizar `app.js`, ESLint, smoke tests Playwright, CI en GitHub Actions con deploy; explorar compatibilidad Open Board Format | P2-23, P2-24, P2-12 (resto) | 2–3 días |
 
-**Criterio de orden:** la Fase 1 elimina los fallos que hoy pueden dejar la app inservible o cortar la voz al usuario final (población especialmente sensible a fallos impredecibles); la Fase 2 es barata y desbloquea la legalidad open source; la Fase 3 consolida la promesa offline; la Fase 4 cierra con poco esfuerzo la mayor parte de la brecha de practicidad frente a otras apps CAA; las Fases 5–7 consolidan contenido clínico, acceso motor y mantenibilidad.
+**Criterio de orden:** la **Fase 0** ya cerró la fricción sensorial inmediata (lo que se sentía «clunky»). La **Fase 1** sigue siendo la prioridad: elimina los fallos que hoy pueden dejar la app inservible o cortar la voz al usuario final (población especialmente sensible a fallos impredecibles); la Fase 2 es barata y desbloquea la legalidad open source; la Fase 3 consolida la promesa offline; la Fase 4 cierra con poco esfuerzo el resto de la brecha de practicidad frente a otras apps CAA; las Fases 5–7 consolidan contenido clínico, acceso motor y mantenibilidad.
 
 Cada fase cabe en un PR independiente y revisable; ninguna requiere migración destructiva de datos de usuarios existentes (la Fase 1 sube `dbVersion` a 3 con migración aditiva del store `history`).
