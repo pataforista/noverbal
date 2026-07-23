@@ -156,7 +156,7 @@
       <button class="btn danger" id="btnResetRoutine" aria-label="Limpiar rutina actual">✕</button>
     </section>
 
-    <section class="grid" id="grid" role="region" aria-label="Tablero de comunicación" aria-live="polite"></section>
+    <section class="grid" id="grid" role="region" aria-label="Tablero de comunicación"></section>
 
   </main>
 
@@ -360,6 +360,17 @@
 
         <div class="settings-section">
           <h3>Accesibilidad</h3>
+          <label class="field-row">
+            <div class="toggle-wrapper">
+              <input id="hapticFeedback" type="checkbox" checked />
+              <span class="toggle-slider"></span>
+            </div>
+            <div class="text-content">
+              <span class="main">Vibración al tocar</span>
+              <span class="sub">Confirma cada toque con una vibración breve (en dispositivos compatibles)</span>
+            </div>
+          </label>
+
           <label class="field-row">
             <div class="toggle-wrapper">
               <input id="scanningEnabled" type="checkbox" />
