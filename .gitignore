@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# Playwright / test output
+test-results/
+playwright-report/
+.playwright/
+
+# Logs & OS/editor cruft
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local env
+.env
+.env.local

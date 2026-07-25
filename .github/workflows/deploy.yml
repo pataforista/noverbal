@@ -1,0 +1,45 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # Stamp the Service Worker cache version with the commit hash so every
+      # deploy invalidates the old cache automatically — no manual bump (P2-16).
+      - name: Stamp Service Worker version
+        run: |
+          SHORT_SHA="${GITHUB_SHA::10}"
+          sed -i "s/__BUILD_VERSION__/${SHORT_SHA}/g" service-worker.js
+          echo "Service Worker version set to ${SHORT_SHA}"
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # The whole repo is the static site; excludes keep dev files out.
+          path: .
+
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

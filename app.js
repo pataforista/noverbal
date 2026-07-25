@@ -11,6 +11,9 @@ const LS_KEYS = {
     hiddenTags: "aac_hidden_tags_v2",
     activeCategories: "aac_active_categories_v1",
     introSeen: "aac_intro_seen_v1",
+    history: "aac_history_v1", // localStorage fallback when IndexedDB is unavailable
+    pinHash: "aac_pin_hash_v1", // configurable tutor PIN (hashed)
+    coreWords: "aac_core_words_v1", // ids pinned to the fixed core row (Fase 4)
 };
 
 const DEFAULT_ITEMS = [
@@ -55,6 +58,34 @@ const CATEGORY_METADATA = {
     "Varios": { icon: "📌", color: "#64748b", order: 99 },
 };
 
+// Real grammatical category (parte de la oración) per semantic category, so the
+// "grammar tag" shows an actual word-type — verb, noun, adjective, social,
+// other — instead of the misleading first letter of the category (P1-9). An
+// item may override this with its own `pos` field.
+const CATEGORY_POS = {
+    "Acciones": "V",        // verbo
+    "Personas": "S",        // sustantivo
+    "Objetos": "S",
+    "Comida": "S",
+    "Lugares": "S",
+    "Necesidad": "S",
+    "Salud": "S",
+    "C. Médica": "S",
+    "Vínculos": "S",
+    "Emociones": "A",       // adjetivo / descriptor
+    "Sensorial": "A",
+    "Mente+": "A",
+    "Social": "So",         // social / interjección
+    "S.O.S": "So",
+    "General": "O",         // otros
+    "Varios": "O",
+};
+
+function getPosLabel(item) {
+    if (item.pos) return String(item.pos).toUpperCase();
+    return CATEGORY_POS[item.category] || "O";
+}
+
 // Board profiles map to REAL category names present in the library.
 // Keep these in sync with CATEGORY_METADATA / library.json categories.
 const PROFILE_CATEGORIES = {
@@ -73,6 +104,7 @@ const DEFAULT_SETTINGS = {
     scanSpeed: 2, // seconds per step in scanning mode
     activeCategories: [],
     hapticFeedback: true, // short vibration confirming each tap (where supported)
+    pagedMode: false, // fixed-position pages instead of a long scroll (N-1)
 };
 
 // State Management
@@ -87,15 +119,23 @@ const state = {
     phrase: loadJSON(LS_KEYS.phrase, []),
     currentPath: [],
     currentCategory: "Todas",
+    currentPage: 0, // active page index in paged mode (N-1)
     searchQuery: "",
     voices: [],
     editorSearchQuery: "",
     pendingImage: null,
+    coreWords: [], // ids pinned to the always-visible core row (N-2)
     routine: [],
     scanning: {
         active: false,
         index: -1,
-        timer: null
+        timer: null,
+        // Row-column scanning over the visible page (N-6).
+        phase: 'linear', // 'linear' | 'row' | 'cell'
+        row: 0,
+        col: 0,
+        cols: 1,
+        rows: 0
     },
     tutorMode: {
         active: false,
@@ -105,73 +145,257 @@ const state = {
 
 // IndexedDB Helper
 const dbName = "MiTableroAAC_DB";
-const dbVersion = 2; // Incremented for history store
+// v3: history store migrated to autoIncrement so two entries in the same
+// millisecond can no longer collide on the timestamp key (P1-4).
+const dbVersion = 3;
 let db = null;
+// When IndexedDB is unavailable (Safari/Firefox private mode, storage full),
+// we degrade gracefully to localStorage so the app still works (P0-1).
+let storageMode = "idb"; // "idb" | "local"
+// Set when library.json couldn't be fetched on first run (offline); we retry
+// merging it once the network/app comes back to the foreground (P0-1).
+let libraryPending = false;
+
+// Normalize a word for comparison: lowercase, trimmed, accents stripped.
+function normalizeWord(text) {
+    return String(text || "")
+        .toLowerCase()
+        .trim()
+        .normalize("NFD")
+        .replace(/[̀-ͯ]/g, "");
+}
+
+function sameWord(a, b) {
+    return normalizeWord(a) === normalizeWord(b);
+}
+
+// High-frequency "core" vocabulary that stays visible in every view (N-2), the
+// way Proloquo2Go / TD Snap / LAMP keep a fixed core. Resolved to real item ids.
+const DEFAULT_CORE_TEXTS = ['Sí', 'No', 'Ayuda', 'Querer', 'Más', 'Parar', 'Baño', 'Dolor'];
+const MAX_CORE_WORDS = 12;
+
+function saveCoreWords() {
+    localStorage.setItem(LS_KEYS.coreWords, JSON.stringify(state.coreWords));
+}
+
+function initCoreWords() {
+    const stored = loadJSON(LS_KEYS.coreWords, null);
+    if (Array.isArray(stored)) {
+        // Drop ids that no longer exist (deleted items).
+        state.coreWords = stored.filter(id => state.items.some(i => i.id === id));
+    } else {
+        state.coreWords = [];
+    }
+    if (state.coreWords.length === 0) {
+        // First run: derive the default core by matching words to real items.
+        for (const text of DEFAULT_CORE_TEXTS) {
+            const item = state.items.find(i => sameWord(i.text, text));
+            if (item && !state.coreWords.includes(item.id)) state.coreWords.push(item.id);
+        }
+        saveCoreWords();
+    }
+}
+
+function isCore(id) {
+    return state.coreWords.includes(id);
+}
+
+/* ── Tutor PIN (configurable, hashed) ─────────────────────────────────────
+   The PIN is stored only as a SHA-256 hash in localStorage — never in clear —
+   and gates the Tutor Mode, unlocking edition, and clearing the clinical log
+   (P1-11). Default PIN is "0000" until the user changes it. */
+
+async function hashPin(pin) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(pin)));
+    return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function getStoredPinHash() {
+    let h = localStorage.getItem(LS_KEYS.pinHash);
+    if (!h) {
+        h = await hashPin('0000');
+        localStorage.setItem(LS_KEYS.pinHash, h);
+    }
+    return h;
+}
+
+async function verifyPinValue(pin) {
+    try {
+        return (await hashPin(pin)) === (await getStoredPinHash());
+    } catch (_) {
+        // crypto.subtle needs a secure context (https/localhost). In the rare
+        // insecure case, accept the default PIN so the user is never locked out.
+        return String(pin) === '0000';
+    }
+}
+
+// Show the PIN dialog and resolve true/false when verified or cancelled. Used
+// anywhere a protected action needs confirmation.
+let pinResolver = null;
+function promptPin() {
+    return new Promise((resolve) => {
+        pinResolver = resolve;
+        if (dom.pinInput) dom.pinInput.value = '';
+        dom.pinModal.showModal();
+        if (dom.pinInput) dom.pinInput.focus();
+    });
+}
+
+function resolvePin(result) {
+    const r = pinResolver;
+    pinResolver = null;
+    if (r) r(result);
+    return !!r;
+}
+
+function activateTutorMode() {
+    state.tutorMode.active = true;
+    dom.tutorMode.checked = true;
+    document.body.classList.add('tutor-active');
+    renderGrid();
+    flashStatus('Modo Tutor activado');
+}
+
+function toggleCore(id) {
+    const idx = state.coreWords.indexOf(id);
+    if (idx >= 0) {
+        state.coreWords.splice(idx, 1);
+    } else {
+        if (state.coreWords.length >= MAX_CORE_WORDS) state.coreWords.shift();
+        state.coreWords.push(id);
+    }
+    saveCoreWords();
+    renderCoreRow();
+    renderGrid();
+}
 
 async function initDB() {
     return new Promise((resolve, reject) => {
-        const request = indexedDB.open(dbName, dbVersion);
+        let request;
+        try {
+            request = indexedDB.open(dbName, dbVersion);
+        } catch (err) {
+            return reject(err);
+        }
         request.onupgradeneeded = (e) => {
-            const db = e.target.result;
-            if (!db.objectStoreNames.contains("items")) {
-                db.createObjectStore("items", { keyPath: "id" });
+            const database = e.target.result;
+            const tx = e.target.transaction;
+            if (!database.objectStoreNames.contains("items")) {
+                database.createObjectStore("items", { keyPath: "id" });
             }
-            if (!db.objectStoreNames.contains("history")) {
-                db.createObjectStore("history", { keyPath: "timestamp" });
+            // Migrate history to an autoIncrement key, rescuing existing records.
+            if (!database.objectStoreNames.contains("history")) {
+                database.createObjectStore("history", { keyPath: "id", autoIncrement: true });
+            } else {
+                const oldStore = tx.objectStore("history");
+                if (!oldStore.autoIncrement) {
+                    const rescued = [];
+                    oldStore.openCursor().onsuccess = (ev) => {
+                        const cursor = ev.target.result;
+                        if (cursor) {
+                            rescued.push(cursor.value);
+                            cursor.continue();
+                        } else {
+                            database.deleteObjectStore("history");
+                            const newStore = database.createObjectStore("history", { keyPath: "id", autoIncrement: true });
+                            rescued.forEach((r) => newStore.add(r));
+                        }
+                    };
+                }
             }
         };
         request.onsuccess = (e) => {
             db = e.target.result;
             resolve(db);
         };
-        request.onerror = (e) => reject(e);
+        request.onerror = (e) => reject(request.error || e);
+        request.onblocked = () => reject(new Error("IndexedDB bloqueada por otra pestaña"));
     });
 }
 
 async function getAllItems() {
-    return new Promise((resolve) => {
-        const transaction = db.transaction(["items"], "readonly");
-        const store = transaction.objectStore("items");
-        const request = store.getAll();
-        request.onsuccess = () => resolve(request.result);
+    if (storageMode === "local") return loadJSON(LS_KEYS.items, []);
+    return new Promise((resolve, reject) => {
+        try {
+            const transaction = db.transaction(["items"], "readonly");
+            const store = transaction.objectStore("items");
+            const request = store.getAll();
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        } catch (err) {
+            reject(err);
+        }
     });
 }
 
 async function saveItemDB(item) {
+    if (storageMode === "local") {
+        const items = loadJSON(LS_KEYS.items, []);
+        const idx = items.findIndex((i) => i.id === item.id);
+        if (idx >= 0) items[idx] = item;
+        else items.push(item);
+        localStorage.setItem(LS_KEYS.items, JSON.stringify(items));
+        return;
+    }
     const transaction = db.transaction(["items"], "readwrite");
     const store = transaction.objectStore("items");
     store.put(item);
 }
 
 async function deleteItemDB(id) {
+    if (storageMode === "local") {
+        const items = loadJSON(LS_KEYS.items, []).filter((i) => i.id !== id);
+        localStorage.setItem(LS_KEYS.items, JSON.stringify(items));
+        return;
+    }
     const transaction = db.transaction(["items"], "readwrite");
     const store = transaction.objectStore("items");
     store.delete(id);
 }
 
 async function logActivity(content) {
-    if (!db) return;
-    const transaction = db.transaction(["history"], "readwrite");
-    const store = transaction.objectStore("history");
     const entry = {
         timestamp: Date.now(),
         date: new Date().toLocaleString(),
         content: content
     };
-    store.add(entry);
+    if (storageMode === "local") {
+        const history = loadJSON(LS_KEYS.history, []);
+        history.push(entry);
+        // Keep the log bounded so localStorage never overflows.
+        if (history.length > 500) history.splice(0, history.length - 500);
+        localStorage.setItem(LS_KEYS.history, JSON.stringify(history));
+        return;
+    }
+    if (!db) return;
+    try {
+        const transaction = db.transaction(["history"], "readwrite");
+        const store = transaction.objectStore("history");
+        store.add(entry);
+    } catch (err) {
+        console.error("No se pudo registrar la actividad", err);
+    }
 }
 
 async function getAllHistory() {
+    if (storageMode === "local") {
+        return loadJSON(LS_KEYS.history, []).slice().reverse().slice(0, 100);
+    }
     return new Promise((resolve) => {
         if (!db) return resolve([]);
         const transaction = db.transaction(["history"], "readonly");
         const store = transaction.objectStore("history");
         const request = store.getAll();
         request.onsuccess = () => resolve(request.result.reverse().slice(0, 100)); // Last 100
+        request.onerror = () => resolve([]);
     });
 }
 
 async function clearHistoryDB() {
+    if (storageMode === "local") {
+        localStorage.removeItem(LS_KEYS.history);
+        return;
+    }
     const transaction = db.transaction(["history"], "readwrite");
     const store = transaction.objectStore("history");
     store.clear();
@@ -181,6 +405,12 @@ async function clearHistoryDB() {
 const dom = {
     statusText: document.getElementById('statusText'),
     grid: document.getElementById('grid'),
+    pageControls: document.getElementById('pageControls'),
+    pagedMode: document.getElementById('pagedMode'),
+    coreRow: document.getElementById('coreRow'),
+    boardBreadcrumb: document.getElementById('boardBreadcrumb'),
+    headerProfile: document.getElementById('headerProfile'),
+    btnSOS: document.getElementById('btnSOS'),
     chips: document.getElementById('chips'),
     categoryBar: document.getElementById('categoryBar'),
     categoryPrev: document.getElementById('categoryPrev'),
@@ -238,6 +468,8 @@ const dom = {
     pinModal: document.getElementById('pinModal'),
     pinInput: document.getElementById('pinInput'),
     btnVerifyPin: document.getElementById('btnVerifyPin'),
+    newPin: document.getElementById('newPin'),
+    btnChangePin: document.getElementById('btnChangePin'),
     // Phase 7: Motor & Speech
     btnPause: document.getElementById('btnPause'),
     btnStop: document.getElementById('btnStop'),
@@ -245,6 +477,11 @@ const dom = {
     speechMode: document.getElementById('speechMode'),
     darkMode: document.getElementById('darkMode'),
     hapticFeedback: document.getElementById('hapticFeedback'),
+    // Offline precache
+    btnDownloadAll: document.getElementById('btnDownloadAll'),
+    downloadProgress: document.getElementById('downloadProgress'),
+    downloadBarFill: document.getElementById('downloadBarFill'),
+    downloadProgressText: document.getElementById('downloadProgressText'),
     headerSpeakToggle: document.getElementById('headerSpeakToggle'),
     btnThemeToggle: document.getElementById('btnThemeToggle'),
     // Writing Module
@@ -364,16 +601,43 @@ async function init() {
         state.settings.darkMode = true;
     }
 
-    await initDB();
-    const storedItems = await getAllItems();
+    try {
+        await initDB();
+    } catch (err) {
+        // IndexedDB unavailable (private mode, storage full…): keep working with
+        // localStorage instead of freezing on "Cargando..." (P0-1).
+        console.error('IndexedDB no disponible, usando almacenamiento local:', err);
+        storageMode = 'local';
+        db = null;
+    }
+
+    let storedItems = [];
+    try {
+        storedItems = await getAllItems();
+    } catch (err) {
+        console.error('No se pudieron leer los elementos guardados:', err);
+        storedItems = [];
+    }
 
     if (storedItems.length === 0) {
-        // First run: copy defaults + curated library to DB
+        // First run: copy defaults + curated library to storage.
         const initialItems = [...DEFAULT_ITEMS];
-        const libraryItems = await fetchLibraryItems();
+        let libraryItems = [];
+        try {
+            libraryItems = await fetchLibraryItems();
+        } catch (err) {
+            // No network on first launch: start with the built-in basics only,
+            // instead of hanging forever waiting for library.json (P0-1).
+            console.error('No se pudo cargar library.json:', err);
+            libraryPending = true;
+        }
 
+        // De-duplicate by normalized text so a default and its library twin don't
+        // both land on the board (P1-8).
         for (const item of libraryItems) {
-            if (!initialItems.some(existing => existing.id === item.id)) {
+            const dupById = initialItems.some(existing => existing.id === item.id);
+            const dupByText = initialItems.some(existing => sameWord(existing.text, item.text));
+            if (!dupById && !dupByText) {
                 initialItems.push(item);
             }
         }
@@ -388,6 +652,7 @@ async function init() {
     }
 
     ensureActiveCategories();
+    initCoreWords();
     applySettings();
     await repairCoreImages(); // Force update core items with images
     attachListeners();
@@ -420,6 +685,18 @@ async function init() {
             window.location.reload();
         });
 
+        // Progress + completion messages from the "Descargar todo" precache.
+        navigator.serviceWorker.addEventListener('message', (event) => {
+            const data = event.data || {};
+            if (data.type === 'PRECACHE_PROGRESS') {
+                updateDownloadProgress(data.done, data.total);
+            } else if (data.type === 'PRECACHE_DONE') {
+                updateDownloadProgress(data.total, data.total);
+                if (dom.btnDownloadAll) dom.btnDownloadAll.disabled = false;
+                flashStatus('Listo: la app funciona sin conexión');
+            }
+        });
+
         navigator.serviceWorker.register('./service-worker.js').then(reg => {
             // Force a check for a newer worker whenever the app is reopened or
             // brought back to the foreground, plus periodically for long sessions.
@@ -446,12 +723,35 @@ async function init() {
 
     dom.statusText.textContent = "Listo para usar";
 
-    // Global Key Events for Scanning
+    // If library.json couldn't be fetched on first run (offline), retry merging
+    // it the next time the app becomes visible / regains focus (P0-1).
+    if (libraryPending) {
+        const retryLibrary = async () => {
+            if (!libraryPending) return;
+            try {
+                await ensureLibraryItemsPresent();
+                libraryPending = false;
+                render();
+            } catch (_) { /* still offline: try again next time */ }
+        };
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') retryLibrary();
+        });
+        window.addEventListener('online', retryLibrary);
+    }
+
+    // Global Key Events for Scanning. Space/Enter only act as the switch when the
+    // user is NOT typing: otherwise a space in the search box or Escritura libre
+    // would trigger the highlighted tile instead of writing a space (P0-2).
     window.addEventListener('keydown', (e) => {
-        if (state.scanning.active && (e.code === 'Space' || e.code === 'Enter')) {
-            e.preventDefault();
-            selectScanningElement();
-        }
+        if (!state.scanning.active) return;
+        if (e.code !== 'Space' && e.code !== 'Enter') return;
+        const t = e.target;
+        const tag = t && t.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (t && t.isContentEditable)) return;
+        if (t && typeof t.closest === 'function' && t.closest('dialog[open]')) return;
+        e.preventDefault();
+        selectScanningElement();
     });
 }
 
@@ -525,7 +825,9 @@ function attachListeners() {
     // Filters
     dom.searchBox.oninput = (e) => {
         state.searchQuery = e.target.value.toLowerCase();
+        state.currentPage = 0; // new search resets to the first page (N-1)
         renderGrid();
+        renderBreadcrumb();
     };
 
     dom.btnClearSearch.onclick = () => {
@@ -605,7 +907,15 @@ function attachListeners() {
         dom.headerSpeakToggle.checked = (state.settings.tapMode === 'speak');
         save();
     };
-    dom.lockEdit.onchange = (e) => {
+    dom.lockEdit.onchange = async (e) => {
+        // Locking is free; UNLOCKING requires the PIN so the barrier means
+        // something (P1-11).
+        if (!e.target.checked) {
+            if (!(await promptPin())) {
+                e.target.checked = true; // stay locked
+                return;
+            }
+        }
         state.settings.lockEdit = e.target.checked;
         save();
     };
@@ -614,6 +924,14 @@ function attachListeners() {
         save();
         renderGrid();
     };
+    if (dom.pagedMode) {
+        dom.pagedMode.onchange = (e) => {
+            state.settings.pagedMode = e.target.checked;
+            state.currentPage = 0;
+            save();
+            render();
+        };
+    }
     if (dom.scanSpeed) {
         dom.scanSpeed.oninput = (e) => {
             state.settings.scanSpeed = parseFloat(e.target.value);
@@ -662,10 +980,21 @@ function attachListeners() {
         save();
     };
     dom.boardProfile.onchange = (e) => {
-        state.settings.boardProfile = e.target.value;
-        save();
+        setBoardProfile(e.target.value);
         render();
     };
+    if (dom.headerProfile) {
+        dom.headerProfile.onchange = (e) => {
+            setBoardProfile(e.target.value);
+            render();
+        };
+    }
+    if (dom.btnSOS) {
+        dom.btnSOS.onclick = (e) => {
+            e.preventDefault();
+            goToSOS();
+        };
+    }
     dom.showGrammarTags.onchange = (e) => {
         state.settings.showGrammarTags = e.target.checked;
         document.body.classList.toggle('show-grammar', state.settings.showGrammarTags);
@@ -687,17 +1016,18 @@ function attachListeners() {
     };
     dom.btnClearHistory.onclick = async () => {
         if (!confirm("¿Borrar historial clínico?")) return;
+        if (!(await promptPin())) return; // clinical log is PIN-protected (P1-11)
         await clearHistoryDB();
         renderHistory();
     };
 
     // Tutor Mode with 3s Hold Security
     let tutorHoldTimer = null;
-    dom.tutorMode.onpointerdown = (e) => {
+    dom.tutorMode.onpointerdown = () => {
         if (state.tutorMode.active) return; // Only for activation
-        tutorHoldTimer = setTimeout(() => {
-            dom.pinModal.showModal();
+        tutorHoldTimer = setTimeout(async () => {
             flashStatus("Liberando Modo Tutor...");
+            if (await promptPin()) activateTutorMode();
         }, 3000);
     };
     dom.tutorMode.onpointerup = () => clearTimeout(tutorHoldTimer);
@@ -709,25 +1039,54 @@ function attachListeners() {
             document.body.classList.remove('tutor-active');
             renderGrid();
         } else {
-            e.target.checked = false; // Stay off until verified
+            e.target.checked = false; // Stay off until verified via hold + PIN
         }
     };
 
-    dom.btnVerifyPin.onclick = (e) => {
+    // Single PIN dialog serves every protected action; verify against the stored
+    // hash and hand the result back to whoever opened it (promptPin).
+    dom.btnVerifyPin.onclick = async (e) => {
         e.preventDefault();
-        if (dom.pinInput.value === "0000") { // PIN por defecto
-            state.tutorMode.active = true;
-            dom.tutorMode.checked = true;
-            document.body.classList.add('tutor-active');
-            dom.pinModal.close();
+        const ok = await verifyPinValue(dom.pinInput.value);
+        if (ok) {
             dom.pinInput.value = "";
-            renderGrid();
-            flashStatus("Modo Tutor activado");
+            dom.pinModal.close();
+            // If nobody is awaiting (legacy direct open), default to activating tutor.
+            if (!resolvePin(true)) activateTutorMode();
         } else {
             flashStatus("PIN Incorrecto");
             dom.pinInput.value = "";
         }
     };
+
+    // Cancelling / dismissing the dialog resolves the pending action as false.
+    dom.pinModal.addEventListener('close', () => {
+        if (pinResolver) resolvePin(false);
+    });
+
+    // Change the Tutor PIN (asks for the current one first).
+    if (dom.btnChangePin) {
+        dom.btnChangePin.onclick = async (e) => {
+            e.preventDefault();
+            const next = (dom.newPin.value || '').trim();
+            if (!/^\d{4}$/.test(next)) {
+                flashStatus('El PIN debe tener 4 dígitos');
+                return;
+            }
+            if (!(await promptPin())) return; // confirm with current PIN
+            localStorage.setItem(LS_KEYS.pinHash, await hashPin(next));
+            dom.newPin.value = '';
+            flashStatus('PIN actualizado');
+        };
+    }
+
+    // Offline precache button
+    if (dom.btnDownloadAll) {
+        dom.btnDownloadAll.onclick = (e) => {
+            e.preventDefault();
+            downloadAllForOffline();
+        };
+    }
 
     // Speech Controls
     dom.btnPause.onclick = () => {
@@ -751,14 +1110,25 @@ async function repairCoreImages() {
         { id: "8", text: "Dolor", image: "assets/pictos/dolor.png" }
     ];
 
+    // Filenames that belong to a core item. Used to detect a "crossed" image
+    // (e.g. a "Sí" tile pointing at no.png) without clobbering a user's own
+    // custom picture for that tile.
+    const coreFiles = new Set(coreUpdates.map(u => u.image.split('/').pop()));
+
     let changed = false;
     for (const update of coreUpdates) {
         const item = state.items.find(i => i.id === update.id);
         if (!item) continue;
 
+        const expectedFile = update.image.split('/').pop();
+        const currentFile = String(item.image || '').split('/').pop();
+
+        // Repair only when the image is clearly broken, or when it's another
+        // core picto assigned to the wrong item — compare each item against ITS
+        // OWN expected file, never against the whole core set (P1-5).
         const needsRepair = !item.image
-            || item.image.includes('null')
-            || (['1', '2'].includes(update.id) && !String(item.image).includes('/si.png') && !String(item.image).includes('/no.png'));
+            || String(item.image).includes('null')
+            || (currentFile !== expectedFile && coreFiles.has(currentFile));
 
         if (needsRepair) {
             item.image = update.image;
@@ -773,67 +1143,71 @@ function updateCompanion() {
     // Guía virtual eliminada por decisión de producto.
 }
 
+// Returns a promise that resolves when the local mp3 finishes playing, and
+// rejects (so the caller can fall back to TTS) if there's no clip or it fails.
+function playLocalAudio(text) {
+    return new Promise((resolve, reject) => {
+        const cleanName = text.toLowerCase().trim()
+            .replace(/\s+/g, '_')
+            .normalize("NFD").replace(/[̀-ͯ]/g, "");
+
+        // Pre-recorded clips only exist for single terms.
+        if (cleanName.includes('_') || !cleanName) return reject();
+
+        const audio = new Audio(`assets/audio/${cleanName}.mp3`);
+        audio.onended = () => resolve();
+        audio.onerror = () => reject();
+        audio.play().catch(reject);
+    });
+}
+
+// Speak one term. Resolves only when playback actually ends, so callers can
+// chain words without cutting each other off (P0-3).
 function speakText(text) {
-    if (!text) return;
-
-    // Try playing local audio file first (Privacy & Offline optimization)
-    const cleanName = text.toLowerCase().trim()
-        .replace(/\s+/g, '_')
-        .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-
-    // Only use pre-recorded clips for single terms.
-    if (!cleanName.includes('_')) {
-        const audioPath = `assets/audio/${cleanName}.mp3`;
-        const audio = new Audio(audioPath);
-        audio.play().then(() => {
-            console.log(`🔊 Playing local audio: ${text}`);
-        }).catch(() => {
-            speakWithTTS(text);
-        });
-        return;
-    }
-
-    speakWithTTS(text);
+    if (!text) return Promise.resolve();
+    return playLocalAudio(text).catch(() => speakWithTTS(text));
 }
 
 function speakWithTTS(text) {
     if (!window.speechSynthesis) {
-        console.error('❌ SpeechSynthesis not supported');
-        return;
+        console.error('SpeechSynthesis no soportado');
+        return Promise.resolve();
     }
 
-    try {
-        window.speechSynthesis.cancel();
+    return new Promise((resolve) => {
+        try {
+            window.speechSynthesis.cancel();
 
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'es';
-        utterance.rate = state.settings.rate * 0.9;
-        utterance.pitch = 1.0;
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'es';
+            // Honour the configured rate directly so the control is truthful (P2-12).
+            utterance.rate = Math.min(2, Math.max(0.5, state.settings.rate || 1));
+            utterance.pitch = 1.0;
+            // Resolve when speech ends (or errors) so word-by-word mode advances
+            // exactly when the previous word is done, never on a fixed timer.
+            utterance.onend = () => resolve();
+            utterance.onerror = () => resolve();
 
-        const voices = window.speechSynthesis.getVoices();
-        if (voices.length === 0) {
-            console.warn('⚠️ No voices available, using system default');
+            const voices = window.speechSynthesis.getVoices();
+            if (voices.length === 0) {
+                window.speechSynthesis.speak(utterance);
+                return;
+            }
+
+            // Selected voice, then es-MX/Premium Spanish, then any Spanish voice.
+            const spanishVoices = voices.filter(v => v.lang.startsWith('es'));
+            const voice = voices.find(v => v.voiceURI === state.settings.voiceURI && v.lang.startsWith('es'))
+                || spanishVoices.find(v => v.lang.includes('es-MX') || v.name.includes('Premium'))
+                || spanishVoices[0];
+
+            if (voice) utterance.voice = voice;
+
             window.speechSynthesis.speak(utterance);
-            return;
+        } catch (e) {
+            console.error('TTS Error:', e);
+            resolve();
         }
-
-        // Try selected voice, then es-MX/Premium Spanish, then any Spanish voice
-        const spanishVoices = voices.filter(v => v.lang.startsWith('es'));
-        const voice = voices.find(v => v.voiceURI === state.settings.voiceURI && v.lang.startsWith('es'))
-            || spanishVoices.find(v => v.lang.includes('es-MX') || v.name.includes('Premium'))
-            || spanishVoices[0];
-
-        if (voice) {
-            utterance.voice = voice;
-            console.log(`🔊 Speaking with: ${voice.name} (${voice.lang})`);
-        } else {
-            console.warn('⚠️ No Spanish voice found, speaking with lang=es hint');
-        }
-
-        window.speechSynthesis.speak(utterance);
-    } catch (e) {
-        console.error('❌ TTS Error:', e);
-    }
+    });
 }
 
 async function speakPhrase() {
@@ -847,10 +1221,11 @@ async function speakPhrase() {
     }
 
     if (state.settings.speechMode === 'word') {
-        // Word-by-word mode (Pedagogical)
+        // Word-by-word mode (pedagogical): wait for each word to finish, then a
+        // short, deliberate gap - no fixed timeout that could clip long words.
         for (const item of items) {
-            speakText(item.text);
-            await new Promise(r => setTimeout(r, 800)); // Pause between words
+            await speakText(item.text);
+            await new Promise(r => setTimeout(r, 150));
         }
     } else {
         // Fluent mode
@@ -861,6 +1236,17 @@ async function speakPhrase() {
     logActivity(`Frase completa: ${items.map(i => i.text).join(" ")}`);
 }
 
+// Render an image preview safely via the DOM API (never string HTML) so an
+// image value can't smuggle markup into the editor (P0-10).
+function setPreviewImage(src) {
+    dom.preview.textContent = '';
+    const img = document.createElement('img');
+    img.src = src;
+    img.style.maxHeight = '100px';
+    img.style.borderRadius = '10px';
+    dom.preview.appendChild(img);
+}
+
 function handleImageSelect(e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -868,7 +1254,7 @@ function handleImageSelect(e) {
     const reader = new FileReader();
     reader.onload = (ev) => {
         state.pendingImage = ev.target.result;
-        dom.preview.innerHTML = `<img src="${state.pendingImage}" style="max-height:100px; border-radius:10px;">`;
+        setPreviewImage(state.pendingImage);
     };
     reader.readAsDataURL(file);
 }
@@ -937,7 +1323,7 @@ window.editItem = (id) => {
     dom.itemCategory.value = item.category;
     dom.itemColor.value = item.color;
     if (item.image) {
-        dom.preview.innerHTML = `<img src="${item.image}" style="max-height:100px; border-radius:10px;">`;
+        setPreviewImage(item.image);
     } else {
         dom.preview.textContent = "Sin imagen";
     }
@@ -1025,11 +1411,58 @@ async function ensureLibraryItemsPresent() {
     }
 }
 
+// Gather every cacheable asset URL (pictos + pre-recorded audio) so the Service
+// Worker can store them all for fully-offline use (P1-13).
+function collectOfflineAssetUrls() {
+    const urls = new Set();
+    for (const item of state.items) {
+        // Only same-origin bundled images are worth precaching (data: URIs are
+        // already stored in the DB; remote ARASAAC images stay on-demand).
+        if (typeof item.image === 'string' && item.image.startsWith('assets/')) {
+            urls.add(item.image);
+        }
+        // Matching pre-recorded clip for single-word terms, if any.
+        const clean = item.text.toLowerCase().trim()
+            .replace(/\s+/g, '_')
+            .normalize('NFD').replace(/[̀-ͯ]/g, '');
+        if (clean && !clean.includes('_')) {
+            urls.add(`assets/audio/${clean}.mp3`);
+        }
+    }
+    return [...urls];
+}
+
+function downloadAllForOffline() {
+    const controller = navigator.serviceWorker && navigator.serviceWorker.controller;
+    if (!controller) {
+        flashStatus('El modo sin conexión aún no está listo. Recarga e intenta de nuevo.');
+        return;
+    }
+    const urls = collectOfflineAssetUrls();
+    if (urls.length === 0) {
+        flashStatus('No hay recursos para descargar');
+        return;
+    }
+    if (dom.downloadProgress) dom.downloadProgress.classList.remove('hidden');
+    if (dom.btnDownloadAll) dom.btnDownloadAll.disabled = true;
+    updateDownloadProgress(0, urls.length);
+    controller.postMessage({ type: 'PRECACHE_ALL', urls });
+}
+
+function updateDownloadProgress(done, total) {
+    const pct = total ? Math.round((done / total) * 100) : 0;
+    if (dom.downloadBarFill) dom.downloadBarFill.style.width = `${pct}%`;
+    if (dom.downloadProgressText) dom.downloadProgressText.textContent = `${pct}%`;
+}
+
 function exportData() {
     const payload = {
         items: state.items,
         settings: state.settings,
         phrase: state.phrase,
+        // Include the therapist's configuration so a backup fully restores it (P2-12).
+        hiddenTags: [...state.tutorMode.hiddenTags],
+        coreWords: state.coreWords,
         exportedAt: new Date().toISOString()
     };
 
@@ -1071,6 +1504,19 @@ async function importData(e) {
         };
         state.phrase = Array.isArray(parsed.phrase) ? parsed.phrase : [];
 
+        // Restore the therapist's configuration too, if the backup carries it (P2-12).
+        if (Array.isArray(parsed.hiddenTags)) {
+            state.tutorMode.hiddenTags = new Set(parsed.hiddenTags.map(String));
+            localStorage.setItem(LS_KEYS.hiddenTags, JSON.stringify([...state.tutorMode.hiddenTags]));
+        }
+        if (Array.isArray(parsed.coreWords)) {
+            state.coreWords = parsed.coreWords.filter(id => state.items.some(i => i.id === id));
+            saveCoreWords();
+        } else {
+            // Items changed; drop any core ids that no longer exist.
+            initCoreWords();
+        }
+
         save();
         applySettings();
         render();
@@ -1085,16 +1531,70 @@ async function importData(e) {
     }
 }
 
+// Only allow images from trusted sources: bundled assets, inline data URIs or
+// ARASAAC. Anything else (javascript:, external http, etc.) is dropped (P0-10).
+function sanitizeImage(image) {
+    if (typeof image !== 'string') return null;
+    const value = image.trim();
+    if (/^assets\//.test(value)) return value;
+    if (/^data:image\/(png|jpe?g|gif|webp|svg\+xml);/i.test(value)) return value;
+    if (/^https:\/\/(static|api)\.arasaac\.org\//i.test(value)) return value;
+    return null;
+}
+
+// Accept only a safe CSS colour token so it can't break out of an inline style.
+function sanitizeColor(color) {
+    if (typeof color !== 'string') return '#22c55e';
+    const value = color.trim();
+    if (/^#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(value)) return value;
+    if (/^rgb\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*\)$/i.test(value)) return value;
+    return '#22c55e';
+}
+
+// Relative luminance (0 dark … 1 light) of a hex colour, for contrast decisions.
+function colorLuminance(hex) {
+    let c = String(hex || '').trim().replace('#', '');
+    if (c.length === 3) c = c.split('').map(ch => ch + ch).join('');
+    if (c.length < 6) return 1; // unknown → assume light
+    const r = parseInt(c.slice(0, 2), 16) / 255;
+    const g = parseInt(c.slice(2, 4), 16) / 255;
+    const b = parseInt(c.slice(4, 6), 16) / 255;
+    const lin = (v) => (v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4));
+    return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+}
+
+// Pick readable ink for a tile painted on an arbitrary user colour, and expose it
+// as --tile-ink so the elements sitting directly on that colour (grammar tag,
+// placeholder letter) stay legible on both light and dark tiles (P1-18).
+function applyReadableText(el, bgColor) {
+    el.style.borderColor = bgColor;
+    const ink = colorLuminance(bgColor) < 0.5 ? '#ffffff' : '#141218';
+    el.style.setProperty('--tile-ink', ink);
+    el.classList.toggle('tile-dark-bg', colorLuminance(bgColor) < 0.5);
+}
+
+function sanitizeItem(item) {
+    return {
+        id: String(item.id),
+        text: String(item.text).slice(0, 80),
+        category: String(item.category || 'Varios').slice(0, 40),
+        color: sanitizeColor(item.color),
+        image: sanitizeImage(item.image),
+        pos: item.pos ? String(item.pos).slice(0, 8) : undefined,
+        isFavorite: !!item.isFavorite
+    };
+}
+
 async function replaceAllItems(items) {
     const sanitized = items
-        .filter(item => item && item.id && item.text)
-        .map(item => ({
-            id: String(item.id),
-            text: String(item.text),
-            category: String(item.category || 'Varios'),
-            color: item.color || '#22c55e',
-            image: item.image || null
-        }));
+        .filter(item => item && item.id != null && item.text)
+        .map(sanitizeItem);
+
+    if (storageMode === 'local') {
+        localStorage.setItem(LS_KEYS.items, JSON.stringify(sanitized));
+        state.items = sanitized;
+        return;
+    }
 
     const tx = db.transaction(['items'], 'readwrite');
     const store = tx.objectStore('items');
@@ -1144,7 +1644,13 @@ function renderArasaacResults(pictos) {
         const imgUrl = `https://static.arasaac.org/pictograms/${picto._id}/${picto._id}_300.png`;
         const keyword = picto.keywords[0]?.keyword || 'Icono';
 
-        thumb.innerHTML = `<img src="${imgUrl}" alt="${keyword}" loading="lazy">`;
+        // Build the thumbnail with the DOM API so an ARASAAC keyword can never be
+        // interpreted as HTML (P0-10).
+        const img = document.createElement('img');
+        img.src = imgUrl;
+        img.alt = keyword;
+        img.loading = 'lazy';
+        thumb.appendChild(img);
         thumb.setAttribute('aria-label', `Seleccionar pictograma ${keyword}`);
         thumb.onclick = () => selectArasaacPictogram(picto._id, keyword);
 
@@ -1159,7 +1665,7 @@ async function selectArasaacPictogram(id, label) {
     try {
         const dataUrl = await imageUrlToDataURL(imgUrl);
         state.pendingImage = dataUrl;
-        dom.preview.innerHTML = `<img src="${dataUrl}" style="max-height:100px; border-radius:10px;">`;
+        setPreviewImage(dataUrl);
         if (label && !dom.itemText.value) dom.itemText.value = label;
 
         // Hide results after selection
@@ -1200,11 +1706,61 @@ function updateSearchClearButton() {
 
 // Rendering
 function render() {
+    renderCoreRow();
     renderGrid();
+    renderBreadcrumb(); // after the grid so it can report the visible word count
     renderPhrase();
     renderCategories();
     renderRoutine();
     renderCategoryToggles();
+}
+
+// Always-visible high-frequency vocabulary (N-2). Independent of the current
+// category/search so the most common words are one tap away from anywhere.
+function renderCoreRow() {
+    if (!dom.coreRow) return;
+    dom.coreRow.textContent = '';
+    const coreItems = state.coreWords
+        .map(id => state.items.find(i => i.id === id))
+        .filter(Boolean);
+
+    if (coreItems.length === 0) {
+        dom.coreRow.classList.add('hidden');
+        return;
+    }
+    dom.coreRow.classList.remove('hidden');
+
+    coreItems.forEach(item => {
+        const tile = createTile(item, () => onTileClick(item), { core: true });
+        dom.coreRow.appendChild(tile);
+    });
+}
+
+// Breadcrumb / location title above the board so the user always knows where
+// they are after navigating (N-8).
+function renderBreadcrumb() {
+    if (!dom.boardBreadcrumb) return;
+    dom.boardBreadcrumb.textContent = '';
+    const cat = state.currentCategory;
+    const icon = document.createElement('span');
+    icon.className = 'breadcrumb-icon';
+    icon.textContent = getCategoryIcon(cat);
+    const label = document.createElement('span');
+    label.className = 'breadcrumb-label';
+    if (cat === 'Todas') label.textContent = 'Todas las palabras';
+    else if (cat === '⭐ Favoritos') label.textContent = 'Favoritos';
+    else label.textContent = cat;
+    dom.boardBreadcrumb.appendChild(icon);
+    dom.boardBreadcrumb.appendChild(label);
+
+    // Count of words currently shown, for orientation.
+    const count = dom.grid ? dom.grid.querySelectorAll('.tile:not([data-id="nav-anchor"])').length : 0;
+    if (count > 0) {
+        const badge = document.createElement('span');
+        badge.className = 'breadcrumb-count';
+        badge.textContent = `${count}`;
+        dom.boardBreadcrumb.appendChild(badge);
+    }
 }
 
 
@@ -1220,99 +1776,258 @@ async function renderHistory() {
     history.forEach(entry => {
         const div = document.createElement('div');
         div.className = 'history-entry';
-        div.innerHTML = `
-            <span class="history-time">${entry.date}</span>
-            <span class="history-content">${entry.content}</span>
-        `;
+        const time = document.createElement('span');
+        time.className = 'history-time';
+        time.textContent = entry.date;
+        const content = document.createElement('span');
+        content.className = 'history-content';
+        content.textContent = entry.content; // textContent: never interpret as HTML (P0-10)
+        div.appendChild(time);
+        div.appendChild(content);
         dom.historyList.appendChild(div);
     });
 }
 
-function renderGrid() {
-    dom.grid.innerHTML = "";
-    updateSearchClearButton();
+// Navigate between the top-level board ("Todas") and a category, integrating with
+// the browser history so the system Back button/gesture returns to "Todas"
+// instead of closing the PWA (N-4).
+let categoryHistoryPushed = false;
 
-    // Filter items based on current category (folder) AND Profile
-    let filtered = state.items.filter(item => {
-        const isFav = state.currentCategory === "⭐ Favoritos";
-        const matchesCat = isFav ? item.isFavorite : (state.currentCategory === "Todas" || item.category === state.currentCategory);
+function goToCategory(cat) {
+    state.currentPage = 0; // fresh category starts on page 1 (N-1)
+    if (cat === 'Todas') {
+        if (categoryHistoryPushed) {
+            history.back(); // popstate resets the view — keeps the stack balanced
+            return;
+        }
+        state.currentCategory = 'Todas';
+    } else {
+        if (!categoryHistoryPushed) {
+            history.pushState({ holaac: 'category' }, '');
+            categoryHistoryPushed = true;
+        }
+        state.currentCategory = cat;
+    }
+    render();
+    scrollBoardToTop();
+}
+
+window.addEventListener('popstate', () => {
+    categoryHistoryPushed = false;
+    if (state.currentCategory !== 'Todas') {
+        state.currentCategory = 'Todas';
+        render();
+        scrollBoardToTop();
+    }
+});
+
+// Jump straight to the emergency board from anywhere, one tap (N-5). Switches to
+// the SOS profile and the S.O.S category if present, else stays on the profile.
+function goToSOS() {
+    setBoardProfile('sos');
+    const sosCat = getAllCategories().find(c => sameWord(c, 'S.O.S') || c === 'S.O.S');
+    goToCategory(sosCat || 'Todas');
+    haptic(20);
+}
+
+// Single source of truth for changing the board profile, keeping the header
+// selector and the Settings selector in sync (N-5).
+function setBoardProfile(profile) {
+    state.settings.boardProfile = profile;
+    state.currentPage = 0;
+    if (dom.boardProfile) dom.boardProfile.value = profile;
+    if (dom.headerProfile) dom.headerProfile.value = profile;
+    save();
+}
+
+// A board profile is the single context mechanism: when one is chosen it owns
+// which categories are visible, so the old "profile AND active-categories"
+// double filter (a frequent source of "why can't I see this word?") no longer
+// applies. "General" falls back to the user's active-categories (N-3).
+function itemPassesContext(category) {
+    const profileCats = PROFILE_CATEGORIES[state.settings.boardProfile];
+    if (profileCats) return profileCats.includes(category);
+    return isCategoryActive(category);
+}
+
+function getVisibleItems() {
+    const isFav = state.currentCategory === "⭐ Favoritos";
+    return state.items.filter(item => {
+        const matchesCat = isFav
+            ? item.isFavorite
+            : (state.currentCategory === "Todas" || item.category === state.currentCategory);
         const matchesSearch = item.text.toLowerCase().includes(state.searchQuery) ||
             item.category.toLowerCase().includes(state.searchQuery);
+        const matchesContext = itemPassesContext(item.category);
+        const isHidden = state.tutorMode.hiddenTags.has(item.id);
+        const hiddenOk = state.tutorMode.active || !isHidden;
+        return matchesCat && matchesSearch && matchesContext && hiddenOk;
+    }).sort(compareItems);
+}
 
-        const matchesActiveCategory = isCategoryActive(item.category);
-
-        // Profile logic: Filter by category groups (real category names)
-        const profileCats = PROFILE_CATEGORIES[state.settings.boardProfile];
-        const matchesProfile = !profileCats || profileCats.includes(item.category);
-
-        return matchesCat && matchesSearch && matchesProfile && matchesActiveCategory;
-    });
-
-    // 1. Navigation Anchor (Slot 1: Always Home/Back)
+function makeNavAnchor() {
     const atHome = state.currentCategory === "Todas";
-    const navBtn = createTile({
+    return createTile({
         text: atHome ? "🏠 Inicio" : "← Volver",
         category: "Navegación",
         color: "#64748b",
         id: "nav-anchor"
     }, () => {
-        if (!atHome) state.currentCategory = "Todas";
-        render();
-        // When already home, this slot doubles as "jump to top" for long boards.
-        scrollBoardToTop();
+        if (!atHome) {
+            goToCategory("Todas"); // routes through history so Back stays in sync (N-4)
+        } else {
+            scrollBoardToTop();
+        }
     });
-    dom.grid.appendChild(navBtn);
+}
 
-    // 2. Render stable items
-    // Sort items: Favoritos first, then by ID
-    if (filtered.length === 0) {
-        const empty = document.createElement('div');
-        empty.className = 'grid-empty glass-card';
-        empty.innerHTML = `
-            <p>No encontramos resultados para "${state.searchQuery || state.currentCategory}".</p>
-            <small>Prueba otra búsqueda o activa más categorías desde Ajustes.</small>
-        `;
-        dom.grid.appendChild(empty);
+function renderEmptyState() {
+    const empty = document.createElement('div');
+    empty.className = 'grid-empty glass-card';
+    const p = document.createElement('p');
+    // textContent so a crafted search string can't inject markup (P0-10).
+    p.textContent = `No encontramos resultados para "${state.searchQuery || state.currentCategory}".`;
+    const small = document.createElement('small');
+    small.textContent = 'Prueba otra búsqueda o activa más categorías desde Ajustes.';
+    empty.appendChild(p);
+    empty.appendChild(small);
+    return empty;
+}
+
+function appendItemTile(item) {
+    const isHidden = state.tutorMode.hiddenTags.has(item.id);
+    const tile = createTile(item, () => onTileClick(item));
+    if (isHidden) tile.classList.add('hidden-by-tutor');
+    dom.grid.appendChild(tile);
+}
+
+function renderGrid() {
+    dom.grid.innerHTML = "";
+    updateSearchClearButton();
+    document.body.classList.toggle('paged-mode', !!state.settings.pagedMode);
+
+    const items = getVisibleItems();
+
+    if (state.settings.pagedMode) {
+        renderPagedGrid(items);
+    } else {
+        // Classic scrolling board.
+        dom.grid.appendChild(makeNavAnchor());
+        if (items.length === 0) dom.grid.appendChild(renderEmptyState());
+        items.forEach(appendItemTile);
+        if (dom.pageControls) dom.pageControls.classList.add('hidden');
     }
-
-    // Stable order regardless of favorite status, so words keep a
-    // consistent position (motor planning). Favorites are still
-    // reachable via the "⭐ Favoritos" tab.
-    filtered.sort((a, b) => a.id.localeCompare(b.id)).forEach((item) => {
-        const isHidden = state.tutorMode.hiddenTags.has(item.id);
-
-        // In User View: Skip hidden items
-        if (!state.tutorMode.active && isHidden) return;
-
-        const tile = createTile(item, () => onTileClick(item));
-        if (isHidden) tile.classList.add('hidden-by-tutor');
-
-        dom.grid.appendChild(tile);
-    });
 
     if (state.settings.scanningEnabled) startScanning();
     else stopScanning();
 }
 
-function createTile(item, onClick) {
+// How many columns currently fit, from the tile size and the grid's real width.
+function computeGridColumns() {
+    const width = dom.grid.clientWidth || window.innerWidth;
+    const tile = state.settings.tileSize || 140;
+    const gap = 14; // matches --grid-gap roughly
+    return Math.max(1, Math.floor((width + gap) / (tile + gap)));
+}
+
+// Fixed-position pages with no vertical scroll (N-1). Each word keeps the same
+// slot on its page, which is the basis of motor learning in AAC apps.
+function renderPagedGrid(items) {
+    const cols = computeGridColumns();
+    // Rows that fit the viewport below the grid's top, so a page needs no scroll.
+    const gridTop = dom.grid.getBoundingClientRect().top;
+    const tile = state.settings.tileSize || 140;
+    const gap = 14;
+    const reserve = 96; // space for the page controls below
+    const avail = Math.max(window.innerHeight - gridTop - reserve, tile + gap);
+    const rows = Math.max(2, Math.floor((avail + gap) / (tile + gap)));
+
+    // Reserve the first slot on every page for the nav anchor (stable position).
+    const perPage = Math.max(1, cols * rows - 1);
+    const totalPages = Math.max(1, Math.ceil(items.length / perPage));
+    if (state.currentPage >= totalPages) state.currentPage = totalPages - 1;
+    if (state.currentPage < 0) state.currentPage = 0;
+
+    dom.grid.style.setProperty('--paged-cols', String(cols));
+    dom.grid.appendChild(makeNavAnchor());
+
+    if (items.length === 0) {
+        dom.grid.appendChild(renderEmptyState());
+    } else {
+        const start = state.currentPage * perPage;
+        items.slice(start, start + perPage).forEach(appendItemTile);
+    }
+
+    renderPageControls(totalPages);
+}
+
+function renderPageControls(totalPages) {
+    if (!dom.pageControls) return;
+    dom.pageControls.textContent = '';
+    if (totalPages <= 1) {
+        dom.pageControls.classList.add('hidden');
+        return;
+    }
+    dom.pageControls.classList.remove('hidden');
+
+    const prev = document.createElement('button');
+    prev.type = 'button';
+    prev.className = 'btn pill-nav page-prev';
+    prev.textContent = '◀';
+    prev.setAttribute('aria-label', 'Página anterior');
+    prev.disabled = state.currentPage <= 0;
+    prev.onclick = () => { state.currentPage -= 1; renderGrid(); renderBreadcrumb(); scrollBoardToTop(); };
+
+    const label = document.createElement('span');
+    label.className = 'page-indicator';
+    label.textContent = `Página ${state.currentPage + 1} de ${totalPages}`;
+
+    const next = document.createElement('button');
+    next.type = 'button';
+    next.className = 'btn pill-nav page-next';
+    next.textContent = '▶';
+    next.setAttribute('aria-label', 'Página siguiente');
+    next.disabled = state.currentPage >= totalPages - 1;
+    next.onclick = () => { state.currentPage += 1; renderGrid(); renderBreadcrumb(); scrollBoardToTop(); };
+
+    dom.pageControls.appendChild(prev);
+    dom.pageControls.appendChild(label);
+    dom.pageControls.appendChild(next);
+}
+
+// Stable, human-natural ordering: an explicit `order` field wins when present,
+// otherwise ids are compared numerically so "lib-2" sorts before "lib-10"
+// instead of after it (P1-6).
+function compareItems(a, b) {
+    const oa = Number.isFinite(a.order) ? a.order : Infinity;
+    const ob = Number.isFinite(b.order) ? b.order : Infinity;
+    if (oa !== ob) return oa - ob;
+    return String(a.id).localeCompare(String(b.id), undefined, { numeric: true });
+}
+
+function createTile(item, onClick, opts = {}) {
     const tile = document.createElement('button');
     tile.type = 'button';
-    tile.className = 'tile glass-card';
+    tile.className = 'tile glass-card' + (opts.core ? ' tile-core' : '');
     tile.setAttribute('data-id', item.id);
     tile.setAttribute('data-cat', item.category);
     tile.setAttribute('aria-label', `${item.text}. Categoría ${item.category}`);
 
     if (item.color) {
         tile.style.backgroundColor = item.color;
-        tile.style.borderColor = item.color;
+        applyReadableText(tile, item.color); // auto contrast (P1-18)
     }
 
-    // Favorite Star (Only if not navigation)
-    if (item.id !== "nav-anchor") {
+    const isNav = item.id === "nav-anchor";
+
+    // Favorite star lives only in Tutor/edit mode now: it was a 32px accidental
+    // touch target in the communication view and the referents reserve favoriting
+    // to edit mode (N-9). Everyday users manage favorites via the editor.
+    if (!isNav && !opts.core && state.tutorMode.active) {
         const fav = document.createElement('button');
         fav.type = 'button';
         fav.className = `tile-fav ${item.isFavorite ? 'active' : 'inactive'}`;
-        fav.innerHTML = item.isFavorite ? '⭐' : '☆';
+        fav.textContent = item.isFavorite ? '⭐' : '☆';
         fav.setAttribute('aria-pressed', item.isFavorite ? 'true' : 'false');
         fav.setAttribute('aria-label', item.isFavorite ? `Quitar ${item.text} de favoritos` : `Añadir ${item.text} a favoritos`);
         fav.onclick = (e) => {
@@ -1322,12 +2037,32 @@ function createTile(item, onClick) {
         tile.appendChild(fav);
     }
 
-    // Grammar Tag (V, S, A, etc.)
-    const tag = document.createElement('div');
-    tag.className = 'grammar-tag';
-    const firstLetter = item.category.charAt(0).toUpperCase();
-    tag.textContent = firstLetter;
-    tile.appendChild(tag);
+    // Tutor mode: a pin control to add/remove a word from the fixed core row (N-2
+    // "configurable desde el modo tutor").
+    if (!isNav && state.tutorMode.active) {
+        const pin = document.createElement('button');
+        pin.type = 'button';
+        const pinned = isCore(item.id);
+        pin.className = `tile-core-pin ${pinned ? 'active' : ''}`;
+        pin.textContent = pinned ? '📌' : '📍';
+        pin.setAttribute('aria-pressed', pinned ? 'true' : 'false');
+        pin.setAttribute('aria-label', pinned ? `Quitar ${item.text} del núcleo` : `Fijar ${item.text} en el núcleo`);
+        pin.onclick = (e) => {
+            e.stopPropagation();
+            toggleCore(item.id);
+        };
+        tile.appendChild(pin);
+    }
+
+    // Grammatical tag: a real part-of-speech code (V/S/A/So/O), not the category
+    // initial, so the label is meaningful to a therapist (P1-9).
+    if (!isNav) {
+        const tag = document.createElement('div');
+        tag.className = 'grammar-tag';
+        tag.textContent = getPosLabel(item);
+        tag.setAttribute('aria-hidden', 'true');
+        tile.appendChild(tag);
+    }
 
     const imgContainer = document.createElement('div');
     imgContainer.className = 'tile-img';
@@ -1347,10 +2082,14 @@ function createTile(item, onClick) {
 
     const label = document.createElement('div');
     label.className = 'tile-label';
-    label.innerHTML = `
-        <span class="tile-text">${item.text}</span>
-        <span class="tile-cat">${item.category}</span>
-    `;
+    const textSpan = document.createElement('span');
+    textSpan.className = 'tile-text';
+    textSpan.textContent = item.text; // textContent: user words are never HTML (P0-10)
+    const catSpan = document.createElement('span');
+    catSpan.className = 'tile-cat';
+    catSpan.textContent = item.category;
+    label.appendChild(textSpan);
+    label.appendChild(catSpan);
 
     tile.appendChild(imgContainer);
     tile.appendChild(label);
@@ -1432,10 +2171,19 @@ function renderRoutine() {
     state.routine.forEach(item => {
         const div = document.createElement('div');
         div.className = 'routine-item';
-        div.innerHTML = `
-            ${item.image ? `<img src="${item.image}">` : '<span>?</span>'}
-            <span>${item.text}</span>
-        `;
+        if (item.image) {
+            const img = document.createElement('img');
+            img.src = item.image;
+            img.alt = item.text;
+            div.appendChild(img);
+        } else {
+            const q = document.createElement('span');
+            q.textContent = '?';
+            div.appendChild(q);
+        }
+        const label = document.createElement('span');
+        label.textContent = item.text;
+        div.appendChild(label);
         dom.routineItems.appendChild(div);
     });
 }
@@ -1448,10 +2196,19 @@ function renderPhrase() {
 
         const chip = document.createElement('div');
         chip.className = 'chip';
-        chip.innerHTML = `
-            <span>${item.text}</span>
-            <span class="remove" onclick="event.stopPropagation(); removeChip('${id}')">✕</span>
-        `;
+        const word = document.createElement('span');
+        word.textContent = item.text;
+        const remove = document.createElement('span');
+        remove.className = 'remove';
+        remove.textContent = '✕';
+        // addEventListener instead of an inline handler so an item id can't be
+        // interpolated into an executable string (P0-10).
+        remove.addEventListener('click', (e) => {
+            e.stopPropagation();
+            removeChip(id);
+        });
+        chip.appendChild(word);
+        chip.appendChild(remove);
         dom.chips.appendChild(chip);
     });
 
@@ -1497,16 +2254,14 @@ function renderCategories() {
         const pill = document.createElement('button');
         pill.type = 'button';
         pill.className = `pill ${state.currentCategory === cat ? 'active' : ''}`;
-        pill.innerHTML = getCategoryIcon(cat) + ' ' + (cat === "⭐ Favoritos" ? "Favoritos" : cat);
+        // textContent (icon is a trusted emoji, category name may be user data) (P0-10)
+        pill.textContent = getCategoryIcon(cat) + ' ' + (cat === "⭐ Favoritos" ? "Favoritos" : cat);
         pill.setAttribute('role', 'tab');
         pill.setAttribute('aria-selected', String(state.currentCategory === cat));
         pill.setAttribute('tabindex', state.currentCategory === cat ? '0' : '-1');
         pill.onclick = () => {
-            state.currentCategory = cat;
-            render();
-            // Land at the top of the freshly filtered board instead of keeping a
-            // stale scroll position from the previous, possibly longer category.
-            scrollBoardToTop();
+            // Routed through history so the system Back button returns here (N-4).
+            goToCategory(cat);
         };
         pill.onkeydown = (event) => {
             if (event.key === 'Enter' || event.key === ' ') {
@@ -1566,16 +2321,18 @@ function showCategoryPicker() {
         card.type = 'button';
         card.className = `category-card ${state.currentCategory === cat ? 'active' : ''}`;
         card.style.borderColor = meta.color;
-        card.innerHTML = `
-            <span class="category-icon">${meta.icon}</span>
-            <span class="category-name">${cat}</span>
-        `;
+        const iconSpan = document.createElement('span');
+        iconSpan.className = 'category-icon';
+        iconSpan.textContent = meta.icon;
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'category-name';
+        nameSpan.textContent = cat; // category name may be user data (P0-10)
+        card.appendChild(iconSpan);
+        card.appendChild(nameSpan);
         card.onclick = (e) => {
             e.preventDefault();
-            state.currentCategory = cat;
             modal.close();
-            render();
-            scrollBoardToTop();
+            goToCategory(cat);
         };
         grid.appendChild(card);
     });
@@ -1643,19 +2400,34 @@ function renderCategoryToggles() {
             if (checked) label.classList.add('is-active');
 
             const meta = CATEGORY_METADATA[category] || { icon: "📌" };
-            label.innerHTML = `
-                <div class="toggle-wrapper">
-                    <input type="checkbox" data-category="${category}" aria-label="Activar categoría ${category}" ${checked ? 'checked' : ''} />
-                    <span class="toggle-slider"></span>
-                </div>
-                <div class="text-content">
-                    <span class="main">${meta.icon} ${category}</span>
-                    <span class="sub state-text">${checked ? 'Activa' : 'Inactiva'}</span>
-                </div>
-            `;
+            // Build via DOM so a user-defined category name can't inject markup
+            // through the data-category attribute or the label text (P0-10).
+            const wrapper = document.createElement('div');
+            wrapper.className = 'toggle-wrapper';
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.setAttribute('data-category', category);
+            checkbox.setAttribute('aria-label', `Activar categoría ${category}`);
+            checkbox.checked = checked;
+            const slider = document.createElement('span');
+            slider.className = 'toggle-slider';
+            wrapper.appendChild(checkbox);
+            wrapper.appendChild(slider);
 
-            const checkbox = label.querySelector('input');
-            const stateText = label.querySelector('.state-text');
+            const textContent = document.createElement('div');
+            textContent.className = 'text-content';
+            const mainSpan = document.createElement('span');
+            mainSpan.className = 'main';
+            mainSpan.textContent = `${meta.icon} ${category}`;
+            const stateText = document.createElement('span');
+            stateText.className = 'sub state-text';
+            stateText.textContent = checked ? 'Activa' : 'Inactiva';
+            textContent.appendChild(mainSpan);
+            textContent.appendChild(stateText);
+
+            label.appendChild(wrapper);
+            label.appendChild(textContent);
+
             checkbox.onchange = (e) => {
                 const current = new Set(state.settings.activeCategories || []);
                 if (e.target.checked) current.add(category);
@@ -1705,28 +2477,65 @@ function renderItemList() {
     });
 
     filtered.forEach(item => {
+        // Whole row built via the DOM API: item text/category/id are user data and
+        // must never reach innerHTML or an inline handler string (P0-10).
         const row = document.createElement('div');
         row.className = 'item-row';
-        row.innerHTML = `
-            <div class="item-info">
-                <div class="item-thumb">
-                    ${item.image ? `<img src="${item.image}">` : '<div style="width:100%; height:100%; background:var(--glass);"></div>'}
-                </div>
-                <div class="item-meta">
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <h4>${item.text}</h4>
-                        <span style="cursor:pointer; font-size:1.1rem" onclick="toggleFavorite('${item.id}')">
-                            ${item.isFavorite ? '⭐' : '☆'}
-                        </span>
-                    </div>
-                    <p>${item.category}</p>
-                </div>
-            </div>
-            <div class="item-actions">
-                <button class="btn glass secondary" onclick="editItem('${item.id}')">Modificar</button>
-                <button class="btn glass danger" onclick="removeItem('${item.id}')">Eliminar</button>
-            </div>
-        `;
+
+        const info = document.createElement('div');
+        info.className = 'item-info';
+        const thumb = document.createElement('div');
+        thumb.className = 'item-thumb';
+        if (item.image) {
+            const img = document.createElement('img');
+            img.src = item.image;
+            img.alt = item.text;
+            thumb.appendChild(img);
+        } else {
+            const ph = document.createElement('div');
+            ph.style.cssText = 'width:100%; height:100%; background:var(--glass);';
+            thumb.appendChild(ph);
+        }
+
+        const meta = document.createElement('div');
+        meta.className = 'item-meta';
+        const titleRow = document.createElement('div');
+        titleRow.style.cssText = 'display:flex; align-items:center; gap:8px;';
+        const h4 = document.createElement('h4');
+        h4.textContent = item.text;
+        const favToggle = document.createElement('span');
+        favToggle.style.cssText = 'cursor:pointer; font-size:1.1rem';
+        favToggle.textContent = item.isFavorite ? '⭐' : '☆';
+        favToggle.setAttribute('role', 'button');
+        favToggle.setAttribute('aria-label', item.isFavorite ? `Quitar ${item.text} de favoritos` : `Añadir ${item.text} a favoritos`);
+        favToggle.addEventListener('click', () => toggleFavorite(item.id));
+        titleRow.appendChild(h4);
+        titleRow.appendChild(favToggle);
+        const catP = document.createElement('p');
+        catP.textContent = item.category;
+        meta.appendChild(titleRow);
+        meta.appendChild(catP);
+
+        info.appendChild(thumb);
+        info.appendChild(meta);
+
+        const actions = document.createElement('div');
+        actions.className = 'item-actions';
+        const editBtn = document.createElement('button');
+        editBtn.className = 'btn glass secondary';
+        editBtn.type = 'button';
+        editBtn.textContent = 'Modificar';
+        editBtn.addEventListener('click', () => editItem(item.id));
+        const delBtn = document.createElement('button');
+        delBtn.className = 'btn glass danger';
+        delBtn.type = 'button';
+        delBtn.textContent = 'Eliminar';
+        delBtn.addEventListener('click', () => removeItem(item.id));
+        actions.appendChild(editBtn);
+        actions.appendChild(delBtn);
+
+        row.appendChild(info);
+        row.appendChild(actions);
         dom.itemList.appendChild(row);
     });
 }
@@ -1736,6 +2545,14 @@ window.toggleFavorite = async (id) => {
     if (!item) return;
     item.isFavorite = !item.isFavorite;
     await saveItemDB(item);
+
+    // If we just removed the last favorite while viewing the Favoritos tab, that
+    // tab is about to vanish — fall back to "Todas" so the board isn't left
+    // empty with no explanation (P1-7).
+    if (state.currentCategory === "⭐ Favoritos" && !state.items.some(i => i.isFavorite)) {
+        state.currentCategory = "Todas";
+    }
+
     render();
     renderItemList();
 };
@@ -1785,38 +2602,46 @@ function loadVoices() {
         dom.voiceSelect.appendChild(opt);
     });
 
-    // Ensure at least one Spanish voice is selected
+    // Ensure at least one Spanish voice is selected, and persist the fallback so
+    // it survives a reload (P2-12).
     if (dom.voiceSelect.selectedIndex === -1 && dom.voiceSelect.options.length > 0) {
         dom.voiceSelect.selectedIndex = 0;
         state.settings.voiceURI = dom.voiceSelect.options[0].value;
+        save();
     }
 
     console.log(`✅ Loaded ${spanishVoices.length} Spanish voices (${voices.length} total)`);
 }
 
-// Scanning Logic
-function startScanning() {
-    stopScanning();
-    const tiles = Array.from(dom.grid.querySelectorAll('.tile'));
-    if (tiles.length === 0) return;
+// ── Scanning ──────────────────────────────────────────────────────────────
+// Two strategies: classic linear scanning for the scrolling board, and
+// row-column scanning over the visible page in paged mode (N-6). Row-column
+// first highlights a whole row; the switch press descends into that row and
+// then scans its cells — so a full sweep is O(rows+cols), not O(all tiles).
 
-    state.scanning.index = 0;
-    state.scanning.active = true;
-    highlightTile(tiles[0]);
-
-    const stepMs = Math.round((state.settings.scanSpeed || 2) * 1000);
-    state.scanning.timer = setInterval(() => {
-        state.scanning.index = (state.scanning.index + 1) % tiles.length;
-        tiles.forEach(t => t.classList.remove('scanning-focus'));
-        highlightTile(tiles[state.scanning.index]);
-    }, stepMs);
+function scanTiles() {
+    return Array.from(dom.grid.querySelectorAll('.tile'));
 }
 
-function stopScanning() {
-    clearInterval(state.scanning.timer);
-    state.scanning.active = false;
-    state.scanning.index = -1;
-    dom.grid.querySelectorAll('.tile').forEach(t => t.classList.remove('scanning-focus'));
+function getRowTiles(row) {
+    const tiles = scanTiles();
+    const c = Math.max(1, state.scanning.cols);
+    return tiles.slice(row * c, (row + 1) * c);
+}
+
+function clearScanHighlights() {
+    dom.grid.querySelectorAll('.tile').forEach(t => t.classList.remove('scanning-focus', 'scanning-row'));
+}
+
+function highlightRow(row) {
+    clearScanHighlights();
+    getRowTiles(row).forEach(t => t.classList.add('scanning-row'));
+}
+
+function highlightCell() {
+    clearScanHighlights();
+    const cell = getRowTiles(state.scanning.row)[state.scanning.col];
+    if (cell) cell.classList.add('scanning-focus');
 }
 
 function highlightTile(tile) {
@@ -1825,10 +2650,81 @@ function highlightTile(tile) {
     tile.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
+function startScanning() {
+    stopScanning();
+    const tiles = scanTiles();
+    if (tiles.length === 0) return;
+
+    state.scanning.active = true;
+    const stepMs = Math.round((state.settings.scanSpeed || 2) * 1000);
+
+    if (state.settings.pagedMode) {
+        // Row-column over the fixed page.
+        const cols = computeGridColumns();
+        state.scanning.cols = cols;
+        state.scanning.rows = Math.ceil(tiles.length / cols);
+        state.scanning.phase = 'row';
+        state.scanning.row = 0;
+        state.scanning.col = 0;
+        highlightRow(0);
+        state.scanning.timer = setInterval(() => {
+            if (state.scanning.phase === 'row') {
+                state.scanning.row = (state.scanning.row + 1) % state.scanning.rows;
+                highlightRow(state.scanning.row);
+            } else {
+                const rowTiles = getRowTiles(state.scanning.row);
+                if (rowTiles.length === 0) return;
+                state.scanning.col = (state.scanning.col + 1) % rowTiles.length;
+                highlightCell();
+            }
+        }, stepMs);
+    } else {
+        // Linear over the whole (scrolling) list.
+        state.scanning.phase = 'linear';
+        state.scanning.index = 0;
+        highlightTile(tiles[0]);
+        state.scanning.timer = setInterval(() => {
+            state.scanning.index = (state.scanning.index + 1) % tiles.length;
+            clearScanHighlights();
+            highlightTile(tiles[state.scanning.index]);
+        }, stepMs);
+    }
+}
+
+function stopScanning() {
+    clearInterval(state.scanning.timer);
+    state.scanning.active = false;
+    state.scanning.index = -1;
+    state.scanning.phase = 'linear';
+    clearScanHighlights();
+}
+
 function selectScanningElement() {
-    const tiles = Array.from(dom.grid.querySelectorAll('.tile'));
-    const current = tiles[state.scanning.index];
-    if (current) current.click();
+    if (!state.scanning.active) return;
+
+    if (state.scanning.phase === 'linear') {
+        const cell = scanTiles()[state.scanning.index];
+        if (cell) cell.click();
+        return;
+    }
+
+    if (state.scanning.phase === 'row') {
+        // Descend into the highlighted row and start scanning its cells.
+        state.scanning.phase = 'cell';
+        state.scanning.col = 0;
+        highlightCell();
+        return;
+    }
+
+    // phase === 'cell': activate the highlighted cell.
+    const cell = getRowTiles(state.scanning.row)[state.scanning.col];
+    if (cell) cell.click();
+    // If the click didn't rebuild the grid, resume scanning from the row level.
+    if (state.scanning.active) {
+        state.scanning.phase = 'row';
+        state.scanning.col = 0;
+        highlightRow(state.scanning.row);
+    }
 }
 
 function applySettings() {
@@ -1838,6 +2734,7 @@ function applySettings() {
     dom.tapMode.value = state.settings.tapMode;
     dom.lockEdit.checked = state.settings.lockEdit;
     dom.scanningEnabled.checked = state.settings.scanningEnabled || false;
+    if (dom.pagedMode) dom.pagedMode.checked = state.settings.pagedMode || false;
     if (dom.scanSpeed) {
         const sp = state.settings.scanSpeed || 2;
         dom.scanSpeed.value = sp;
@@ -1847,6 +2744,7 @@ function applySettings() {
     // Professional Features
     dom.showRoutine.checked = state.settings.showRoutine || false;
     dom.boardProfile.value = state.settings.boardProfile || "default";
+    if (dom.headerProfile) dom.headerProfile.value = state.settings.boardProfile || "default";
     dom.routineBar.classList.toggle('hidden', !state.settings.showRoutine);
     updateCategoryNavState();
 
@@ -1867,4 +2765,10 @@ function applySettings() {
     }
 }
 
-init();
+// Last-ditch guard: if anything in init() throws before we render, surface a
+// clear message instead of leaving the user stuck on "Cargando..." (P0-1).
+init().catch((err) => {
+    console.error('Fallo crítico al iniciar la app:', err);
+    const status = document.getElementById('statusText');
+    if (status) status.textContent = 'Ocurrió un error al iniciar. Recarga la página.';
+});

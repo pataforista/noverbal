@@ -4,7 +4,9 @@ const https = require('https');
 
 // We use a clean approach to download TTS audio files for the local library
 // This provides studio-quality, offline audio.
-const DIRECTORY_AUDIO = path.join(__dirname, 'assets', 'audio');
+// Repo root is one level up now that this script lives in tools/.
+const ROOT = path.join(__dirname, '..');
+const DIRECTORY_AUDIO = path.join(ROOT, 'assets', 'audio');
 
 if (!fs.existsSync(DIRECTORY_AUDIO)) {
     fs.mkdirSync(DIRECTORY_AUDIO, { recursive: true });

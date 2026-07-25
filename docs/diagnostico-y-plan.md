@@ -8,17 +8,27 @@ Cada hallazgo lleva un estado: **⬜ pendiente**, **🟡 parcial** o **✅ hecho
 
 ---
 
-## Estado del trabajo (última actualización: 2026-07-23)
+## Estado del trabajo (última actualización: 2026-07-25)
 
-**Entregado**
+**Todas las fases del plan (0–7) están entregadas.** La Fase 0 (feel + accesibilidad) se entregó el 2026-07-23; las Fases 1–7 el 2026-07-25 en la rama `claude/plan-de-mejora-esh7ya`. Cada cambio se verificó con un smoke test headless (Chromium/Playwright) que arranca la app real y comprueba el arranque sin errores, el compositor de frase, la fila de núcleo, la navegación con el botón Atrás, el botón SOS, la ausencia de estrella en la vista de comunicación, las etiquetas gramaticales reales y el modo páginas.
 
-- **Feedback táctil y pulido de interacción** (2026-07-23, rama `claude/navigation-accessibility-review-8leggm`, ver `docs/revision-navegacion-y-feedback.md`): ripple Material desde el punto de contacto, vibración háptica configurable (ajuste «Vibración al tocar»), pulsado instantáneo (transiciones específicas en vez de `all 0.3s` + `touch-action: manipulation`), scroll al inicio del board al cambiar de categoría, y el hueco «Inicio» deja de ser botón muerto. Cierra **N-7** y parte de **N-8**.
-- **Accesibilidad — victorias rápidas** (mismo cambio): `aria-live` retirado del `#grid` (**P1-17 ✅**), `prefers-color-scheme` respetado en el primer arranque (**P2-19 ✅**), `theme-color` dinámico (**P2-12** parcial 🟡), foco restaurado al cerrar el selector de categorías (**P2-20 ✅**).
+**Entregado — Fase 0** (2026-07-23, ver `docs/revision-navegacion-y-feedback.md`): ripple Material desde el punto de contacto, vibración háptica configurable, pulsado instantáneo, scroll al inicio al navegar, `aria-live` retirado del `#grid` (**P1-17 ✅**), `prefers-color-scheme` en el primer arranque (**P2-19 ✅**), `theme-color` dinámico, foco restaurado al cerrar el selector (**P2-20 ✅**). Cierra **N-7** y parte de **N-8**.
 
-**Siguientes candidatos sugeridos** (orden de impacto/esfuerzo)
+**Entregado — Fase 1 · Correcciones críticas** (2026-07-25): `init()` envuelto en try/catch con degradación a `localStorage` si falla IndexedDB y a `DEFAULT_ITEMS` si falla `library.json` (**P0-1 ✅**); el barrido ignora Espacio/Enter mientras se escribe en inputs/dialogs (**P0-2 ✅**); voz palabra-por-palabra encadenada por `onended`/`onend` en vez de `setTimeout` fijo (**P0-3 ✅**); todo el `innerHTML` con datos no confiables sustituido por `textContent`/`createElement`/`addEventListener` y saneado de import con lista blanca de imágenes/color (**P0-10 ✅**); bitácora migrada a `autoIncrement` (dbVersion 3, migración aditiva) (**P1-4 ✅**); `repairCoreImages` compara cada ítem contra su propia imagen (**P1-5 ✅**); favoritos huérfanos vuelven a «Todas» (**P1-7 ✅**).
 
-1. **Fase 1 · Correcciones críticas** — sigue siendo la prioridad: arranque con try/catch, filtro de foco en barrido, encadenado real palabra-por-palabra, `innerHTML` inseguro, bitácora con `autoIncrement`, `repairCoreImages`, favoritos huérfanos.
-2. **Fase 4 · Navegación (victorias rápidas restantes)** — vocabulario nuclear fijo (N-2), Atrás del sistema con `history.pushState` (N-4), selector de perfil + SOS a 1 toque (N-5), breadcrumb de categoría (resto de N-8), estrella solo en modo tutor (N-9).
+**Entregado — Fase 2 · Fundamentos del repo** (2026-07-25): `LICENSE` MIT + atribución ARASAAC (**P0-21 ✅**), `README.md` completo (**P1-22 ✅**), scripts movidos a `tools/` con rutas corregidas (**P2-25 ✅**), `.gitignore`.
+
+**Entregado — Fase 3 · Offline y PWA** (2026-07-25): botón «Descargar todo para uso sin conexión» que precachea pictos+audio vía mensaje al SW con barra de progreso (**P1-13 ✅**); fuente Plus Jakarta Sans autoalojada en `assets/fonts/` y Google Fonts eliminado del HTML y del SW (**P1-14 ✅**); manifest completo con maskable dedicado, purposes separados, `lang`/`scope`/`id`, favicon-16 referenciado (**P2-15 ✅**); instalación del SW resiliente y versión sellada con el hash del commit en el deploy (**P2-16 ✅**).
+
+**Entregado — Fase 4 · Navegación (victorias rápidas)** (2026-07-25): fila de vocabulario nuclear fija y configurable desde el Modo Tutor (**N-2 ✅**); botón Atrás del sistema con `history.pushState`/`popstate` (**N-4 ✅**); selector de perfil + botón SOS a 1 toque en la barra superior (**N-5 ✅**); breadcrumb de categoría sobre el tablero (**N-8 ✅**); estrella de favorito solo en Modo Tutor (**N-9 ✅**).
+
+**Entregado — Fase 5 · Contenido y UX** (2026-07-25): orden numérico estable con campo `order` opcional (**P1-6 ✅**); «Baño» deduplicado en `library.json` y defaults omitidos por texto en el primer arranque (**P1-8 ✅**); etiquetas gramaticales reales (V/S/A/So/O por categoría, con override `pos`) (**P1-9 ✅**); PIN configurable con hash SHA-256, exigido para Modo Tutor, desbloqueo de edición y borrado de bitácora (**P1-11 ✅**); contraste automático de texto según la luminancia del color (**P1-18 ✅**).
+
+**Entregado — Fase 6 · Acceso motor** (2026-07-25): paginación con posiciones fijas sin scroll (opt-in «Modo páginas») (**N-1 ✅**); barrido fila-columna sobre la página visible (**N-6 ✅**); perfil como mecanismo único de contexto (absorbe «categorías activas»), eliminando el doble filtro (**N-3 ✅**).
+
+**Entregado — Fase 7 · Calidad sostenible** (2026-07-25): ESLint (flat config), smoke tests de Playwright y CI en GitHub Actions (lint+test) con workflow de despliegue a GitHub Pages que sella la versión del SW (**P2-24 ✅**); coherencia de voz —velocidad real sin `×0.9`, `hiddenTags`/núcleo en export/import, `save()` en el fallback de `loadVoices`— (**P2-12 ✅**).
+
+**Diferido a futuro** (registrado, no bloqueante): modularizar `app.js` en módulos ES (**P2-23**) y soporte Open Board Format (OBF). Ambos son refactors/funcionalidades grandes cuyo riesgo de regresión no compensa hacerlos «a ciegas» sobre una herramienta de uso asistencial; se recomiendan como trabajo futuro con verificación interactiva.
 
 ---
 
@@ -175,14 +185,15 @@ Un solo nivel: pestañas horizontales de categoría (+ modal selector), buscador
 | Fase | Estado | Contenido | Hallazgos | Esfuerzo |
 |------|--------|-----------|-----------|----------|
 | **0 · Feel y accesibilidad rápida** | ✅ hecho (2026-07-23) | Feedback táctil (ripple + háptico), pulsado instantáneo, `touch-action`, scroll al inicio al navegar, `aria-live` del grid, `prefers-color-scheme`, `theme-color` dinámico, foco tras cerrar el selector | N-7, N-8 (parcial), P1-17, P2-19, P2-20, P2-12 (parcial) | — |
-| **1 · Correcciones críticas** | ⬜ pendiente | try/catch de arranque con degradación, filtro de foco en barrido, encadenado real palabra-por-palabra, eliminación de `innerHTML` inseguro + saneado de import, bitácora con `autoIncrement`, fix `repairCoreImages`, favoritos huérfanos | P0-1, P0-2, P0-3, P0-10, P1-4, P1-5, P1-7 | 1–2 días |
-| **2 · Fundamentos del repo** | ⬜ pendiente | `LICENSE` MIT + atribución ARASAAC, `README.md`, mover scripts a `tools/`, `.gitignore` | P0-21, P1-22, P2-25 | ~½ día |
-| **3 · Offline y PWA de verdad** | ⬜ pendiente | Precache generado desde `library.json` (o descarga bajo demanda), fuente autoalojada, manifest completo, ~~theme-color dinámico~~ (✅ hecho en Fase 0), versión de SW automatizada | P1-13, P1-14, P2-15, P2-16 | 1 día |
-| **4 · Navegación: victorias rápidas** | ⬜ pendiente (N-7 ✅) | Fila de núcleo fija, Atrás del sistema con `pushState`, selector de perfil + SOS a 1 toque, breadcrumb de categoría, ~~quitar botón "Inicio" muerto~~ (✅ Fase 0), estrella solo en modo tutor | N-2, N-4, N-5, N-8, N-9 | 1–2 días |
-| **5 · Contenido y UX** | ⬜ pendiente (P1-17 ✅) | Deduplicar "Baño" y defaults, orden numérico/estable, etiquetas gramaticales reales (`pos` en library.json), PIN configurable + candado coherente, contraste automático, ~~`aria-live` ajustado~~ (✅ Fase 0) | P1-6, P1-8, P1-9, P1-11, P1-18 | 1–2 días |
-| **6 · Navegación: rediseño de acceso motor** | ⬜ pendiente | Paginación con posiciones fijas (sin scroll), barrido fila-columna sobre la página visible, unificación de perfiles/categorías activas | N-1, N-3, N-6 | 3–4 días |
-| **7 · Calidad sostenible** | ⬜ pendiente (P2-19, P2-20 ✅) | Modularizar `app.js`, ESLint, smoke tests Playwright, CI en GitHub Actions con deploy; explorar compatibilidad Open Board Format | P2-23, P2-24, P2-12 (resto) | 2–3 días |
+| **1 · Correcciones críticas** | ✅ hecho (2026-07-25) | try/catch de arranque con degradación, filtro de foco en barrido, encadenado real palabra-por-palabra, eliminación de `innerHTML` inseguro + saneado de import, bitácora con `autoIncrement`, fix `repairCoreImages`, favoritos huérfanos | P0-1, P0-2, P0-3, P0-10, P1-4, P1-5, P1-7 | ✅ |
+| **2 · Fundamentos del repo** | ✅ hecho (2026-07-25) | `LICENSE` MIT + atribución ARASAAC, `README.md`, mover scripts a `tools/`, `.gitignore` | P0-21, P1-22, P2-25 | ✅ |
+| **3 · Offline y PWA de verdad** | ✅ hecho (2026-07-25) | Descarga bajo demanda desde `library.json`, fuente autoalojada, manifest completo, versión de SW automatizada por hash de commit | P1-13, P1-14, P2-15, P2-16 | ✅ |
+| **4 · Navegación: victorias rápidas** | ✅ hecho (2026-07-25) | Fila de núcleo fija, Atrás del sistema con `pushState`, selector de perfil + SOS a 1 toque, breadcrumb de categoría, estrella solo en modo tutor | N-2, N-4, N-5, N-8, N-9 | ✅ |
+| **5 · Contenido y UX** | ✅ hecho (2026-07-25) | Deduplicar "Baño" y defaults, orden numérico/estable, etiquetas gramaticales reales, PIN configurable + candado coherente, contraste automático | P1-6, P1-8, P1-9, P1-11, P1-18 | ✅ |
+| **6 · Navegación: rediseño de acceso motor** | ✅ hecho (2026-07-25) | Paginación con posiciones fijas (sin scroll, opt-in), barrido fila-columna sobre la página visible, unificación de perfiles/categorías activas | N-1, N-3, N-6 | ✅ |
+| **7 · Calidad sostenible** | ✅ hecho (2026-07-25) | ESLint, smoke tests Playwright, CI en GitHub Actions con deploy; coherencia de voz/export | P2-24, P2-12 (resto) | ✅ |
+| **Futuro** | ⬜ diferido | Modularizar `app.js` en módulos ES; explorar compatibilidad Open Board Format (OBF) | P2-23, OBF | — |
 
-**Criterio de orden:** la **Fase 0** ya cerró la fricción sensorial inmediata (lo que se sentía «clunky»). La **Fase 1** sigue siendo la prioridad: elimina los fallos que hoy pueden dejar la app inservible o cortar la voz al usuario final (población especialmente sensible a fallos impredecibles); la Fase 2 es barata y desbloquea la legalidad open source; la Fase 3 consolida la promesa offline; la Fase 4 cierra con poco esfuerzo el resto de la brecha de practicidad frente a otras apps CAA; las Fases 5–7 consolidan contenido clínico, acceso motor y mantenibilidad.
+**Resultado:** las ocho fases del plan (0–7) están entregadas y verificadas con un smoke test headless. Solo quedan diferidos como trabajo futuro la modularización de `app.js` (**P2-23**) y el soporte OBF, por ser refactors/funcionalidades grandes cuyo riesgo de regresión conviene abordar con verificación interactiva.
 
-Cada fase cabe en un PR independiente y revisable; ninguna requiere migración destructiva de datos de usuarios existentes (la Fase 1 sube `dbVersion` a 3 con migración aditiva del store `history`).
+Ninguna fase requirió migración destructiva de datos de usuarios existentes (la Fase 1 subió `dbVersion` a 3 con migración aditiva del store `history`).
