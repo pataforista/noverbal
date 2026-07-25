@@ -1,0 +1,22 @@
+{
+  "name": "holaac",
+  "version": "1.0.0",
+  "description": "HolAAC! — Tablero de comunicación aumentativa y alternativa (SAAC), gratuito y offline-first.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "eslint .",
+    "test": "playwright test",
+    "test:install": "playwright install --with-deps chromium",
+    "serve": "python3 -m http.server 8137"
+  },
+  "keywords": ["aac", "saac", "pwa", "accesibilidad", "autismo", "afasia", "comunicacion"],
+  "author": "César Celada",
+  "license": "MIT",
+  "devDependencies": {
+    "@eslint/js": "^9.15.0",
+    "@playwright/test": "^1.49.1",
+    "eslint": "^9.15.0",
+    "globals": "^15.12.0"
+  }
+}

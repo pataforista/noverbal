@@ -2,12 +2,15 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 
+// Repo root is one level up now that this script lives in tools/.
+const ROOT = path.join(__dirname, '..');
+
 // Folder where the local library will be stored
-const DIRECTORY_LOCAL = path.join(__dirname, 'assets', 'pictos');
+const DIRECTORY_LOCAL = path.join(ROOT, 'assets', 'pictos');
 
 // Create folder if it doesn't exist
-if (!fs.existsSync(path.join(__dirname, 'assets'))) {
-    fs.mkdirSync(path.join(__dirname, 'assets'));
+if (!fs.existsSync(path.join(ROOT, 'assets'))) {
+    fs.mkdirSync(path.join(ROOT, 'assets'));
 }
 if (!fs.existsSync(DIRECTORY_LOCAL)) {
     fs.mkdirSync(DIRECTORY_LOCAL);
