@@ -130,8 +130,10 @@ const state = {
         active: false,
         index: -1,
         timer: null,
-        // Row-column scanning over the visible page (N-6).
-        phase: 'linear', // 'linear' | 'row' | 'cell'
+        // Two-level group scanning: region first, then its contents.
+        phase: 'group', // 'group' | 'linear' | 'row' | 'cell'
+        group: 0,       // index into the active scan regions
+        passes: 0,      // completed sweeps of a region, to auto-escape it
         row: 0,
         col: 0,
         cols: 1,
@@ -484,6 +486,8 @@ const dom = {
     downloadProgressText: document.getElementById('downloadProgressText'),
     headerSpeakToggle: document.getElementById('headerSpeakToggle'),
     btnThemeToggle: document.getElementById('btnThemeToggle'),
+    btnMore: document.getElementById('btnMore'),
+    headerOverflow: document.getElementById('headerOverflow'),
     // Writing Module
     btnWriting: document.getElementById('btnWriting'),
     writingPanel: document.getElementById('writingPanel'),
@@ -577,6 +581,30 @@ function scrollBoardToTop() {
     window.scrollTo({ top: 0, behavior });
 }
 
+/* The pinned stack (topbar → composer → core row) is sticky, and each layer has
+   to sit exactly below the previous one. Their heights depend on the viewport,
+   the tile size setting and how many words are in the sentence, so they are
+   measured rather than hard-coded. */
+function updateStickyOffsets() {
+    const topbar = document.querySelector('.topbar');
+    const composer = document.querySelector('.composer');
+    const root = document.documentElement.style;
+    if (topbar) root.setProperty('--topbar-h', `${Math.round(topbar.getBoundingClientRect().height)}px`);
+    if (composer && !composer.classList.contains('hidden')) {
+        root.setProperty('--composer-h', `${Math.round(composer.getBoundingClientRect().height)}px`);
+    }
+}
+
+function initStickyOffsets() {
+    updateStickyOffsets();
+    if (typeof ResizeObserver === 'function') {
+        const ro = new ResizeObserver(() => updateStickyOffsets());
+        document.querySelectorAll('.topbar, .composer').forEach(el => ro.observe(el));
+    }
+    window.addEventListener('resize', updateStickyOffsets, { passive: true });
+    window.addEventListener('orientationchange', updateStickyOffsets);
+}
+
 // One delegated listener covers every tappable, present or dynamically added.
 function initTactileFeedback() {
     document.body.addEventListener('pointerdown', (e) => {
@@ -657,6 +685,7 @@ async function init() {
     await repairCoreImages(); // Force update core items with images
     attachListeners();
     initTactileFeedback();
+    initStickyOffsets();
 
     // Setup voice loading BEFORE initial load
     if (window.speechSynthesis) {
@@ -785,6 +814,32 @@ function attachListeners() {
             dom.btnSpeakWriting.click();
         }
     });
+
+    // Caregiver-tools overflow menu (phones and short landscape only; on wider
+    // screens the wrapper is `display: contents` and the button is hidden).
+    if (dom.btnMore && dom.headerOverflow) {
+        const setMenu = (open) => {
+            dom.headerOverflow.classList.toggle('open', open);
+            dom.btnMore.setAttribute('aria-expanded', String(open));
+        };
+        dom.btnMore.onclick = (e) => {
+            e.stopPropagation();
+            setMenu(dom.btnMore.getAttribute('aria-expanded') !== 'true');
+        };
+        // Any choice inside the menu closes it, as does a tap outside or Escape.
+        dom.headerOverflow.addEventListener('click', (e) => {
+            if (e.target.closest('.btn')) setMenu(false);
+        });
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#headerOverflow, #btnMore')) setMenu(false);
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && dom.btnMore.getAttribute('aria-expanded') === 'true') {
+                setMenu(false);
+                dom.btnMore.focus();
+            }
+        });
+    }
 
     // Top bar
     dom.btnSettings.onclick = () => {
@@ -1090,10 +1145,9 @@ function attachListeners() {
 
     // Speech Controls
     dom.btnPause.onclick = () => {
-        if (window.speechSynthesis.paused) window.speechSynthesis.resume();
-        else window.speechSynthesis.pause();
+        togglePauseSpeaking();
     };
-    dom.btnStop.onclick = () => window.speechSynthesis.cancel();
+    dom.btnStop.onclick = () => stopSpeaking();
 }
 
 // Actions
@@ -1143,6 +1197,46 @@ function updateCompanion() {
     // Guía virtual eliminada por decisión de producto.
 }
 
+/* ── Playback control ─────────────────────────────────────────────────────
+   Speech reaches the user through two channels: pre-recorded mp3 clips (46 of
+   the highest-frequency words) and the TTS engine. «Pausa» and «Detener» used
+   to call only `speechSynthesis`, so on exactly those high-frequency words —
+   Sí, No, Ayuda, Dolor… — the stop button did nothing. Both channels are now
+   tracked together and driven by the same controls. */
+
+let currentAudio = null;      // the <audio> element playing a local clip, if any
+let speakingDepth = 0;        // >0 while any channel is producing sound
+
+function setSpeakingState(active) {
+    speakingDepth = Math.max(0, speakingDepth + (active ? 1 : -1));
+    document.body.classList.toggle('is-speaking', speakingDepth > 0);
+}
+
+function stopSpeaking() {
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    if (currentAudio) {
+        currentAudio.pause();
+        currentAudio.currentTime = 0;
+        currentAudio = null;
+    }
+    speakingDepth = 0;
+    document.body.classList.remove('is-speaking');
+}
+
+function togglePauseSpeaking() {
+    if (currentAudio && !currentAudio.paused) {
+        currentAudio.pause();
+        return;
+    }
+    if (currentAudio && currentAudio.paused) {
+        currentAudio.play().catch(() => {});
+        return;
+    }
+    if (!window.speechSynthesis) return;
+    if (window.speechSynthesis.paused) window.speechSynthesis.resume();
+    else window.speechSynthesis.pause();
+}
+
 // Returns a promise that resolves when the local mp3 finishes playing, and
 // rejects (so the caller can fall back to TTS) if there's no clip or it fails.
 function playLocalAudio(text) {
@@ -1155,9 +1249,17 @@ function playLocalAudio(text) {
         if (cleanName.includes('_') || !cleanName) return reject();
 
         const audio = new Audio(`assets/audio/${cleanName}.mp3`);
-        audio.onended = () => resolve();
-        audio.onerror = () => reject();
-        audio.play().catch(reject);
+        const done = (fn) => () => {
+            if (currentAudio === audio) currentAudio = null;
+            setSpeakingState(false);
+            fn();
+        };
+        audio.onended = done(resolve);
+        audio.onerror = done(reject);
+        audio.play().then(() => {
+            currentAudio = audio;
+            setSpeakingState(true);
+        }).catch(reject);
     });
 }
 
@@ -1185,8 +1287,10 @@ function speakWithTTS(text) {
             utterance.pitch = 1.0;
             // Resolve when speech ends (or errors) so word-by-word mode advances
             // exactly when the previous word is done, never on a fixed timer.
-            utterance.onend = () => resolve();
-            utterance.onerror = () => resolve();
+            const finish = () => { setSpeakingState(false); resolve(); };
+            utterance.onstart = () => setSpeakingState(true);
+            utterance.onend = finish;
+            utterance.onerror = finish;
 
             const voices = window.speechSynthesis.getVoices();
             if (voices.length === 0) {
@@ -1719,7 +1823,8 @@ function render() {
 // category/search so the most common words are one tap away from anywhere.
 function renderCoreRow() {
     if (!dom.coreRow) return;
-    dom.coreRow.textContent = '';
+    // Keep the region's heading; only the tiles are rebuilt.
+    dom.coreRow.querySelectorAll('.tile').forEach(t => t.remove());
     const coreItems = state.coreWords
         .map(id => state.items.find(i => i.id === id))
         .filter(Boolean);
@@ -2190,30 +2295,62 @@ function renderRoutine() {
 
 function renderPhrase() {
     dom.chips.innerHTML = "";
-    state.phrase.forEach(id => {
+    state.phrase.forEach((id, position) => {
         const item = state.items.find(i => i.id === id);
         if (!item) return;
 
         const chip = document.createElement('div');
         chip.className = 'chip';
+
+        // The sentence bar carries the pictogram, not just the word. Someone who
+        // cannot read has no way to check a text-only sentence before speaking
+        // it, which is why every reference AAC app (Proloquo2Go, LetMeTalk,
+        // Hablalo) shows the symbols in the sentence strip.
+        if (item.image) {
+            const img = document.createElement('img');
+            img.className = 'chip-img';
+            img.src = item.image;
+            img.alt = '';
+            img.setAttribute('aria-hidden', 'true');
+            chip.appendChild(img);
+        }
+
         const word = document.createElement('span');
+        word.className = 'chip-text';
         word.textContent = item.text;
-        const remove = document.createElement('span');
+        chip.appendChild(word);
+
+        // A real <button>, so the word can be removed with a keyboard, a screen
+        // reader or the scanning switch — a <span> was reachable by mouse only.
+        const remove = document.createElement('button');
+        remove.type = 'button';
         remove.className = 'remove';
         remove.textContent = '✕';
+        remove.setAttribute('aria-label', `Quitar «${item.text}» de la frase (palabra ${position + 1})`);
         // addEventListener instead of an inline handler so an item id can't be
         // interpolated into an executable string (P0-10).
         remove.addEventListener('click', (e) => {
             e.stopPropagation();
             removeChip(id);
         });
-        chip.appendChild(word);
         chip.appendChild(remove);
         dom.chips.appendChild(chip);
     });
 
+    updateComposerState();
+
     // Auto-scroll composer
     dom.chips.scrollLeft = dom.chips.scrollWidth;
+}
+
+// Controls that only make sense with words in the composer stay disabled until
+// there are any, instead of offering dead buttons (and, for «Hablar Frase», a
+// silent no-op that reads as "the app is broken").
+function updateComposerState() {
+    const empty = state.phrase.length === 0;
+    [dom.btnSpeak, dom.btnBackspace, dom.btnClear].forEach(btn => {
+        if (btn) btn.disabled = empty;
+    });
 }
 
 window.removeChip = (id) => {
@@ -2267,12 +2404,44 @@ function renderCategories() {
             if (event.key === 'Enter' || event.key === ' ') {
                 event.preventDefault();
                 pill.click();
+                return;
             }
+            handleTablistKeys(event);
         };
         dom.categoryBar.appendChild(pill);
     });
 
     updateCategoryNavState();
+}
+
+/* A roving-tabindex tablist puts `tabindex="-1"` on every tab but the selected
+   one, which is correct only if the arrow keys then move between them. Without
+   that half, every category except the active one was unreachable by keyboard
+   or switch — 16 of 17 tabs, for the very users who depend on them most
+   (WCAG 2.1.1 Keyboard, and the ARIA tabs pattern). */
+function handleTablistKeys(event) {
+    const KEYS = ['ArrowRight', 'ArrowLeft', 'Home', 'End'];
+    if (!KEYS.includes(event.key)) return;
+
+    const tabs = Array.from(dom.categoryBar.querySelectorAll('[role="tab"]'));
+    if (tabs.length === 0) return;
+
+    const current = tabs.indexOf(event.target);
+    if (current < 0) return;
+
+    let next;
+    if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = tabs.length - 1;
+    else if (event.key === 'ArrowRight') next = (current + 1) % tabs.length;
+    else next = (current - 1 + tabs.length) % tabs.length;
+
+    event.preventDefault();
+    // Move focus only. Activation stays explicit (Enter/Space) so a switch user
+    // sweeping the categories doesn't rebuild the board on every step.
+    tabs[current].setAttribute('tabindex', '-1');
+    tabs[next].setAttribute('tabindex', '0');
+    tabs[next].focus();
+    tabs[next].scrollIntoView({ block: 'nearest', inline: 'nearest' });
 }
 
 function getCategoryIcon(category) {
@@ -2619,8 +2788,50 @@ function loadVoices() {
 // first highlights a whole row; the switch press descends into that row and
 // then scans its cells — so a full sweep is O(rows+cols), not O(all tiles).
 
+/* Scanning used to sweep `#grid` and nothing else, which made it a dead end:
+   a switch user could pile words into the composer but could never reach
+   «Hablar Frase» to say them, nor the fixed core row that holds the
+   highest-frequency vocabulary. Scanning is now a two-level group sweep, the
+   model AsTeRICS Grid and TD Snap use — first the region, then its contents:
+
+     Nivel 1  Frase → Núcleo → Tablero        (the highlighted region pulses)
+     Nivel 2  the chosen region's own sweep   (linear, or row-column on the
+                                               paged board)
+
+   A region that completes a full pass without a switch press returns to level
+   1 on its own, so entering the wrong region is never a trap. */
+
+const SCAN_GROUPS = [
+    { id: 'composer', label: 'Frase', container: () => document.querySelector('.composer'),
+      // Includes «Hablar Frase» — reaching it is the whole point of the group
+      // level; only visible controls take part (Pausa/Detener appear while
+      // speech is playing).
+      items: () => Array.from(document.querySelectorAll('.composer .btn'))
+          .filter(b => b.offsetParent !== null) },
+    { id: 'core', label: 'Núcleo', container: () => dom.coreRow,
+      items: () => Array.from(dom.coreRow ? dom.coreRow.querySelectorAll('.tile') : []) },
+    { id: 'grid', label: 'Tablero', container: () => dom.grid,
+      items: () => Array.from(dom.grid.querySelectorAll('.tile')) },
+];
+
+// Only regions that currently offer something to activate take part.
+function activeScanGroups() {
+    return SCAN_GROUPS.filter(g => {
+        const c = g.container();
+        if (!c || c.classList.contains('hidden') || c.offsetParent === null) return false;
+        return g.items().some(el => !el.disabled);
+    });
+}
+
+function currentGroup() {
+    const groups = activeScanGroups();
+    if (groups.length === 0) return null;
+    return groups[Math.min(state.scanning.group || 0, groups.length - 1)];
+}
+
 function scanTiles() {
-    return Array.from(dom.grid.querySelectorAll('.tile'));
+    const g = currentGroup();
+    return g ? g.items().filter(el => !el.disabled) : [];
 }
 
 function getRowTiles(row) {
@@ -2630,7 +2841,20 @@ function getRowTiles(row) {
 }
 
 function clearScanHighlights() {
-    dom.grid.querySelectorAll('.tile').forEach(t => t.classList.remove('scanning-focus', 'scanning-row'));
+    document.querySelectorAll('.scanning-focus, .scanning-row').forEach(
+        t => t.classList.remove('scanning-focus', 'scanning-row'));
+    document.querySelectorAll('.scanning-group').forEach(
+        c => c.classList.remove('scanning-group'));
+}
+
+function highlightGroup() {
+    clearScanHighlights();
+    const groups = activeScanGroups();
+    if (groups.length === 0) return;
+    const g = groups[state.scanning.group % groups.length];
+    const c = g.container();
+    if (c) c.classList.add('scanning-group');
+    announceScan(`${g.label}. Pulsa para entrar.`);
 }
 
 function highlightRow(row) {
@@ -2647,64 +2871,121 @@ function highlightCell() {
 function highlightTile(tile) {
     if (!tile) return;
     tile.classList.add('scanning-focus');
-    tile.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // `nearest` keeps the sticky composer and core row in place instead of
+    // yanking the whole page on every step.
+    tile.scrollIntoView({ behavior: PREFERS_REDUCED_MOTION.matches ? 'auto' : 'smooth', block: 'nearest' });
 }
 
-function startScanning() {
-    stopScanning();
-    const tiles = scanTiles();
-    if (tiles.length === 0) return;
+function announceScan(text) {
+    if (dom.statusText) dom.statusText.textContent = text;
+}
 
+function scanStepMs() {
+    return Math.round((state.settings.scanSpeed || 2) * 1000);
+}
+
+// Level 1: sweep the regions.
+function startGroupScanning() {
+    clearInterval(state.scanning.timer);
+    const groups = activeScanGroups();
+    if (groups.length === 0) return;
     state.scanning.active = true;
-    const stepMs = Math.round((state.settings.scanSpeed || 2) * 1000);
+    state.scanning.phase = 'group';
+    state.scanning.group = state.scanning.group % groups.length;
+    highlightGroup();
+    state.scanning.timer = setInterval(() => {
+        const g = activeScanGroups();
+        if (g.length === 0) return;
+        state.scanning.group = (state.scanning.group + 1) % g.length;
+        highlightGroup();
+    }, scanStepMs());
+}
 
-    if (state.settings.pagedMode) {
-        // Row-column over the fixed page.
+// Level 2: sweep inside the chosen region.
+function startItemScanning() {
+    clearInterval(state.scanning.timer);
+    const tiles = scanTiles();
+    if (tiles.length === 0) return startGroupScanning();
+
+    const group = currentGroup();
+    const stepMs = scanStepMs();
+    // Row-column only pays off on the paged board; the composer and the core
+    // row are single rows where it would just add a pointless extra press.
+    const useRowColumn = group.id === 'grid' && state.settings.pagedMode;
+
+    if (useRowColumn) {
         const cols = computeGridColumns();
         state.scanning.cols = cols;
         state.scanning.rows = Math.ceil(tiles.length / cols);
         state.scanning.phase = 'row';
         state.scanning.row = 0;
         state.scanning.col = 0;
+        state.scanning.passes = 0;
         highlightRow(0);
         state.scanning.timer = setInterval(() => {
             if (state.scanning.phase === 'row') {
                 state.scanning.row = (state.scanning.row + 1) % state.scanning.rows;
+                if (state.scanning.row === 0 && ++state.scanning.passes >= 2) return startGroupScanning();
                 highlightRow(state.scanning.row);
             } else {
                 const rowTiles = getRowTiles(state.scanning.row);
                 if (rowTiles.length === 0) return;
                 state.scanning.col = (state.scanning.col + 1) % rowTiles.length;
+                if (state.scanning.col === 0) { state.scanning.phase = 'row'; return highlightRow(state.scanning.row); }
                 highlightCell();
             }
         }, stepMs);
-    } else {
-        // Linear over the whole (scrolling) list.
-        state.scanning.phase = 'linear';
-        state.scanning.index = 0;
-        highlightTile(tiles[0]);
-        state.scanning.timer = setInterval(() => {
-            state.scanning.index = (state.scanning.index + 1) % tiles.length;
-            clearScanHighlights();
-            highlightTile(tiles[state.scanning.index]);
-        }, stepMs);
+        return;
     }
+
+    state.scanning.phase = 'linear';
+    state.scanning.index = 0;
+    state.scanning.passes = 0;
+    clearScanHighlights();
+    highlightTile(tiles[0]);
+    state.scanning.timer = setInterval(() => {
+        const list = scanTiles();
+        if (list.length === 0) return startGroupScanning();
+        state.scanning.index = (state.scanning.index + 1) % list.length;
+        // Back at the start after a full pass: hand control back to level 1 so
+        // the user is never stuck cycling a region they entered by mistake.
+        if (state.scanning.index === 0 && ++state.scanning.passes >= 1) return startGroupScanning();
+        clearScanHighlights();
+        highlightTile(list[state.scanning.index]);
+    }, stepMs);
+}
+
+function startScanning() {
+    stopScanning();
+    state.scanning.group = 0;
+    startGroupScanning();
 }
 
 function stopScanning() {
     clearInterval(state.scanning.timer);
     state.scanning.active = false;
     state.scanning.index = -1;
-    state.scanning.phase = 'linear';
+    state.scanning.phase = 'group';
+    state.scanning.group = 0;
+    state.scanning.passes = 0;
     clearScanHighlights();
 }
 
 function selectScanningElement() {
     if (!state.scanning.active) return;
 
+    // Level 1 → descend into the highlighted region.
+    if (state.scanning.phase === 'group') {
+        startItemScanning();
+        return;
+    }
+
     if (state.scanning.phase === 'linear') {
         const cell = scanTiles()[state.scanning.index];
         if (cell) cell.click();
+        // Back to region level: after speaking or picking a word the next choice
+        // is usually in a different region.
+        if (state.scanning.active) startGroupScanning();
         return;
     }
 
@@ -2719,12 +3000,7 @@ function selectScanningElement() {
     // phase === 'cell': activate the highlighted cell.
     const cell = getRowTiles(state.scanning.row)[state.scanning.col];
     if (cell) cell.click();
-    // If the click didn't rebuild the grid, resume scanning from the row level.
-    if (state.scanning.active) {
-        state.scanning.phase = 'row';
-        state.scanning.col = 0;
-        highlightRow(state.scanning.row);
-    }
+    if (state.scanning.active) startGroupScanning();
 }
 
 function applySettings() {
