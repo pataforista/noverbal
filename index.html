@@ -68,9 +68,6 @@
           <option value="sos">🆘 Emergencias</option>
         </select>
       </label>
-      <button class="btn btn--labeled" id="btnThemeToggle" aria-label="Cambiar entre tema claro y oscuro" title="Cambiar tema">
-        <span class="btn-icon" aria-hidden="true">🌙</span><span class="btn-label">Tema</span>
-      </button>
       <div class="header-toggle-group" role="group" aria-label="Modo de habla inmediata">
         <span class="toggle-label">Hablar al tocar</span>
         <label class="switch mini">
@@ -81,22 +78,52 @@
       <button class="btn btn--labeled" id="btnWriting" aria-label="Abrir teclado para escribir libremente" title="Escribir">
         <span class="btn-icon" aria-hidden="true">⌨️</span><span class="btn-label">Escribir</span>
       </button>
-      <button class="btn btn--labeled" id="btnSettings" aria-label="Abrir ajustes y configuración" title="Ajustes">
-        <span class="btn-icon" aria-hidden="true">⚙️</span><span class="btn-label">Ajustes</span>
+
+      <!-- Caregiver tools. On a phone these collapse behind «Más» so the header
+           stays one row: the communicator needs SOS, the profile, «Hablar al
+           tocar» and «Escribir» at hand; theme, settings and board editing are
+           occasional. On wider screens `display: contents` lays them out inline
+           exactly as before and the toggle button is hidden. -->
+      <button class="btn btn--labeled header-more-btn" id="btnMore" aria-label="Más herramientas"
+        aria-expanded="false" aria-controls="headerOverflow" title="Más">
+        <span class="btn-icon" aria-hidden="true">⋯</span><span class="btn-label">Más</span>
       </button>
-      <button class="btn btn--labeled" id="btnEdit" aria-label="Editar el tablero de comunicación" title="Editar">
-        <span class="btn-icon" aria-hidden="true">✏️</span><span class="btn-label">Editar</span>
-      </button>
+      <div class="header-overflow" id="headerOverflow">
+        <button class="btn btn--labeled" id="btnThemeToggle" aria-label="Cambiar entre tema claro y oscuro" title="Cambiar tema">
+          <span class="btn-icon" aria-hidden="true">🌙</span><span class="btn-label">Tema</span>
+        </button>
+        <button class="btn btn--labeled" id="btnSettings" aria-label="Abrir ajustes y configuración" title="Ajustes">
+          <span class="btn-icon" aria-hidden="true">⚙️</span><span class="btn-label">Ajustes</span>
+        </button>
+        <button class="btn btn--labeled" id="btnEdit" aria-label="Editar el tablero de comunicación" title="Editar">
+          <span class="btn-icon" aria-hidden="true">✏️</span><span class="btn-label">Editar</span>
+        </button>
+      </div>
     </nav>
   </header>
 
   <main class="layout" id="mainContent">
-    <section class="composer" aria-label="Compositor de frase">
+    <!-- The main view had no headings at all, so a screen reader user had no
+         document outline to navigate by — only landmarks. These name the three
+         regions without changing the visual design. -->
+    <h1 class="sr-only">HolAAC! — tablero de comunicación</h1>
+
+    <section class="composer" aria-labelledby="composerHeading">
+      <h2 class="sr-only" id="composerHeading">Frase en construcción</h2>
+      <!-- «Hablar Frase» sits beside the sentence strip, not on a row of its
+           own: the composer was 231px tall on a phone, and the speak button is
+           the action the strip exists for. Same arrangement as Proloquo2Go,
+           LetMeTalk and Hablalo. -->
       <div class="composer-row">
         <div class="chips" id="chips" role="region" aria-label="Palabras seleccionadas" aria-live="polite"></div>
+        <button class="btn primary-action speak-btn" id="btnSpeak" aria-label="Leer la frase completa en voz alta">
+          <span class="icon" aria-hidden="true">🔊</span>
+          <span class="text">Hablar Frase</span>
+        </button>
       </div>
 
       <div class="composer-actions">
+        <!-- Shown only while something is actually playing (body.is-speaking). -->
         <div class="speech-controls" role="group" aria-label="Controles de reproducción">
           <button class="btn btn--labeled" id="btnPause" aria-label="Pausar o reanudar la voz">
             <span class="btn-icon" aria-hidden="true">⏸</span><span class="btn-label">Pausa</span>
@@ -105,10 +132,6 @@
             <span class="btn-icon" aria-hidden="true">⏹</span><span class="btn-label">Detener</span>
           </button>
         </div>
-        <button class="btn primary-action speak-btn" id="btnSpeak" aria-label="Leer la frase completa en voz alta">
-          <span class="icon" aria-hidden="true">🔊</span>
-          <span class="text">Hablar Frase</span>
-        </button>
         <div class="utility-actions" role="group" aria-label="Funciones de edición">
           <button class="btn btn--labeled" id="btnBackspace" aria-label="Borrar la última palabra">
             <span class="btn-icon" aria-hidden="true">⌫</span><span class="btn-label">Borrar</span>
@@ -167,7 +190,9 @@
       <button class="btn danger" id="btnResetRoutine" aria-label="Limpiar rutina actual">✕</button>
     </section>
 
-    <section class="core-row" id="coreRow" role="region" aria-label="Vocabulario nuclear, siempre visible"></section>
+    <section class="core-row" id="coreRow" role="region" aria-labelledby="coreHeading">
+      <h2 class="sr-only" id="coreHeading">Vocabulario nuclear, siempre visible</h2>
+    </section>
 
     <div class="board-breadcrumb" id="boardBreadcrumb" aria-live="polite"></div>
 
@@ -190,10 +215,13 @@
       <div class="modal-body">
         <div class="intro-guide">
           <h2 class="intro-guide-title">Cómo se usa, en 3 pasos</h2>
+          <!-- The step text lives in its own <span>: the <li> is a flex
+               container, so bare text nodes around <strong> would each become a
+               separate flex item and break the sentence into columns. -->
           <ol class="intro-steps">
-            <li><span class="intro-step-emoji" aria-hidden="true">👆</span> Toca las palabras que quieras decir.</li>
-            <li><span class="intro-step-emoji" aria-hidden="true">📝</span> Se juntan arriba y forman tu frase.</li>
-            <li><span class="intro-step-emoji" aria-hidden="true">🔊</span> Pulsa <strong>«Hablar Frase»</strong> para escucharla.</li>
+            <li><span class="intro-step-emoji" aria-hidden="true">👆</span><span>Toca las palabras que quieras decir.</span></li>
+            <li><span class="intro-step-emoji" aria-hidden="true">📝</span><span>Se juntan arriba y forman tu frase.</span></li>
+            <li><span class="intro-step-emoji" aria-hidden="true">🔊</span><span>Pulsa <strong>«Hablar Frase»</strong> para escucharla.</span></li>
           </ol>
           <p class="intro-tip"><strong>Consejo:</strong> activa <strong>«Hablar al tocar»</strong> arriba si prefieres que cada palabra suene apenas la tocas.</p>
         </div>
