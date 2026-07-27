@@ -14,6 +14,8 @@ const LS_KEYS = {
     history: "aac_history_v1", // localStorage fallback when IndexedDB is unavailable
     pinHash: "aac_pin_hash_v1", // configurable tutor PIN (hashed)
     coreWords: "aac_core_words_v1", // ids pinned to the fixed core row (Fase 4)
+    vocabLevels: "aac_vocab_levels_v1", // named hiddenTags snapshots (Fase 9, progressive vocabulary)
+    activeVocabLevel: "aac_active_vocab_level_v1",
 };
 
 const DEFAULT_ITEMS = [
@@ -142,7 +144,12 @@ const state = {
     tutorMode: {
         active: false,
         hiddenTags: new Set(loadJSON(LS_KEYS.hiddenTags, []))
-    }
+    },
+    // Named snapshots of hiddenTags: { id, name, hiddenIds }, so a tutor can
+    // switch the whole set of visible words with one tap instead of hiding
+    // items one by one every time (Fase 9, progressive vocabulary).
+    vocabLevels: loadJSON(LS_KEYS.vocabLevels, []),
+    activeVocabLevelId: localStorage.getItem(LS_KEYS.activeVocabLevel) || ""
 };
 
 // IndexedDB Helper
@@ -269,6 +276,82 @@ function toggleCore(id) {
     saveCoreWords();
     renderCoreRow();
     renderGrid();
+}
+
+/* ── Progressive vocabulary levels ─────────────────────────────────────────
+   A "level" is just a named snapshot of tutorMode.hiddenTags. Tutor Mode
+   already lets a tutor hide/show any word by tapping it on the board; this
+   adds the missing piece — save that set under a name ("Nivel 1 · Básico")
+   and switch between saved sets with one tap, the way Proloquo2Go's
+   Crescendo/"Lenguaje por pasos" progressively reveals more vocabulary
+   without re-hiding everything by hand each time. */
+
+function saveVocabLevels() {
+    localStorage.setItem(LS_KEYS.vocabLevels, JSON.stringify(state.vocabLevels));
+}
+
+function setActiveVocabLevelId(id) {
+    state.activeVocabLevelId = id;
+    localStorage.setItem(LS_KEYS.activeVocabLevel, id);
+}
+
+function renderVocabLevelOptions() {
+    if (!dom.vocabLevelSelect) return;
+    const select = dom.vocabLevelSelect;
+    select.innerHTML = "";
+    const allOption = document.createElement('option');
+    allOption.value = "";
+    allOption.textContent = "Todo visible (sin nivel)";
+    select.appendChild(allOption);
+    for (const level of state.vocabLevels) {
+        const opt = document.createElement('option');
+        opt.value = level.id;
+        opt.textContent = level.name; // tutor-authored text, safe as an option label via textContent
+        select.appendChild(opt);
+    }
+    select.value = state.vocabLevels.some(l => l.id === state.activeVocabLevelId)
+        ? state.activeVocabLevelId
+        : "";
+}
+
+function applyVocabLevel(id) {
+    const level = state.vocabLevels.find(l => l.id === id);
+    state.tutorMode.hiddenTags = new Set(level ? level.hiddenIds : []);
+    localStorage.setItem(LS_KEYS.hiddenTags, JSON.stringify([...state.tutorMode.hiddenTags]));
+    setActiveVocabLevelId(level ? level.id : "");
+    renderGrid();
+    renderCoreRow();
+    flashStatus(level ? `Nivel «${level.name}» aplicado` : 'Todo el vocabulario visible');
+}
+
+function saveCurrentAsVocabLevel(name) {
+    const trimmed = name.trim().slice(0, 30);
+    if (!trimmed) {
+        flashStatus('Ponle un nombre al nivel');
+        return;
+    }
+    const id = `lvl-${Date.now()}`;
+    state.vocabLevels.push({ id, name: trimmed, hiddenIds: [...state.tutorMode.hiddenTags] });
+    saveVocabLevels();
+    renderVocabLevelOptions();
+    setActiveVocabLevelId(id);
+    dom.vocabLevelSelect.value = id;
+    flashStatus(`Nivel «${trimmed}» guardado`);
+}
+
+function deleteSelectedVocabLevel() {
+    const id = dom.vocabLevelSelect.value;
+    if (!id) {
+        flashStatus('Elige un nivel guardado para eliminar');
+        return;
+    }
+    const level = state.vocabLevels.find(l => l.id === id);
+    if (!level || !confirm(`¿Eliminar el nivel «${level.name}»? Esto no oculta ni muestra palabras.`)) return;
+    state.vocabLevels = state.vocabLevels.filter(l => l.id !== id);
+    saveVocabLevels();
+    if (state.activeVocabLevelId === id) setActiveVocabLevelId("");
+    renderVocabLevelOptions();
+    flashStatus('Nivel eliminado');
 }
 
 async function initDB() {
@@ -500,6 +583,12 @@ const dom = {
     activeCategoryList: document.getElementById('activeCategoryList'),
     btnIntroSelectAll: document.getElementById('btnIntroSelectAll'),
     btnSaveIntro: document.getElementById('btnSaveIntro'),
+    // Progressive vocabulary levels
+    vocabLevelSelect: document.getElementById('vocabLevelSelect'),
+    btnApplyVocabLevel: document.getElementById('btnApplyVocabLevel'),
+    newVocabLevelName: document.getElementById('newVocabLevelName'),
+    btnSaveVocabLevel: document.getElementById('btnSaveVocabLevel'),
+    btnDeleteVocabLevel: document.getElementById('btnDeleteVocabLevel'),
 };
 
 // Persistence Helpers
@@ -1135,6 +1224,27 @@ function attachListeners() {
         };
     }
 
+    // Progressive vocabulary levels
+    if (dom.btnApplyVocabLevel) {
+        dom.btnApplyVocabLevel.onclick = (e) => {
+            e.preventDefault();
+            applyVocabLevel(dom.vocabLevelSelect.value);
+        };
+    }
+    if (dom.btnSaveVocabLevel) {
+        dom.btnSaveVocabLevel.onclick = (e) => {
+            e.preventDefault();
+            saveCurrentAsVocabLevel(dom.newVocabLevelName.value);
+            dom.newVocabLevelName.value = '';
+        };
+    }
+    if (dom.btnDeleteVocabLevel) {
+        dom.btnDeleteVocabLevel.onclick = (e) => {
+            e.preventDefault();
+            deleteSelectedVocabLevel();
+        };
+    }
+
     // Offline precache button
     if (dom.btnDownloadAll) {
         dom.btnDownloadAll.onclick = (e) => {
@@ -1573,6 +1683,8 @@ function exportData() {
         // Include the therapist's configuration so a backup fully restores it (P2-12).
         hiddenTags: [...state.tutorMode.hiddenTags],
         coreWords: state.coreWords,
+        vocabLevels: state.vocabLevels,
+        activeVocabLevelId: state.activeVocabLevelId,
         exportedAt: new Date().toISOString()
     };
 
@@ -1640,6 +1752,20 @@ async function importData(e) {
         } else {
             // Items changed; drop any core ids that no longer exist.
             initCoreWords();
+        }
+
+        // Restore progressive vocabulary levels, dropping ids that no longer exist.
+        if (Array.isArray(parsed.vocabLevels)) {
+            state.vocabLevels = parsed.vocabLevels
+                .filter(l => l && typeof l.id === 'string' && typeof l.name === 'string' && Array.isArray(l.hiddenIds))
+                .map(l => ({
+                    id: l.id,
+                    name: l.name.slice(0, 30),
+                    hiddenIds: l.hiddenIds.map(String).filter(id => state.items.some(i => i.id === id))
+                }));
+            saveVocabLevels();
+            const restoredActive = typeof parsed.activeVocabLevelId === 'string' ? parsed.activeVocabLevelId : "";
+            setActiveVocabLevelId(state.vocabLevels.some(l => l.id === restoredActive) ? restoredActive : "");
         }
 
         save();
@@ -3052,6 +3178,7 @@ function applySettings() {
     dom.darkMode.checked = state.settings.darkMode || false;
     if (dom.hapticFeedback) dom.hapticFeedback.checked = state.settings.hapticFeedback !== false;
     dom.headerSpeakToggle.checked = (state.settings.tapMode === 'speak');
+    renderVocabLevelOptions();
     ensureActiveCategories();
     document.body.classList.toggle('show-grammar', state.settings.showGrammarTags);
     document.body.classList.toggle('dark-theme', state.settings.darkMode);

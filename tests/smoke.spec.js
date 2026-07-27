@@ -82,6 +82,34 @@ test('backup export produces a versioned, importable JSON file (device transfer)
   expect(page.errors, page.errors.join('\n')).toHaveLength(0);
 });
 
+test('vocabulary levels hide/show a whole saved set with one tap (progressive vocabulary)', async ({ page }) => {
+  const target = page.locator('#grid .tile:not([data-id="nav-anchor"])').first();
+  const targetId = await target.getAttribute('data-id');
+
+  // Seed a saved level that hides this one item and mark it active, as if a
+  // tutor had already hidden it via Tutor Mode and saved the set with a name.
+  await page.evaluate((id) => {
+    localStorage.setItem('aac_vocab_levels_v1', JSON.stringify([
+      { id: 'lvl-test', name: 'Nivel de prueba', hiddenIds: [id] },
+    ]));
+    localStorage.setItem('aac_active_vocab_level_v1', 'lvl-test');
+    localStorage.setItem('aac_hidden_tags_v2', JSON.stringify([id]));
+  }, targetId);
+
+  await page.reload({ waitUntil: 'networkidle' });
+  await dismissIntro(page);
+
+  await expect(page.locator(`#grid .tile[data-id="${targetId}"]`)).toHaveCount(0);
+
+  await page.locator('#btnSettings').click();
+  await expect(page.locator('#vocabLevelSelect')).toHaveValue('lvl-test');
+
+  await page.selectOption('#vocabLevelSelect', '');
+  await page.locator('#btnApplyVocabLevel').click();
+  await expect(page.locator(`#grid .tile[data-id="${targetId}"]`)).toHaveCount(1);
+  expect(page.errors, page.errors.join('\n')).toHaveLength(0);
+});
+
 test('paged mode shows fixed pages with working navigation (N-1)', async ({ page }) => {
   await page.locator('#categoryBar .pill', { hasText: 'Todas' }).first().click();
   // The toggle is a styled checkbox inside the (closed) Settings modal; activate

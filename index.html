@@ -515,6 +515,28 @@
         </div>
 
         <div class="settings-section">
+          <h3>Vocabulario progresivo</h3>
+          <p class="settings-hint">Activa el Modo Tutor y toca palabras en el tablero para ocultarlas o mostrarlas.
+            Cuando tengas listo un conjunto (por ejemplo, solo lo esencial), guárdalo aquí como un «nivel» con nombre.
+            Luego puedes cambiar de nivel con un toque, sin tener que ocultar cada palabra de nuevo — así se puede ir
+            ampliando el vocabulario disponible a medida que la persona avanza.</p>
+          <div class="row compact">
+            <select id="vocabLevelSelect" class="glass-input flex-grow">
+              <option value="">Todo visible (sin nivel)</option>
+            </select>
+            <button type="button" class="btn glass secondary" id="btnApplyVocabLevel">Aplicar nivel</button>
+          </div>
+          <div class="row compact" style="margin-top: 10px;">
+            <input id="newVocabLevelName" class="glass-input flex-grow" maxlength="30"
+                   placeholder="Nombre del nivel (ej. Nivel 1 · Básico)" />
+            <button type="button" class="btn glass secondary" id="btnSaveVocabLevel">Guardar nivel actual</button>
+          </div>
+          <div class="row compact" style="margin-top: 10px;">
+            <button type="button" class="btn glass secondary flex-grow" id="btnDeleteVocabLevel">Eliminar nivel seleccionado</button>
+          </div>
+        </div>
+
+        <div class="settings-section">
           <h3>Acerca de HolAAC!</h3>
           <div class="about-card">
             <div class="about-author-row">
