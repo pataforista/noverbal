@@ -118,6 +118,33 @@ test('imports a single Open Board Format (.obf) board as a new, additive categor
   expect(boardsAfter).toBe(boardsBefore + 2);
 });
 
+test('Ajustes is a menu of screens, not one long scroll (navigation hub)', async ({ page }) => {
+  await page.locator('#btnSettings').click();
+  await expect(page.locator('#settingsModal .hub-menu')).toBeVisible();
+  await expect(page.locator('#settingsModal .hub-screen')).toHaveCount(6);
+  for (const screen of await page.locator('#settingsModal .hub-screen').all()) {
+    await expect(screen).toBeHidden();
+  }
+
+  await page.locator('.hub-menu-row[data-hub-target="screen-voice"]').click();
+  await expect(page.locator('#screen-voice')).toBeVisible();
+  await expect(page.locator('#settingsModal .hub-menu')).toBeHidden();
+  await expect(page.locator('#voiceSelect')).toBeVisible();
+
+  await page.locator('#screen-voice [data-hub-back]').click();
+  await expect(page.locator('#settingsModal .hub-menu')).toBeVisible();
+  await expect(page.locator('#screen-voice')).toBeHidden();
+
+  // Reopening the dialog always starts back at the menu.
+  await page.locator('.hub-menu-row[data-hub-target="screen-tutor"]').click();
+  await expect(page.locator('#screen-tutor')).toBeVisible();
+  await page.locator('[data-close-dialog="settingsModal"]').click();
+  await page.locator('#btnSettings').click();
+  await expect(page.locator('#settingsModal .hub-menu')).toBeVisible();
+  await expect(page.locator('#screen-tutor')).toBeHidden();
+  expect(page.errors, page.errors.join('\n')).toHaveLength(0);
+});
+
 test('vocabulary levels hide/show a whole saved set with one tap (progressive vocabulary)', async ({ page }) => {
   const target = page.locator('#grid .tile:not([data-id="nav-anchor"])').first();
   const targetId = await target.getAttribute('data-id');
@@ -138,6 +165,7 @@ test('vocabulary levels hide/show a whole saved set with one tap (progressive vo
   await expect(page.locator(`#grid .tile[data-id="${targetId}"]`)).toHaveCount(0);
 
   await page.locator('#btnSettings').click();
+  await page.locator('.hub-menu-row[data-hub-target="screen-tutor"]').click();
   await expect(page.locator('#vocabLevelSelect')).toHaveValue('lvl-test');
 
   await page.selectOption('#vocabLevelSelect', '');

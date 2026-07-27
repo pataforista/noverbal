@@ -390,264 +390,346 @@
       </div>
 
       <div class="modal-body">
-        <div class="settings-section">
-          <h3>Voz y Lectura</h3>
-          <div class="row">
-            <label class="field">
-              <span>Voz</span>
-              <select id="voiceSelect" class="glass-input"></select>
+        <div class="hub-menu">
+          <button type="button" class="hub-menu-row" data-hub-target="screen-voice">
+            <span class="hub-menu-icon" aria-hidden="true">🔊</span>
+            <span class="hub-menu-text">
+              <span class="hub-menu-title">Voz y Lectura</span>
+              <span class="hub-menu-desc">Voz, velocidad, modo de lectura</span>
+            </span>
+            <span class="hub-menu-chevron" aria-hidden="true">›</span>
+          </button>
+          <button type="button" class="hub-menu-row" data-hub-target="screen-interface">
+            <span class="hub-menu-icon" aria-hidden="true">🎨</span>
+            <span class="hub-menu-text">
+              <span class="hub-menu-title">Interfaz y Estilo</span>
+              <span class="hub-menu-desc">Tamaño de botones, tema, perfil de tablero, categorías activas</span>
+            </span>
+            <span class="hub-menu-chevron" aria-hidden="true">›</span>
+          </button>
+          <button type="button" class="hub-menu-row" data-hub-target="screen-accessibility">
+            <span class="hub-menu-icon" aria-hidden="true">♿</span>
+            <span class="hub-menu-text">
+              <span class="hub-menu-title">Accesibilidad</span>
+              <span class="hub-menu-desc">Vibración, modo páginas, barrido, etiquetas gramaticales, rutina</span>
+            </span>
+            <span class="hub-menu-chevron" aria-hidden="true">›</span>
+          </button>
+          <button type="button" class="hub-menu-row" data-hub-target="screen-offline">
+            <span class="hub-menu-icon" aria-hidden="true">📶</span>
+            <span class="hub-menu-text">
+              <span class="hub-menu-title">Uso sin conexión</span>
+              <span class="hub-menu-desc">Descargar pictogramas y audios al dispositivo</span>
+            </span>
+            <span class="hub-menu-chevron" aria-hidden="true">›</span>
+          </button>
+          <button type="button" class="hub-menu-row" data-hub-target="screen-tutor">
+            <span class="hub-menu-icon" aria-hidden="true">🔒</span>
+            <span class="hub-menu-text">
+              <span class="hub-menu-title">Modo Tutor y Seguridad</span>
+              <span class="hub-menu-desc">Bloqueo, PIN, vocabulario progresivo, bitácora de uso</span>
+            </span>
+            <span class="hub-menu-chevron" aria-hidden="true">›</span>
+          </button>
+          <button type="button" class="hub-menu-row" data-hub-target="screen-about">
+            <span class="hub-menu-icon" aria-hidden="true">ℹ️</span>
+            <span class="hub-menu-text">
+              <span class="hub-menu-title">Acerca de HolAAC!</span>
+              <span class="hub-menu-desc">Autor, licencia y aviso legal</span>
+            </span>
+            <span class="hub-menu-chevron" aria-hidden="true">›</span>
+          </button>
+        </div>
+
+        <div class="hub-screen hidden" id="screen-voice">
+          <div class="hub-screen-head">
+            <button type="button" class="btn glass" data-hub-back>← Menú</button>
+            <span class="hub-screen-title">Voz y Lectura</span>
+          </div>
+          <div class="settings-section">
+            <div class="row">
+              <label class="field">
+                <span>Voz</span>
+                <select id="voiceSelect" class="glass-input"></select>
+              </label>
+
+              <label class="field">
+                <span>Velocidad de voz</span>
+                <input id="rate" type="range" min="0.6" max="1.4" step="0.1" />
+              </label>
+
+              <label class="field">
+                <span>Modo de Lectura</span>
+                <select id="speechMode" class="glass-input">
+                  <option value="fluent">Fluida (Oración)</option>
+                  <option value="word">Palabra por palabra</option>
+                </select>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="hub-screen hidden" id="screen-interface">
+          <div class="hub-screen-head">
+            <button type="button" class="btn glass" data-hub-back>← Menú</button>
+            <span class="hub-screen-title">Interfaz y Estilo</span>
+          </div>
+          <div class="settings-section">
+            <div class="row">
+              <label class="field">
+                <span>Tamaño de botones</span>
+                <input id="tileSize" type="range" min="100" max="220" step="5" />
+              </label>
+
+              <label class="field">
+                <span>Modo de Interacción</span>
+                <select id="tapMode" class="glass-input">
+                  <option value="add">1 toque = añadir a frase</option>
+                  <option value="speak">1 toque = hablar ítem</option>
+                </select>
+              </label>
+
+              <label class="field">
+                <span>Perfil de Tablero</span>
+                <select id="boardProfile" class="glass-input">
+                  <option value="default">General</option>
+                  <option value="home">Casa</option>
+                  <option value="school">Escuela / Terapia</option>
+                  <option value="sos">Emergencias</option>
+                </select>
+              </label>
+            </div>
+
+            <label class="field-row">
+              <div class="toggle-wrapper">
+                <input id="darkMode" type="checkbox" />
+                <span class="toggle-slider"></span>
+              </div>
+              <div class="text-content">
+                <span class="main">Tema Obscuro (Moomins Style)</span>
+                <span class="sub">Activa una paleta relajante y premium</span>
+              </div>
+            </label>
+
+            <div class="field">
+              <span>Categorías activas</span>
+              <div id="activeCategoryList" class="category-toggle-list"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="hub-screen hidden" id="screen-accessibility">
+          <div class="hub-screen-head">
+            <button type="button" class="btn glass" data-hub-back>← Menú</button>
+            <span class="hub-screen-title">Accesibilidad</span>
+          </div>
+          <div class="settings-section">
+            <label class="field-row">
+              <div class="toggle-wrapper">
+                <input id="hapticFeedback" type="checkbox" checked />
+                <span class="toggle-slider"></span>
+              </div>
+              <div class="text-content">
+                <span class="main">Vibración al tocar</span>
+                <span class="sub">Confirma cada toque con una vibración breve (en dispositivos compatibles)</span>
+              </div>
+            </label>
+
+            <label class="field-row">
+              <div class="toggle-wrapper">
+                <input id="pagedMode" type="checkbox" />
+                <span class="toggle-slider"></span>
+              </div>
+              <div class="text-content">
+                <span class="main">Modo páginas (sin scroll)</span>
+                <span class="sub">Muestra el tablero en páginas con posiciones fijas en vez de un scroll largo (mejor para planificación motora y barrido)</span>
+              </div>
+            </label>
+
+            <label class="field-row">
+              <div class="toggle-wrapper">
+                <input id="scanningEnabled" type="checkbox" />
+                <span class="toggle-slider"></span>
+              </div>
+              <div class="text-content">
+                <span class="main">Modo de Barrido (Scanning)</span>
+                <span class="sub">Cicla automáticamente entre botones (usa Espacio/Enter para seleccionar). En modo páginas usa barrido fila-columna.</span>
+              </div>
             </label>
 
             <label class="field">
-              <span>Velocidad de voz</span>
-              <input id="rate" type="range" min="0.6" max="1.4" step="0.1" />
+              <span>Velocidad de barrido: <span id="scanSpeedValue">2.0</span> s por botón</span>
+              <input id="scanSpeed" type="range" min="1" max="6" step="0.5" value="2"
+                aria-label="Segundos que cada botón permanece resaltado en modo barrido" />
             </label>
 
-            <label class="field">
-              <span>Modo de Lectura</span>
-              <select id="speechMode" class="glass-input">
-                <option value="fluent">Fluida (Oración)</option>
-                <option value="word">Palabra por palabra</option>
+            <label class="field-row">
+              <div class="toggle-wrapper">
+                <input id="showGrammarTags" type="checkbox" />
+                <span class="toggle-slider"></span>
+              </div>
+              <div class="text-content">
+                <span class="main">Etiquetas gramaticales</span>
+                <span class="sub">Muestra el tipo de palabra sobre cada botón — V (verbo), S (sustantivo), A (adjetivo), So (social), O (otros)</span>
+              </div>
+            </label>
+
+            <label class="field-row">
+              <div class="toggle-wrapper">
+                <input id="showRoutine" type="checkbox" />
+                <span class="toggle-slider"></span>
+              </div>
+              <div class="text-content">
+                <span class="main">Mostrar Panel de Rutina</span>
+                <span class="sub">Habilita una barra superior para organizar horarios visuales</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="hub-screen hidden" id="screen-offline">
+          <div class="hub-screen-head">
+            <button type="button" class="btn glass" data-hub-back>← Menú</button>
+            <span class="hub-screen-title">Uso sin conexión</span>
+          </div>
+          <div class="settings-section">
+            <p class="settings-hint">Descarga todos los pictogramas y audios al dispositivo para que la app funcione completa sin internet.</p>
+            <button type="button" class="btn primary-action full-width" id="btnDownloadAll">⬇️ Descargar todo para uso sin conexión</button>
+            <div class="download-progress hidden" id="downloadProgress" role="status" aria-live="polite">
+              <div class="download-bar"><div class="download-bar-fill" id="downloadBarFill"></div></div>
+              <span class="download-progress-text" id="downloadProgressText">0%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="hub-screen hidden" id="screen-tutor">
+          <div class="hub-screen-head">
+            <button type="button" class="btn glass" data-hub-back>← Menú</button>
+            <span class="hub-screen-title">Modo Tutor y Seguridad</span>
+          </div>
+          <div class="settings-section">
+            <h3>Seguridad</h3>
+            <label class="field-row">
+              <div class="toggle-wrapper">
+                <input id="lockEdit" type="checkbox" />
+                <span class="toggle-slider"></span>
+              </div>
+              <div class="text-content">
+                <span class="main">Bloquear edición</span>
+                <span class="sub">Evita cambios accidentales en el tablero</span>
+              </div>
+            </label>
+
+            <label class="field-row">
+              <div class="toggle-wrapper">
+                <input id="tutorMode" type="checkbox" />
+                <span class="toggle-slider"></span>
+              </div>
+              <div class="text-content">
+                <span class="main">Modo Tutor (Filtrado)</span>
+                <span class="sub">Oculta o muestra elementos específicos para cada sesión</span>
+              </div>
+            </label>
+
+            <div class="field">
+              <span>PIN del Modo Tutor</span>
+              <div class="pin-change-row">
+                <input id="newPin" type="password" inputmode="numeric" maxlength="4" placeholder="Nuevo PIN (4 dígitos)" aria-label="Nuevo PIN de 4 dígitos" />
+                <button type="button" class="btn glass" id="btnChangePin">Cambiar</button>
+              </div>
+              <small class="settings-hint">Protege el Modo Tutor, el desbloqueo de edición y el borrado de la bitácora. Se pedirá el PIN actual para confirmar. PIN por defecto: <strong>0000</strong>.</small>
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <h3>Vocabulario progresivo</h3>
+            <p class="settings-hint">Activa el Modo Tutor y toca palabras en el tablero para ocultarlas o mostrarlas.
+              Cuando tengas listo un conjunto (por ejemplo, solo lo esencial), guárdalo aquí como un «nivel» con nombre.
+              Luego puedes cambiar de nivel con un toque, sin tener que ocultar cada palabra de nuevo — así se puede ir
+              ampliando el vocabulario disponible a medida que la persona avanza.</p>
+            <div class="row compact">
+              <select id="vocabLevelSelect" class="glass-input flex-grow">
+                <option value="">Todo visible (sin nivel)</option>
               </select>
-            </label>
+              <button type="button" class="btn glass secondary" id="btnApplyVocabLevel">Aplicar nivel</button>
+            </div>
+            <div class="row compact" style="margin-top: 10px;">
+              <input id="newVocabLevelName" class="glass-input flex-grow" maxlength="30"
+                     placeholder="Nombre del nivel (ej. Nivel 1 · Básico)" />
+              <button type="button" class="btn glass secondary" id="btnSaveVocabLevel">Guardar nivel actual</button>
+            </div>
+            <div class="row compact" style="margin-top: 10px;">
+              <button type="button" class="btn glass secondary flex-grow" id="btnDeleteVocabLevel">Eliminar nivel seleccionado</button>
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <h3>Clínico</h3>
+            <button type="button" class="btn glass warning full-width" id="btnOpenHistory">📊 Ver Bitácora de Uso</button>
           </div>
         </div>
 
-        <div class="settings-section">
-          <h3>Interfaz y Estilo</h3>
-          <div class="row">
-            <label class="field">
-              <span>Tamaño de botones</span>
-              <input id="tileSize" type="range" min="100" max="220" step="5" />
-            </label>
-
-            <label class="field">
-              <span>Modo de Interacción</span>
-              <select id="tapMode" class="glass-input">
-                <option value="add">1 toque = añadir a frase</option>
-                <option value="speak">1 toque = hablar ítem</option>
-              </select>
-            </label>
-
-            <label class="field">
-              <span>Perfil de Tablero</span>
-              <select id="boardProfile" class="glass-input">
-                <option value="default">General</option>
-                <option value="home">Casa</option>
-                <option value="school">Escuela / Terapia</option>
-                <option value="sos">Emergencias</option>
-              </select>
-            </label>
+        <div class="hub-screen hidden" id="screen-about">
+          <div class="hub-screen-head">
+            <button type="button" class="btn glass" data-hub-back>← Menú</button>
+            <span class="hub-screen-title">Acerca de HolAAC!</span>
           </div>
-
-          <label class="field-row">
-            <div class="toggle-wrapper">
-              <input id="darkMode" type="checkbox" />
-              <span class="toggle-slider"></span>
-            </div>
-            <div class="text-content">
-              <span class="main">Tema Obscuro (Moomins Style)</span>
-              <span class="sub">Activa una paleta relajante y premium</span>
-            </div>
-          </label>
-
-          <div class="field">
-            <span>Categorías activas</span>
-            <div id="activeCategoryList" class="category-toggle-list"></div>
-          </div>
-        </div>
-
-        <div class="settings-section">
-          <h3>Accesibilidad</h3>
-          <label class="field-row">
-            <div class="toggle-wrapper">
-              <input id="hapticFeedback" type="checkbox" checked />
-              <span class="toggle-slider"></span>
-            </div>
-            <div class="text-content">
-              <span class="main">Vibración al tocar</span>
-              <span class="sub">Confirma cada toque con una vibración breve (en dispositivos compatibles)</span>
-            </div>
-          </label>
-
-          <label class="field-row">
-            <div class="toggle-wrapper">
-              <input id="pagedMode" type="checkbox" />
-              <span class="toggle-slider"></span>
-            </div>
-            <div class="text-content">
-              <span class="main">Modo páginas (sin scroll)</span>
-              <span class="sub">Muestra el tablero en páginas con posiciones fijas en vez de un scroll largo (mejor para planificación motora y barrido)</span>
-            </div>
-          </label>
-
-          <label class="field-row">
-            <div class="toggle-wrapper">
-              <input id="scanningEnabled" type="checkbox" />
-              <span class="toggle-slider"></span>
-            </div>
-            <div class="text-content">
-              <span class="main">Modo de Barrido (Scanning)</span>
-              <span class="sub">Cicla automáticamente entre botones (usa Espacio/Enter para seleccionar). En modo páginas usa barrido fila-columna.</span>
-            </div>
-          </label>
-
-          <label class="field">
-            <span>Velocidad de barrido: <span id="scanSpeedValue">2.0</span> s por botón</span>
-            <input id="scanSpeed" type="range" min="1" max="6" step="0.5" value="2"
-              aria-label="Segundos que cada botón permanece resaltado en modo barrido" />
-          </label>
-
-          <label class="field-row">
-            <div class="toggle-wrapper">
-              <input id="showGrammarTags" type="checkbox" />
-              <span class="toggle-slider"></span>
-            </div>
-            <div class="text-content">
-              <span class="main">Etiquetas gramaticales</span>
-              <span class="sub">Muestra el tipo de palabra sobre cada botón — V (verbo), S (sustantivo), A (adjetivo), So (social), O (otros)</span>
-            </div>
-          </label>
-
-          <label class="field-row">
-            <div class="toggle-wrapper">
-              <input id="showRoutine" type="checkbox" />
-              <span class="toggle-slider"></span>
-            </div>
-            <div class="text-content">
-              <span class="main">Mostrar Panel de Rutina</span>
-              <span class="sub">Habilita una barra superior para organizar horarios visuales</span>
-            </div>
-          </label>
-        </div>
-
-        <div class="settings-section">
-          <h3>Uso sin conexión</h3>
-          <p class="settings-hint">Descarga todos los pictogramas y audios al dispositivo para que la app funcione completa sin internet.</p>
-          <button type="button" class="btn primary-action full-width" id="btnDownloadAll">⬇️ Descargar todo para uso sin conexión</button>
-          <div class="download-progress hidden" id="downloadProgress" role="status" aria-live="polite">
-            <div class="download-bar"><div class="download-bar-fill" id="downloadBarFill"></div></div>
-            <span class="download-progress-text" id="downloadProgressText">0%</span>
-          </div>
-        </div>
-
-        <div class="settings-section">
-          <h3>Seguridad</h3>
-          <label class="field-row">
-            <div class="toggle-wrapper">
-              <input id="lockEdit" type="checkbox" />
-              <span class="toggle-slider"></span>
-            </div>
-            <div class="text-content">
-              <span class="main">Bloquear edición</span>
-              <span class="sub">Evita cambios accidentales en el tablero</span>
-            </div>
-          </label>
-
-          <label class="field-row">
-            <div class="toggle-wrapper">
-              <input id="tutorMode" type="checkbox" />
-              <span class="toggle-slider"></span>
-            </div>
-            <div class="text-content">
-              <span class="main">Modo Tutor (Filtrado)</span>
-              <span class="sub">Oculta o muestra elementos específicos para cada sesión</span>
-            </div>
-          </label>
-
-          <div class="field">
-            <span>PIN del Modo Tutor</span>
-            <div class="pin-change-row">
-              <input id="newPin" type="password" inputmode="numeric" maxlength="4" placeholder="Nuevo PIN (4 dígitos)" aria-label="Nuevo PIN de 4 dígitos" />
-              <button type="button" class="btn glass" id="btnChangePin">Cambiar</button>
-            </div>
-            <small class="settings-hint">Protege el Modo Tutor, el desbloqueo de edición y el borrado de la bitácora. Se pedirá el PIN actual para confirmar. PIN por defecto: <strong>0000</strong>.</small>
-          </div>
-        </div>
-
-        <div class="settings-section">
-          <h3>Vocabulario progresivo</h3>
-          <p class="settings-hint">Activa el Modo Tutor y toca palabras en el tablero para ocultarlas o mostrarlas.
-            Cuando tengas listo un conjunto (por ejemplo, solo lo esencial), guárdalo aquí como un «nivel» con nombre.
-            Luego puedes cambiar de nivel con un toque, sin tener que ocultar cada palabra de nuevo — así se puede ir
-            ampliando el vocabulario disponible a medida que la persona avanza.</p>
-          <div class="row compact">
-            <select id="vocabLevelSelect" class="glass-input flex-grow">
-              <option value="">Todo visible (sin nivel)</option>
-            </select>
-            <button type="button" class="btn glass secondary" id="btnApplyVocabLevel">Aplicar nivel</button>
-          </div>
-          <div class="row compact" style="margin-top: 10px;">
-            <input id="newVocabLevelName" class="glass-input flex-grow" maxlength="30"
-                   placeholder="Nombre del nivel (ej. Nivel 1 · Básico)" />
-            <button type="button" class="btn glass secondary" id="btnSaveVocabLevel">Guardar nivel actual</button>
-          </div>
-          <div class="row compact" style="margin-top: 10px;">
-            <button type="button" class="btn glass secondary flex-grow" id="btnDeleteVocabLevel">Eliminar nivel seleccionado</button>
-          </div>
-        </div>
-
-        <div class="settings-section">
-          <h3>Acerca de HolAAC!</h3>
-          <div class="about-card">
-            <div class="about-author-row">
-              <div class="about-author-info">
-                <p class="about-name">César Celada</p>
-                <p class="about-role">Psiquiatra · Desarrollador</p>
+          <div class="settings-section">
+            <div class="about-card">
+              <div class="about-author-row">
+                <div class="about-author-info">
+                  <p class="about-name">César Celada</p>
+                  <p class="about-role">Psiquiatra · Desarrollador</p>
+                </div>
+                <div class="about-links">
+                  <a href="mailto:drceladapsiquiatria@gmail.com" class="about-link" aria-label="Enviar correo al autor">✉️</a>
+                  <a href="https://github.com/pataforista/noverbal" target="_blank" rel="noopener" class="about-link" aria-label="Ver código fuente en GitHub">🔗</a>
+                </div>
               </div>
-              <div class="about-links">
-                <a href="mailto:drceladapsiquiatria@gmail.com" class="about-link" aria-label="Enviar correo al autor">✉️</a>
-                <a href="https://github.com/pataforista/noverbal" target="_blank" rel="noopener" class="about-link" aria-label="Ver código fuente en GitHub">🔗</a>
-              </div>
-            </div>
 
-            <div class="donation-section" role="complementary" aria-label="Apoyar el proyecto">
-              <p class="donation-tagline">HolAAC! es gratuito y sin fines de lucro.<br>Si te resulta útil, puedes apoyar su desarrollo:</p>
-              <a href="https://buymeacoffee.com/herramente" target="_blank" rel="noopener" class="bmc-button-custom" aria-label="Donar en Buy Me a Coffee">
-                <span class="bmc-icon" aria-hidden="true">☕</span>
-                <span>Invítame un café</span>
-              </a>
-            </div>
-          </div>
-        </div>
-
-        <div class="settings-section">
-          <h3>⚠️ Aviso Legal</h3>
-          <div class="disclaimer-card" role="note" aria-label="Aviso legal y condiciones de uso">
-            <div class="disclaimer-item disclaimer-clinical">
-              <span class="disclaimer-icon" aria-hidden="true">🏥</span>
-              <div>
-                <strong>Herramienta de apoyo, no dispositivo médico</strong>
-                <p>HolAAC! es un apoyo a la comunicación. No reemplaza la evaluación ni el tratamiento por profesionales de salud, fonoaudiología o terapia ocupacional. Siempre consulte a un especialista.</p>
-              </div>
-            </div>
-            <div class="disclaimer-item">
-              <span class="disclaimer-icon" aria-hidden="true">🔒</span>
-              <div>
-                <strong>Privacidad de datos</strong>
-                <p>Toda la información —historial clínico, tableros y configuración— se almacena <em>únicamente</em> en este dispositivo. No se envía ningún dato a servidores externos.</p>
-              </div>
-            </div>
-            <div class="disclaimer-item">
-              <span class="disclaimer-icon" aria-hidden="true">🖼️</span>
-              <div>
-                <strong>Pictogramas: ARASAAC</strong>
-                <p>Los pictogramas son © del Gobierno de Aragón y ARASAAC, bajo licencia <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a>. Uso no comercial.</p>
-              </div>
-            </div>
-            <div class="disclaimer-item">
-              <span class="disclaimer-icon" aria-hidden="true">📖</span>
-              <div>
-                <strong>Código abierto (MIT)</strong>
-                <p>HolAAC! es software libre. Puedes ver, modificar y distribuir el código en <a href="https://github.com/pataforista/noverbal" target="_blank" rel="noopener">GitHub</a> respetando la licencia MIT.</p>
+              <div class="donation-section" role="complementary" aria-label="Apoyar el proyecto">
+                <p class="donation-tagline">HolAAC! es gratuito y sin fines de lucro.<br>Si te resulta útil, puedes apoyar su desarrollo:</p>
+                <a href="https://buymeacoffee.com/herramente" target="_blank" rel="noopener" class="bmc-button-custom" aria-label="Donar en Buy Me a Coffee">
+                  <span class="bmc-icon" aria-hidden="true">☕</span>
+                  <span>Invítame un café</span>
+                </a>
               </div>
             </div>
           </div>
-        </div>
 
-        <div class="settings-section">
-          <h3>Clínico</h3>
-          <button type="button" class="btn glass warning full-width" id="btnOpenHistory">📊 Ver Bitácora de Uso</button>
+          <div class="settings-section">
+            <h3>⚠️ Aviso Legal</h3>
+            <div class="disclaimer-card" role="note" aria-label="Aviso legal y condiciones de uso">
+              <div class="disclaimer-item disclaimer-clinical">
+                <span class="disclaimer-icon" aria-hidden="true">🏥</span>
+                <div>
+                  <strong>Herramienta de apoyo, no dispositivo médico</strong>
+                  <p>HolAAC! es un apoyo a la comunicación. No reemplaza la evaluación ni el tratamiento por profesionales de salud, fonoaudiología o terapia ocupacional. Siempre consulte a un especialista.</p>
+                </div>
+              </div>
+              <div class="disclaimer-item">
+                <span class="disclaimer-icon" aria-hidden="true">🔒</span>
+                <div>
+                  <strong>Privacidad de datos</strong>
+                  <p>Toda la información —historial clínico, tableros y configuración— se almacena <em>únicamente</em> en este dispositivo. No se envía ningún dato a servidores externos.</p>
+                </div>
+              </div>
+              <div class="disclaimer-item">
+                <span class="disclaimer-icon" aria-hidden="true">🖼️</span>
+                <div>
+                  <strong>Pictogramas: ARASAAC</strong>
+                  <p>Los pictogramas son © del Gobierno de Aragón y ARASAAC, bajo licencia <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a>. Uso no comercial.</p>
+                </div>
+              </div>
+              <div class="disclaimer-item">
+                <span class="disclaimer-icon" aria-hidden="true">📖</span>
+                <div>
+                  <strong>Código abierto (MIT)</strong>
+                  <p>HolAAC! es software libre. Puedes ver, modificar y distribuir el código en <a href="https://github.com/pataforista/noverbal" target="_blank" rel="noopener">GitHub</a> respetando la licencia MIT.</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

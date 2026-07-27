@@ -1684,6 +1684,73 @@ select:focus {
   letter-spacing: 1px;
 }
 
+/* Hub-and-spoke navigation (menu + focused screens) for Ajustes/Editor ──── */
+.hub-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hub-menu-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 14px 16px;
+  border: var(--border-thick);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+}
+
+.hub-menu-icon {
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
+.hub-menu-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.hub-menu-title {
+  font-weight: 800;
+  font-size: 0.98rem;
+}
+
+.hub-menu-desc {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.hub-menu-chevron {
+  font-size: 1.3rem;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.hub-screen.hidden {
+  display: none;
+}
+
+.hub-screen-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 1.2rem;
+}
+
+.hub-screen-title {
+  font-weight: 800;
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
 .field-row {
   display: flex;
   align-items: center;

@@ -974,6 +974,40 @@ function initTactileFeedback() {
     }, { passive: true });
 }
 
+// Hub-and-spoke navigation for dialogs that had grown into one long scroll
+// (Ajustes, Editor): a menu of rows up front, one focused `.hub-screen` per
+// row, "← Menú" returns to the list. Reopening the dialog always starts back
+// at the menu — same pattern already used by the Escenas gallery/viewer and
+// the Writing panel, just generalised so both big dialogs can share it.
+function initHubDialog(dialog) {
+    if (!dialog) return;
+    const hub = dialog.querySelector('.hub-menu');
+    if (!hub) return; // dialog has no hub screens (e.g. History, PIN)
+    const screens = dialog.querySelectorAll('.hub-screen');
+
+    const showHub = () => {
+        hub.classList.remove('hidden');
+        screens.forEach(s => s.classList.add('hidden'));
+    };
+
+    hub.querySelectorAll('[data-hub-target]').forEach(row => {
+        row.onclick = () => {
+            const target = dialog.querySelector(`#${row.dataset.hubTarget}`);
+            if (!target) return;
+            hub.classList.add('hidden');
+            screens.forEach(s => s.classList.add('hidden'));
+            target.classList.remove('hidden');
+        };
+    });
+
+    dialog.querySelectorAll('[data-hub-back]').forEach(btn => {
+        btn.onclick = showHub;
+    });
+
+    dialog.addEventListener('close', showHub);
+    showHub();
+}
+
 // Initialization
 async function init() {
     // On the very first run (no saved preferences yet) honour the OS colour
@@ -1047,6 +1081,7 @@ async function init() {
     attachListeners();
     initTactileFeedback();
     initStickyOffsets();
+    initHubDialog(dom.settingsModal);
 
     // Setup voice loading BEFORE initial load
     if (window.speechSynthesis) {
