@@ -78,6 +78,9 @@
       <button class="btn btn--labeled" id="btnWriting" aria-label="Abrir teclado para escribir libremente" title="Escribir">
         <span class="btn-icon" aria-hidden="true">⌨️</span><span class="btn-label">Escribir</span>
       </button>
+      <button class="btn btn--labeled" id="btnScenes" aria-label="Abrir escenas visuales con foto propia" title="Escenas">
+        <span class="btn-icon" aria-hidden="true">🖼️</span><span class="btn-label">Escenas</span>
+      </button>
 
       <!-- Caregiver tools. On a phone these collapse behind «Más» so the header
            stays one row: the communicator needs SOS, the profile, «Hablar al
@@ -163,6 +166,46 @@
           <span class="icon" aria-hidden="true">🔊</span>
           <span class="text">Leer texto</span>
         </button>
+      </div>
+    </section>
+
+    <section class="writing-panel scenes-panel hidden" id="scenesPanel" aria-label="Escenas visuales con foto propia">
+      <div class="writing-header">
+        <h2 class="writing-title">🖼️ Escenas visuales</h2>
+        <button class="btn-close" id="btnCloseScenes" aria-label="Cerrar escenas">✕</button>
+      </div>
+
+      <div id="sceneGalleryView">
+        <p class="settings-hint">Sube una foto (por ejemplo, de la cocina o el patio) y marca zonas tocables sobre
+          ella; cada una habla su propia palabra o frase. Todo se guarda solo en este dispositivo.</p>
+        <div id="sceneGallery" class="scene-gallery"></div>
+        <input id="sceneImageInput" type="file" accept="image/*" hidden />
+        <button type="button" class="btn primary-action full-width" id="btnNewScene">➕ Nueva escena (foto)</button>
+      </div>
+
+      <div id="sceneViewer" class="scene-viewer hidden">
+        <div class="scene-viewer-head">
+          <button type="button" class="btn glass" id="btnBackToGallery">← Volver a escenas</button>
+          <span id="sceneViewerName" class="scene-viewer-name"></span>
+          <label class="field-row scene-edit-toggle">
+            <div class="toggle-wrapper">
+              <input id="sceneEditToggle" type="checkbox" />
+              <span class="toggle-slider"></span>
+            </div>
+            <span class="main">Editar zonas</span>
+          </label>
+        </div>
+        <div class="scene-stage" id="sceneStage">
+          <img id="sceneImage" alt="" />
+        </div>
+        <div id="sceneEditTools" class="scene-edit-tools hidden">
+          <p class="settings-hint">Toca la foto para agregar una zona nueva ahí. Toca una zona existente para
+            editar su texto o borrarla.</p>
+          <div class="row compact">
+            <button type="button" class="btn glass secondary flex-grow" id="btnRenameScene">✏️ Renombrar escena</button>
+            <button type="button" class="btn danger flex-grow" id="btnDeleteScene">🗑️ Eliminar escena</button>
+          </div>
+        </div>
       </div>
     </section>
 

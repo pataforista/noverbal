@@ -16,6 +16,7 @@ const LS_KEYS = {
     coreWords: "aac_core_words_v1", // ids pinned to the fixed core row (Fase 4)
     vocabLevels: "aac_vocab_levels_v1", // named hiddenTags snapshots (Fase 9, progressive vocabulary)
     activeVocabLevel: "aac_active_vocab_level_v1",
+    scenes: "aac_scenes_v1", // localStorage fallback for visual scenes (Fase 10)
 };
 
 const DEFAULT_ITEMS = [
@@ -149,14 +150,24 @@ const state = {
     // switch the whole set of visible words with one tap instead of hiding
     // items one by one every time (Fase 9, progressive vocabulary).
     vocabLevels: loadJSON(LS_KEYS.vocabLevels, []),
-    activeVocabLevelId: localStorage.getItem(LS_KEYS.activeVocabLevel) || ""
+    activeVocabLevelId: localStorage.getItem(LS_KEYS.activeVocabLevel) || "",
+    // Visual scenes: user photos with tappable hotspots (Fase 10).
+    scenes: [],
+    sceneView: { openId: null, editing: false }
 };
+
+// Rotating palette for new hotspots, so zones on a scene are visually
+// distinct without asking the tutor to pick a colour every time.
+const HOTSPOT_COLORS = ['#22c55e', '#3b82f6', '#f59e0b', '#a855f7', '#ef4444', '#0ea5e9', '#ec4899', '#64748b'];
+const HOTSPOT_WIDTH_PCT = 18;
+const HOTSPOT_HEIGHT_PCT = 14;
 
 // IndexedDB Helper
 const dbName = "MiTableroAAC_DB";
 // v3: history store migrated to autoIncrement so two entries in the same
 // millisecond can no longer collide on the timestamp key (P1-4).
-const dbVersion = 3;
+// v4: added "scenes" store for visual scene displays (Fase 10).
+const dbVersion = 4;
 let db = null;
 // When IndexedDB is unavailable (Safari/Firefox private mode, storage full),
 // we degrade gracefully to localStorage so the app still works (P0-1).
@@ -368,6 +379,9 @@ async function initDB() {
             if (!database.objectStoreNames.contains("items")) {
                 database.createObjectStore("items", { keyPath: "id" });
             }
+            if (!database.objectStoreNames.contains("scenes")) {
+                database.createObjectStore("scenes", { keyPath: "id" });
+            }
             // Migrate history to an autoIncrement key, rescuing existing records.
             if (!database.objectStoreNames.contains("history")) {
                 database.createObjectStore("history", { keyPath: "id", autoIncrement: true });
@@ -436,6 +450,238 @@ async function deleteItemDB(id) {
     const transaction = db.transaction(["items"], "readwrite");
     const store = transaction.objectStore("items");
     store.delete(id);
+}
+
+// ── Visual scenes (Fase 10) ──────────────────────────────────────────────
+// A scene is a user photo with "hotspots" — tappable zones positioned as
+// percentages of the image so they stay put across screen sizes — each
+// speaking its own text. Same idb-or-local storage pattern as items.
+
+async function getAllScenes() {
+    if (storageMode === "local") return loadJSON(LS_KEYS.scenes, []);
+    return new Promise((resolve, reject) => {
+        try {
+            const transaction = db.transaction(["scenes"], "readonly");
+            const store = transaction.objectStore("scenes");
+            const request = store.getAll();
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        } catch (err) {
+            reject(err);
+        }
+    });
+}
+
+async function saveSceneDB(scene) {
+    if (storageMode === "local") {
+        const scenes = loadJSON(LS_KEYS.scenes, []);
+        const idx = scenes.findIndex((s) => s.id === scene.id);
+        if (idx >= 0) scenes[idx] = scene;
+        else scenes.push(scene);
+        localStorage.setItem(LS_KEYS.scenes, JSON.stringify(scenes));
+        return;
+    }
+    const transaction = db.transaction(["scenes"], "readwrite");
+    const store = transaction.objectStore("scenes");
+    store.put(scene);
+}
+
+async function deleteSceneDB(id) {
+    if (storageMode === "local") {
+        const scenes = loadJSON(LS_KEYS.scenes, []).filter((s) => s.id !== id);
+        localStorage.setItem(LS_KEYS.scenes, JSON.stringify(scenes));
+        return;
+    }
+    const transaction = db.transaction(["scenes"], "readwrite");
+    const store = transaction.objectStore("scenes");
+    store.delete(id);
+}
+
+// Downscale a data URL on a canvas so a full-resolution camera photo doesn't
+// balloon local storage; falls back to the original if decoding fails.
+function downscaleImage(dataUrl, maxDim = 1600, quality = 0.85) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+            let { width, height } = img;
+            if (width > maxDim || height > maxDim) {
+                const scale = maxDim / Math.max(width, height);
+                width = Math.round(width * scale);
+                height = Math.round(height * scale);
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.onerror = () => resolve(dataUrl);
+        img.src = dataUrl;
+    });
+}
+
+function showSceneGallery() {
+    state.sceneView = { openId: null, editing: false };
+    dom.sceneGalleryView.classList.remove('hidden');
+    dom.sceneViewer.classList.add('hidden');
+    renderSceneGallery();
+}
+
+function renderSceneGallery() {
+    const gallery = dom.sceneGallery;
+    gallery.innerHTML = '';
+    for (const scene of state.scenes) {
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'scene-card';
+        const img = document.createElement('img');
+        img.src = scene.image;
+        img.alt = '';
+        const name = document.createElement('div');
+        name.className = 'scene-card-name';
+        name.textContent = scene.name; // textContent: scene names are user text, never HTML (P0-10 convention)
+        card.appendChild(img);
+        card.appendChild(name);
+        card.onclick = () => openScene(scene.id);
+        gallery.appendChild(card);
+    }
+}
+
+async function handleNewSceneImage(e) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    const name = (prompt('Nombre de la escena (ej. Cocina, Patio):', '') || '').trim().slice(0, 40);
+    if (!name) {
+        flashStatus('Escena cancelada: hace falta un nombre');
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+        const image = await downscaleImage(ev.target.result);
+        const scene = { id: crypto.randomUUID(), name, image, hotspots: [] };
+        state.scenes.push(scene);
+        await saveSceneDB(scene);
+        renderSceneGallery();
+        openScene(scene.id, { startEditing: true });
+        flashStatus(`Escena «${name}» creada`);
+    };
+    reader.readAsDataURL(file);
+}
+
+function getCurrentScene() {
+    return state.scenes.find(s => s.id === state.sceneView.openId);
+}
+
+function openScene(id, opts = {}) {
+    state.sceneView = { openId: id, editing: !!opts.startEditing };
+    dom.sceneGalleryView.classList.add('hidden');
+    dom.sceneViewer.classList.remove('hidden');
+    dom.sceneEditToggle.checked = state.sceneView.editing;
+    renderSceneViewer();
+}
+
+function renderSceneViewer() {
+    const scene = getCurrentScene();
+    if (!scene) { showSceneGallery(); return; }
+
+    dom.sceneViewerName.textContent = scene.name;
+    dom.sceneImage.src = scene.image;
+    dom.sceneImage.alt = scene.name;
+    dom.sceneEditTools.classList.toggle('hidden', !state.sceneView.editing);
+    dom.sceneStage.classList.toggle('is-editing', state.sceneView.editing);
+
+    // Clear previously rendered hotspots (keep the <img> itself).
+    dom.sceneStage.querySelectorAll('.scene-hotspot').forEach(el => el.remove());
+
+    scene.hotspots.forEach((spot, idx) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'scene-hotspot';
+        btn.style.left = `${spot.xPct - spot.wPct / 2}%`;
+        btn.style.top = `${spot.yPct - spot.hPct / 2}%`;
+        btn.style.width = `${spot.wPct}%`;
+        btn.style.height = `${spot.hPct}%`;
+        btn.style.backgroundColor = spot.color;
+        btn.textContent = spot.text; // textContent: hotspot text is user data, never HTML (P0-10 convention)
+        btn.setAttribute('aria-label', spot.text);
+        btn.onclick = (e) => {
+            e.stopPropagation();
+            if (state.sceneView.editing) {
+                editOrDeleteHotspot(scene, idx);
+            } else {
+                speakText(spot.text);
+                haptic();
+                logActivity(`Emitido (escena ${scene.name}): ${spot.text}`);
+            }
+        };
+        dom.sceneStage.appendChild(btn);
+    });
+
+    // Tapping empty photo space while editing adds a new hotspot there.
+    dom.sceneImage.onclick = (e) => {
+        if (!state.sceneView.editing) return;
+        const rect = dom.sceneImage.getBoundingClientRect();
+        const xPct = ((e.clientX - rect.left) / rect.width) * 100;
+        const yPct = ((e.clientY - rect.top) / rect.height) * 100;
+        addHotspotAt(scene, xPct, yPct);
+    };
+}
+
+function addHotspotAt(scene, xPct, yPct) {
+    const text = (prompt('Texto para esta zona (lo que dirá en voz alta):', '') || '').trim().slice(0, 80);
+    if (!text) return;
+    const clamp = (v, half) => Math.min(100 - half, Math.max(half, v));
+    const spot = {
+        id: crypto.randomUUID(),
+        text,
+        color: HOTSPOT_COLORS[scene.hotspots.length % HOTSPOT_COLORS.length],
+        xPct: clamp(xPct, HOTSPOT_WIDTH_PCT / 2),
+        yPct: clamp(yPct, HOTSPOT_HEIGHT_PCT / 2),
+        wPct: HOTSPOT_WIDTH_PCT,
+        hPct: HOTSPOT_HEIGHT_PCT
+    };
+    scene.hotspots.push(spot);
+    saveSceneDB(scene);
+    renderSceneViewer();
+}
+
+function editOrDeleteHotspot(scene, idx) {
+    const spot = scene.hotspots[idx];
+    const next = prompt('Editar el texto de esta zona (déjalo vacío y confirma para eliminarla):', spot.text);
+    if (next === null) return; // cancelled, no change
+    const trimmed = next.trim().slice(0, 80);
+    if (!trimmed) {
+        if (!confirm('¿Eliminar esta zona?')) return;
+        scene.hotspots.splice(idx, 1);
+    } else {
+        spot.text = trimmed;
+    }
+    saveSceneDB(scene);
+    renderSceneViewer();
+}
+
+function renameCurrentScene() {
+    const scene = getCurrentScene();
+    if (!scene) return;
+    const next = (prompt('Nuevo nombre de la escena:', scene.name) || '').trim().slice(0, 40);
+    if (!next) return;
+    scene.name = next;
+    saveSceneDB(scene);
+    dom.sceneViewerName.textContent = scene.name;
+}
+
+async function deleteCurrentScene() {
+    const scene = getCurrentScene();
+    if (!scene) return;
+    if (!confirm(`¿Eliminar la escena «${scene.name}» y todas sus zonas? Esto no se puede deshacer.`)) return;
+    state.scenes = state.scenes.filter(s => s.id !== scene.id);
+    await deleteSceneDB(scene.id);
+    showSceneGallery();
+    flashStatus('Escena eliminada');
 }
 
 async function logActivity(content) {
@@ -574,6 +820,23 @@ const dom = {
     // Writing Module
     btnWriting: document.getElementById('btnWriting'),
     writingPanel: document.getElementById('writingPanel'),
+    // Visual scenes
+    btnScenes: document.getElementById('btnScenes'),
+    scenesPanel: document.getElementById('scenesPanel'),
+    btnCloseScenes: document.getElementById('btnCloseScenes'),
+    sceneGalleryView: document.getElementById('sceneGalleryView'),
+    sceneGallery: document.getElementById('sceneGallery'),
+    sceneImageInput: document.getElementById('sceneImageInput'),
+    btnNewScene: document.getElementById('btnNewScene'),
+    sceneViewer: document.getElementById('sceneViewer'),
+    btnBackToGallery: document.getElementById('btnBackToGallery'),
+    sceneViewerName: document.getElementById('sceneViewerName'),
+    sceneEditToggle: document.getElementById('sceneEditToggle'),
+    sceneStage: document.getElementById('sceneStage'),
+    sceneImage: document.getElementById('sceneImage'),
+    sceneEditTools: document.getElementById('sceneEditTools'),
+    btnRenameScene: document.getElementById('btnRenameScene'),
+    btnDeleteScene: document.getElementById('btnDeleteScene'),
     writingInput: document.getElementById('writingInput'),
     btnSpeakWriting: document.getElementById('btnSpeakWriting'),
     btnClearWriting: document.getElementById('btnClearWriting'),
@@ -768,6 +1031,13 @@ async function init() {
         await ensureLibraryItemsPresent();
     }
 
+    try {
+        state.scenes = await getAllScenes();
+    } catch (err) {
+        console.error('No se pudieron leer las escenas guardadas:', err);
+        state.scenes = [];
+    }
+
     ensureActiveCategories();
     initCoreWords();
     applySettings();
@@ -876,6 +1146,7 @@ async function init() {
 function attachListeners() {
     // Writing Module
     dom.btnWriting.onclick = () => {
+        dom.scenesPanel.classList.add('hidden');
         dom.writingPanel.classList.toggle('hidden');
         if (!dom.writingPanel.classList.contains('hidden')) {
             dom.writingInput.focus();
@@ -903,6 +1174,25 @@ function attachListeners() {
             dom.btnSpeakWriting.click();
         }
     });
+
+    // Visual scenes (Fase 10)
+    dom.btnScenes.onclick = () => {
+        dom.writingPanel.classList.add('hidden');
+        dom.scenesPanel.classList.toggle('hidden');
+        if (!dom.scenesPanel.classList.contains('hidden')) {
+            showSceneGallery();
+        }
+    };
+    dom.btnCloseScenes.onclick = () => dom.scenesPanel.classList.add('hidden');
+    dom.btnNewScene.onclick = () => dom.sceneImageInput.click();
+    dom.sceneImageInput.onchange = handleNewSceneImage;
+    dom.btnBackToGallery.onclick = showSceneGallery;
+    dom.sceneEditToggle.onchange = (e) => {
+        state.sceneView.editing = e.target.checked;
+        renderSceneViewer();
+    };
+    dom.btnRenameScene.onclick = renameCurrentScene;
+    dom.btnDeleteScene.onclick = deleteCurrentScene;
 
     // Caregiver-tools overflow menu (phones and short landscape only; on wider
     // screens the wrapper is `display: contents` and the button is hidden).
@@ -1685,6 +1975,7 @@ function exportData() {
         coreWords: state.coreWords,
         vocabLevels: state.vocabLevels,
         activeVocabLevelId: state.activeVocabLevelId,
+        scenes: state.scenes,
         exportedAt: new Date().toISOString()
     };
 
@@ -1768,10 +2059,34 @@ async function importData(e) {
             setActiveVocabLevelId(state.vocabLevels.some(l => l.id === restoredActive) ? restoredActive : "");
         }
 
+        // Restore visual scenes, sanitizing the same way item images/colours are.
+        if (Array.isArray(parsed.scenes)) {
+            const sanitized = parsed.scenes
+                .filter(s => s && typeof s.id === 'string' && typeof s.name === 'string' && sanitizeImage(s.image))
+                .map(s => ({
+                    id: s.id,
+                    name: s.name.slice(0, 40),
+                    image: sanitizeImage(s.image),
+                    hotspots: Array.isArray(s.hotspots) ? s.hotspots
+                        .filter(h => h && typeof h.text === 'string')
+                        .map(h => ({
+                            id: typeof h.id === 'string' ? h.id : crypto.randomUUID(),
+                            text: String(h.text).slice(0, 80),
+                            color: sanitizeColor(h.color),
+                            xPct: Math.min(100, Math.max(0, Number(h.xPct) || 50)),
+                            yPct: Math.min(100, Math.max(0, Number(h.yPct) || 50)),
+                            wPct: Math.min(100, Math.max(4, Number(h.wPct) || HOTSPOT_WIDTH_PCT)),
+                            hPct: Math.min(100, Math.max(4, Number(h.hPct) || HOTSPOT_HEIGHT_PCT))
+                        })) : []
+                }));
+            await replaceAllScenes(sanitized);
+        }
+
         save();
         applySettings();
         render();
         renderItemList();
+        renderSceneGallery();
 
         flashStatus('Importación completada');
     } catch (error) {
@@ -1860,6 +2175,27 @@ async function replaceAllItems(items) {
     });
 
     state.items = sanitized;
+}
+
+async function replaceAllScenes(scenes) {
+    if (storageMode === 'local') {
+        localStorage.setItem(LS_KEYS.scenes, JSON.stringify(scenes));
+        state.scenes = scenes;
+        return;
+    }
+
+    const tx = db.transaction(['scenes'], 'readwrite');
+    const store = tx.objectStore('scenes');
+    store.clear();
+    scenes.forEach(scene => store.put(scene));
+
+    await new Promise((resolve, reject) => {
+        tx.oncomplete = resolve;
+        tx.onerror = () => reject(tx.error);
+        tx.onabort = () => reject(tx.error);
+    });
+
+    state.scenes = scenes;
 }
 
 // ARASAAC Integration

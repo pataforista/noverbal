@@ -110,6 +110,46 @@ test('vocabulary levels hide/show a whole saved set with one tap (progressive vo
   expect(page.errors, page.errors.join('\n')).toHaveLength(0);
 });
 
+test('visual scenes: create a scene, place a hotspot, and speak it (Avaz-style VSD)', async ({ page }) => {
+  // Minimal 1x1 PNG, uploaded as a "photo" for the scene.
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+    'base64',
+  );
+
+  const prompts = [];
+  page.on('dialog', async (d) => {
+    prompts.push(d.message());
+    if (d.message().startsWith('Nombre de la escena')) await d.accept('Cocina de prueba');
+    else if (d.message().startsWith('Texto para esta zona')) await d.accept('Quiero agua');
+    else await d.accept();
+  });
+
+  await page.locator('#btnScenes').click();
+  await expect(page.locator('#scenesPanel')).toBeVisible();
+
+  await page.setInputFiles('#sceneImageInput', { name: 'cocina.png', mimeType: 'image/png', buffer: png });
+  await expect(page.locator('#sceneViewer')).toBeVisible();
+  await expect(page.locator('#sceneViewerName')).toHaveText('Cocina de prueba');
+
+  // Scene opens already in edit mode after creation; tap the photo to place a hotspot.
+  // Click via a locator (not raw page.mouse) so Playwright scrolls the image into
+  // view first — it can render below the fold on a short viewport.
+  const box = await page.locator('#sceneImage').boundingBox();
+  await page.locator('#sceneImage').click({ position: { x: box.width / 2, y: box.height / 2 } });
+  await expect(page.locator('.scene-hotspot')).toHaveCount(1);
+  await expect(page.locator('.scene-hotspot')).toHaveText('Quiero agua');
+
+  // Leave edit mode: tapping the hotspot now speaks it instead of opening the editor.
+  await page.locator('#sceneEditToggle + .toggle-slider').click();
+  await page.locator('.scene-hotspot').click();
+  expect(prompts).toEqual(['Nombre de la escena (ej. Cocina, Patio):', 'Texto para esta zona (lo que dirá en voz alta):']);
+
+  await page.locator('#btnBackToGallery').click();
+  await expect(page.locator('.scene-card')).toHaveCount(1);
+  expect(page.errors, page.errors.join('\n')).toHaveLength(0);
+});
+
 test('paged mode shows fixed pages with working navigation (N-1)', async ({ page }) => {
   await page.locator('#categoryBar .pill', { hasText: 'Todas' }).first().click();
   // The toggle is a styled checkbox inside the (closed) Settings modal; activate
