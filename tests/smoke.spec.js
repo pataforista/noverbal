@@ -82,6 +82,42 @@ test('backup export produces a versioned, importable JSON file (device transfer)
   expect(page.errors, page.errors.join('\n')).toHaveLength(0);
 });
 
+test('imports a single Open Board Format (.obf) board as a new, additive category', async ({ page }) => {
+  const obf = {
+    format: 'open-board-0.1',
+    id: 'root',
+    name: 'Mi Tablero Importado',
+    buttons: [
+      { id: 'b1', label: 'Manzana', background_color: 'rgb(255, 0, 0)' },
+      { id: 'b2', label: 'Pera', background_color: 'rgba(0, 255, 0, 0.5)' },
+    ],
+    grid: { rows: 1, columns: 2, order: [['b1', 'b2']] },
+    images: [],
+  };
+
+  const boardsBefore = await page.locator('#grid .tile:not([data-id="nav-anchor"])').count();
+
+  await page.locator('#btnEdit').click();
+  page.once('dialog', (d) => d.accept());
+  await page.setInputFiles('#importObfFile', {
+    name: 'board.obf',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(obf)),
+  });
+  await expect(page.locator('#statusText')).toHaveText(/importado/);
+  expect(page.errors, page.errors.join('\n')).toHaveLength(0);
+
+  await page.locator('[data-close-dialog="editModal"]').click();
+  await page.locator('#categoryBar .pill', { hasText: 'Mi Tablero Importado' }).click();
+  await expect(page.locator('#grid .tile', { hasText: 'Manzana' })).toHaveCount(1);
+  await expect(page.locator('#grid .tile', { hasText: 'Pera' })).toHaveCount(1);
+
+  // Existing catalog items were untouched — this was additive, not a replace.
+  await page.locator('#categoryBar .pill', { hasText: 'Todas' }).first().click();
+  const boardsAfter = await page.locator('#grid .tile:not([data-id="nav-anchor"])').count();
+  expect(boardsAfter).toBe(boardsBefore + 2);
+});
+
 test('vocabulary levels hide/show a whole saved set with one tap (progressive vocabulary)', async ({ page }) => {
   const target = page.locator('#grid .tile:not([data-id="nav-anchor"])').first();
   const targetId = await target.getAttribute('data-id');

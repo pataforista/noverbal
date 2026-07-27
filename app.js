@@ -782,6 +782,8 @@ const dom = {
     btnExport: document.getElementById('btnExport'),
     btnImport: document.getElementById('btnImport'),
     importFile: document.getElementById('importFile'),
+    btnImportObf: document.getElementById('btnImportObf'),
+    importObfFile: document.getElementById('importObfFile'),
     btnLoadLibrary: document.getElementById('btnLoadLibrary'),
     // Professional features
     routineBar: document.getElementById('routineBar'),
@@ -1311,6 +1313,14 @@ function attachListeners() {
         dom.importFile.click();
     };
     dom.importFile.onchange = importData;
+
+    if (dom.btnImportObf) {
+        dom.btnImportObf.onclick = (e) => {
+            e.preventDefault();
+            dom.importObfFile.click();
+        };
+        dom.importObfFile.onchange = importObfBoard;
+    }
 
     document.querySelectorAll('[data-close-dialog]').forEach((btn) => {
         btn.addEventListener('click', () => {
@@ -2116,6 +2126,138 @@ function sanitizeColor(color) {
     if (/^#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(value)) return value;
     if (/^rgb\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*\)$/i.test(value)) return value;
     return '#22c55e';
+}
+
+// ── Open Board Format (OBF) import (Fase 11) ─────────────────────────────
+// Minimal importer for a single .obf board — the JSON format used by Cboard
+// and other free/libre AAC tools (openboardformat.org). Buttons become new
+// catalog items under a category named after the board; this is additive
+// (existing items are untouched), unlike the full backup restore which
+// replaces the catalog. .obz (zipped multi-board sets with folder-linking
+// between boards) is out of scope: HolAAC! has no folder/board-link model
+// to map that onto, only flat categories.
+
+// OBF sometimes uses rgba(); HolAAC! colours (sanitizeColor) only accept
+// hex or plain rgb(), so drop the alpha channel rather than reject the colour.
+function normalizeObfColor(value) {
+    if (typeof value !== 'string') return null;
+    const m = value.trim().match(/^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*(?:,[^)]+)?\)$/i);
+    return m ? `rgb(${m[1]}, ${m[2]}, ${m[3]})` : value.trim();
+}
+
+function resolveObfImage(imageId, images) {
+    if (imageId == null) return null;
+    const img = images.find(i => String(i.id) === String(imageId));
+    if (!img) return null;
+    // sanitizeImage keeps the same allow-list used for every other image in the
+    // app (bundled assets, data URIs, ARASAAC) — an arbitrary third-party URL in
+    // someone else's board file is dropped, falling back to the placeholder letter.
+    if (typeof img.data === 'string') return sanitizeImage(img.data);
+    if (typeof img.url === 'string') return sanitizeImage(img.url);
+    return null;
+}
+
+function parseObfBoard(json) {
+    if (!json || typeof json.format !== 'string' || !json.format.startsWith('open-board')) {
+        throw new Error('No es un archivo Open Board Format (.obf) reconocido');
+    }
+    if (!Array.isArray(json.buttons)) {
+        throw new Error('El tablero OBF no tiene botones');
+    }
+
+    const images = Array.isArray(json.images) ? json.images : [];
+    const category = String(json.name || '').trim().slice(0, 40) || 'Importado';
+
+    // Row-major position from the grid, so the imported layout stays predictable
+    // (items sort by the numeric `order` field, same mechanism as P1-6).
+    const orderById = new Map();
+    if (json.grid && Array.isArray(json.grid.order)) {
+        let i = 0;
+        for (const row of json.grid.order) {
+            if (Array.isArray(row)) {
+                for (const btnId of row) {
+                    if (btnId != null && !orderById.has(String(btnId))) orderById.set(String(btnId), i);
+                    i++;
+                }
+            }
+        }
+    }
+
+    const usedIds = new Set(state.items.map(it => it.id));
+    const items = [];
+    let skipped = 0;
+
+    json.buttons.forEach((btn, idx) => {
+        const text = String(btn.label || btn.vocalization || '').trim().slice(0, 80);
+        if (!text) { skipped++; return; }
+
+        const base = `obf-${String(btn.id || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 40) || crypto.randomUUID()}`;
+        let id = base;
+        while (usedIds.has(id)) id = `${base}-${Math.random().toString(36).slice(2, 6)}`;
+        usedIds.add(id);
+
+        items.push({
+            id,
+            text,
+            category,
+            color: sanitizeColor(normalizeObfColor(btn.background_color)),
+            image: resolveObfImage(btn.image_id, images),
+            order: orderById.has(String(btn.id)) ? orderById.get(String(btn.id)) : json.buttons.length + idx,
+            isFavorite: false
+        });
+    });
+
+    return { category, items, skipped };
+}
+
+async function importObfBoard(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+        const text = await file.text();
+        const json = JSON.parse(text);
+        const { category, items, skipped } = parseObfBoard(json);
+
+        if (items.length === 0) {
+            flashStatus('El tablero OBF no tenía botones importables');
+            return;
+        }
+
+        const confirmMsg = `Se importarán ${items.length} palabra(s) en una nueva categoría «${category}»` +
+            (skipped ? ` (${skipped} botón(es) sin texto se omitieron)` : '') +
+            '.\nSe añaden a tu catálogo actual; no se borra nada. ¿Continuar?';
+        if (!confirm(confirmMsg)) return;
+
+        for (const item of items) {
+            state.items.push(item);
+            await saveItemDB(item);
+        }
+
+        // Make sure the new category is actually visible: if the user already had
+        // a subset of categories active, a brand-new one would otherwise be
+        // silently invisible (ensureActiveCategories only fills in "all active"
+        // the very first time it ever runs).
+        if (Array.isArray(state.settings.activeCategories) && state.settings.activeCategories.length &&
+            !state.settings.activeCategories.includes(category)) {
+            state.settings.activeCategories.push(category);
+        }
+
+        save();
+        ensureActiveCategories();
+        render();
+        renderItemList();
+        renderCategories();
+
+        flashStatus(`Tablero «${category}» importado (${items.length} palabras). Si no lo ves, elige el perfil ` +
+            '«General» arriba.');
+    } catch (error) {
+        console.error('OBF import error', error);
+        const known = ['No es un archivo Open Board Format (.obf) reconocido', 'El tablero OBF no tiene botones'];
+        flashStatus(known.includes(error.message) ? error.message : 'Error al importar el tablero OBF');
+    } finally {
+        dom.importObfFile.value = '';
+    }
 }
 
 // Relative luminance (0 dark … 1 light) of a hex colour, for contrast decisions.

@@ -351,6 +351,14 @@
               <button class="btn glass secondary flex-grow" id="btnImport">📂 Cargar configuración desde archivo</button>
               <input id="importFile" type="file" accept="application/json" hidden />
             </div>
+            <p class="hint-text">También puedes importar un tablero en formato abierto Open Board Format (.obf),
+              el que usan Cboard y otras apps CAA libres. Se añade como una categoría nueva, sin borrar tu
+              catálogo actual. (Solo tableros sueltos .obf por ahora; los paquetes .obz con varios tableros
+              enlazados no son compatibles todavía.)</p>
+            <div class="row compact" style="margin-top: 10px;">
+              <button class="btn glass secondary flex-grow" id="btnImportObf">📋 Importar tablero (Open Board Format)</button>
+              <input id="importObfFile" type="file" accept=".obf,.json,application/json" hidden />
+            </div>
           </div>
         </div>
 
