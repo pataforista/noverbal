@@ -1559,8 +1559,14 @@ function updateDownloadProgress(done, total) {
     if (dom.downloadProgressText) dom.downloadProgressText.textContent = `${pct}%`;
 }
 
+// Bump if the payload shape changes in a way that could break older imports.
+const BACKUP_FORMAT = 'holaac-backup';
+const BACKUP_SCHEMA_VERSION = 1;
+
 function exportData() {
     const payload = {
+        format: BACKUP_FORMAT,
+        schemaVersion: BACKUP_SCHEMA_VERSION,
         items: state.items,
         settings: state.settings,
         phrase: state.phrase,
@@ -1595,7 +1601,22 @@ async function importData(e) {
             throw new Error('Formato inválido: items no encontrados');
         }
 
-        if (!confirm('Importar reemplazará los elementos actuales del tablero. ¿Continuar?')) {
+        // Soft check: warn on an unrecognized/newer schema, but still let the
+        // user decide — the file is theirs and items is all this really needs.
+        if (parsed.format && parsed.format !== BACKUP_FORMAT) {
+            throw new Error('El archivo no es un respaldo de HolAAC!');
+        }
+        if (typeof parsed.schemaVersion === 'number' && parsed.schemaVersion > BACKUP_SCHEMA_VERSION) {
+            flashStatus('Aviso: el archivo viene de una versión más reciente de la app');
+        }
+
+        const itemCount = parsed.items.length;
+        const exportedDate = parsed.exportedAt
+            ? new Date(parsed.exportedAt).toLocaleDateString()
+            : 'fecha desconocida';
+        const confirmMsg = `Este archivo tiene ${itemCount} elemento(s), exportado el ${exportedDate}.\n` +
+            'Importar reemplazará los elementos y ajustes actuales del tablero. ¿Continuar?';
+        if (!confirm(confirmMsg)) {
             dom.importFile.value = '';
             return;
         }
@@ -1629,7 +1650,8 @@ async function importData(e) {
         flashStatus('Importación completada');
     } catch (error) {
         console.error('Import error', error);
-        flashStatus('Error al importar JSON');
+        const knownMessages = ['Formato inválido: items no encontrados', 'El archivo no es un respaldo de HolAAC!'];
+        flashStatus(knownMessages.includes(error.message) ? error.message : 'Error al importar JSON');
     } finally {
         dom.importFile.value = '';
     }

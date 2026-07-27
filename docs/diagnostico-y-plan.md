@@ -8,7 +8,11 @@ Cada hallazgo lleva un estado: **⬜ pendiente**, **🟡 parcial** o **✅ hecho
 
 ---
 
-## Estado del trabajo (última actualización: 2026-07-25)
+## Estado del trabajo (última actualización: 2026-07-27)
+
+**Entregado — Fase 8 · Respaldo transferible entre dispositivos** (2026-07-27): a raíz de una comparación con Proloquo2Go, TouchChat, Avaz, Leeloo y LetMeTalk, se confirmó que el respaldo local (Ajustes → Configurar Tablero → "Respaldo y Datos") ya cubre lo que ofrecen esas apps como "compartir perfiles entre dispositivos", pero de forma silenciosa. Se mejoró para que sea explícito y más seguro de usar: texto de ayuda que aclara que el archivo sirve para copiar el tablero completo a otro dispositivo/instalación y que nada sale del equipo; el payload exportado ahora lleva `format`/`schemaVersion` para poder detectar archivos ajenos o futuros; la confirmación de importar muestra cuántos elementos trae el archivo y su fecha de exportación antes de reemplazar nada; se añadió un smoke test de round-trip (exportar → importar) a la suite de Playwright. No se tocó el modelo de datos ni se añadió ninguna dependencia de red — sigue siendo 100% local.
+
+Quedan pendientes de decidir con el autor, por ser cambios de mayor alcance, otras ideas de la misma comparación (vocabulario nuclear progresivo tipo Crescendo™, escenas visuales con foto propia tipo Avaz, soporte Open Board Format): ver sección 6 y "Diferido a futuro".
 
 **Todas las fases del plan (0–7) están entregadas.** La Fase 0 (feel + accesibilidad) se entregó el 2026-07-23; las Fases 1–7 el 2026-07-25 en la rama `claude/plan-de-mejora-esh7ya`. Cada cambio se verificó con un smoke test headless (Chromium/Playwright) que arranca la app real y comprueba el arranque sin errores, el compositor de frase, la fila de núcleo, la navegación con el botón Atrás, el botón SOS, la ausencia de estrella en la vista de comunicación, las etiquetas gramaticales reales y el modo páginas.
 

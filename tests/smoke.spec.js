@@ -58,6 +58,30 @@ test('grammar tags show a real part-of-speech, not the category initial (P1-9)',
   for (const l of labels) expect(['V', 'S', 'A', 'SO', 'O']).toContain(l);
 });
 
+test('backup export produces a versioned, importable JSON file (device transfer)', async ({ page }) => {
+  await page.locator('#btnEdit').click();
+  await expect(page.locator('#editModal')).toBeVisible();
+
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    page.locator('#btnExport').click(),
+  ]);
+  const path = await download.path();
+  const fs = await import('node:fs/promises');
+  const payload = JSON.parse(await fs.readFile(path, 'utf-8'));
+
+  expect(payload.format).toBe('holaac-backup');
+  expect(typeof payload.schemaVersion).toBe('number');
+  expect(Array.isArray(payload.items)).toBe(true);
+  expect(payload.items.length).toBeGreaterThan(50);
+
+  // Round-trip: importing the file just downloaded should be accepted without error.
+  page.once('dialog', (d) => d.accept());
+  await page.setInputFiles('#importFile', path);
+  await expect(page.locator('#statusText')).toHaveText(/Importaci(o|ó)n completada/);
+  expect(page.errors, page.errors.join('\n')).toHaveLength(0);
+});
+
 test('paged mode shows fixed pages with working navigation (N-1)', async ({ page }) => {
   await page.locator('#categoryBar .pill', { hasText: 'Todas' }).first().click();
   // The toggle is a styled checkbox inside the (closed) Settings modal; activate
