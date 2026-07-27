@@ -61,6 +61,7 @@ test('grammar tags show a real part-of-speech, not the category initial (P1-9)',
 test('backup export produces a versioned, importable JSON file (device transfer)', async ({ page }) => {
   await page.locator('#btnEdit').click();
   await expect(page.locator('#editModal')).toBeVisible();
+  await page.locator('.hub-menu-row[data-hub-target="screen-backup"]').click();
 
   const [download] = await Promise.all([
     page.waitForEvent('download'),
@@ -116,6 +117,28 @@ test('imports a single Open Board Format (.obf) board as a new, additive categor
   await page.locator('#categoryBar .pill', { hasText: 'Todas' }).first().click();
   const boardsAfter = await page.locator('#grid .tile:not([data-id="nav-anchor"])').count();
   expect(boardsAfter).toBe(boardsBefore + 2);
+});
+
+test('Editor is a menu of screens, not one long scroll (navigation hub)', async ({ page }) => {
+  await page.locator('#btnEdit').click();
+  await expect(page.locator('#editModal .hub-menu')).toBeVisible();
+  await expect(page.locator('#editModal .hub-screen')).toHaveCount(3);
+  for (const screen of await page.locator('#editModal .hub-screen').all()) {
+    await expect(screen).toBeHidden();
+  }
+
+  await page.locator('.hub-menu-row[data-hub-target="screen-catalog"]').click();
+  await expect(page.locator('#screen-catalog')).toBeVisible();
+  await expect(page.locator('#itemList')).toBeVisible();
+
+  // Clicking "Modificar" on a catalog item jumps straight to the add/edit screen.
+  await page.locator('#itemList .item-row').first().locator('button', { hasText: 'Modificar' }).click();
+  await expect(page.locator('#screen-add-item')).toBeVisible();
+  await expect(page.locator('#screen-catalog')).toBeHidden();
+
+  await page.locator('#screen-add-item [data-hub-back]').click();
+  await expect(page.locator('#editModal .hub-menu')).toBeVisible();
+  expect(page.errors, page.errors.join('\n')).toHaveLength(0);
 });
 
 test('Ajustes is a menu of screens, not one long scroll (navigation hub)', async ({ page }) => {

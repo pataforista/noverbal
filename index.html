@@ -291,7 +291,38 @@
       </div>
 
       <div class="modal-body">
-        <div class="editor-grid">
+        <div class="hub-menu">
+          <button type="button" class="hub-menu-row" data-hub-target="screen-add-item">
+            <span class="hub-menu-icon" aria-hidden="true">➕</span>
+            <span class="hub-menu-text">
+              <span class="hub-menu-title">Añadir/Editar palabra</span>
+              <span class="hub-menu-desc">Texto, categoría, imagen (archivo o ARASAAC), color</span>
+            </span>
+            <span class="hub-menu-chevron" aria-hidden="true">›</span>
+          </button>
+          <button type="button" class="hub-menu-row" data-hub-target="screen-catalog">
+            <span class="hub-menu-icon" aria-hidden="true">📚</span>
+            <span class="hub-menu-text">
+              <span class="hub-menu-title">Catálogo y biblioteca</span>
+              <span class="hub-menu-desc">Cargar biblioteca ilustrada, ver y editar tus elementos</span>
+            </span>
+            <span class="hub-menu-chevron" aria-hidden="true">›</span>
+          </button>
+          <button type="button" class="hub-menu-row" data-hub-target="screen-backup">
+            <span class="hub-menu-icon" aria-hidden="true">💾</span>
+            <span class="hub-menu-text">
+              <span class="hub-menu-title">Respaldo y datos</span>
+              <span class="hub-menu-desc">Exportar/importar configuración, importar tablero Open Board Format</span>
+            </span>
+            <span class="hub-menu-chevron" aria-hidden="true">›</span>
+          </button>
+        </div>
+
+        <div class="hub-screen hidden" id="screen-add-item">
+          <div class="hub-screen-head">
+            <button type="button" class="btn glass" data-hub-back>← Menú</button>
+            <span class="hub-screen-title">Añadir/Editar palabra</span>
+          </div>
           <div class="editor-form">
             <div class="row">
               <label class="field">
@@ -337,39 +368,48 @@
 
             <button class="btn primary full-width" id="btnAddItem">➕ Añadir al Catálogo</button>
           </div>
-
-          <div class="data-mgmt">
-            <div class="divider text">Respaldo y Datos</div>
-            <div class="row compact">
-              <button class="btn primary-action flex-grow" id="btnLoadLibrary">📚 Cargar Biblioteca Ilustrada</button>
-            </div>
-            <p class="hint-text">Descarga tu tablero y ajustes en un archivo para tenerlos de respaldo o para
-              copiarlos a otro dispositivo/instalación. El archivo se guarda solo en tu equipo: nada se sube a
-              internet.</p>
-            <div class="row compact" style="margin-top: 10px;">
-              <button class="btn glass secondary flex-grow" id="btnExport">💾 Descargar configuración (.json)</button>
-              <button class="btn glass secondary flex-grow" id="btnImport">📂 Cargar configuración desde archivo</button>
-              <input id="importFile" type="file" accept="application/json" hidden />
-            </div>
-            <p class="hint-text">También puedes importar un tablero en formato abierto Open Board Format (.obf),
-              el que usan Cboard y otras apps CAA libres. Se añade como una categoría nueva, sin borrar tu
-              catálogo actual. (Solo tableros sueltos .obf por ahora; los paquetes .obz con varios tableros
-              enlazados no son compatibles todavía.)</p>
-            <div class="row compact" style="margin-top: 10px;">
-              <button class="btn glass secondary flex-grow" id="btnImportObf">📋 Importar tablero (Open Board Format)</button>
-              <input id="importObfFile" type="file" accept=".obf,.json,application/json" hidden />
-            </div>
-          </div>
         </div>
 
-        <div class="divider text">Tus Elementos</div>
-        <div class="row">
-          <div class="search-wrapper full-width" style="margin-bottom: 10px;">
-            <span class="search-icon">🔍</span>
-            <input class="search-input glass" id="editorSearchBox" placeholder="Filtrar tus elementos..." />
+        <div class="hub-screen hidden" id="screen-catalog">
+          <div class="hub-screen-head">
+            <button type="button" class="btn glass" data-hub-back>← Menú</button>
+            <span class="hub-screen-title">Catálogo y biblioteca</span>
+          </div>
+          <div class="row compact">
+            <button class="btn primary-action flex-grow" id="btnLoadLibrary">📚 Cargar Biblioteca Ilustrada</button>
+          </div>
+          <div class="divider text">Tus Elementos</div>
+          <div class="row">
+            <div class="search-wrapper full-width" style="margin-bottom: 10px;">
+              <span class="search-icon">🔍</span>
+              <input class="search-input glass" id="editorSearchBox" placeholder="Filtrar tus elementos..." />
+            </div>
+          </div>
+          <div class="list" id="itemList"></div>
+        </div>
+
+        <div class="hub-screen hidden" id="screen-backup">
+          <div class="hub-screen-head">
+            <button type="button" class="btn glass" data-hub-back>← Menú</button>
+            <span class="hub-screen-title">Respaldo y datos</span>
+          </div>
+          <p class="hint-text">Descarga tu tablero y ajustes en un archivo para tenerlos de respaldo o para
+            copiarlos a otro dispositivo/instalación. El archivo se guarda solo en tu equipo: nada se sube a
+            internet.</p>
+          <div class="row compact" style="margin-top: 10px;">
+            <button class="btn glass secondary flex-grow" id="btnExport">💾 Descargar configuración (.json)</button>
+            <button class="btn glass secondary flex-grow" id="btnImport">📂 Cargar configuración desde archivo</button>
+            <input id="importFile" type="file" accept="application/json" hidden />
+          </div>
+          <p class="hint-text">También puedes importar un tablero en formato abierto Open Board Format (.obf),
+            el que usan Cboard y otras apps CAA libres. Se añade como una categoría nueva, sin borrar tu
+            catálogo actual. (Solo tableros sueltos .obf por ahora; los paquetes .obz con varios tableros
+            enlazados no son compatibles todavía.)</p>
+          <div class="row compact" style="margin-top: 10px;">
+            <button class="btn glass secondary flex-grow" id="btnImportObf">📋 Importar tablero (Open Board Format)</button>
+            <input id="importObfFile" type="file" accept=".obf,.json,application/json" hidden />
           </div>
         </div>
-        <div class="list" id="itemList"></div>
       </div>
 
       <div class="modal-foot">

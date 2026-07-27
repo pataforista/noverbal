@@ -979,33 +979,40 @@ function initTactileFeedback() {
 // row, "← Menú" returns to the list. Reopening the dialog always starts back
 // at the menu — same pattern already used by the Escenas gallery/viewer and
 // the Writing panel, just generalised so both big dialogs can share it.
+// Shows one hub screen (or the menu itself, if screenId is falsy) inside a
+// dialog already wired by initHubDialog. Exported so code outside the hub
+// itself — e.g. "Editar" on an item in the catalogue list — can jump
+// straight to a screen instead of only reacting to a menu-row click.
+function showHubScreen(dialog, screenId) {
+    if (!dialog) return;
+    const hub = dialog.querySelector('.hub-menu');
+    if (!hub) return;
+    const screens = dialog.querySelectorAll('.hub-screen');
+    screens.forEach(s => s.classList.add('hidden'));
+    const target = screenId && dialog.querySelector(`#${screenId}`);
+    if (target) {
+        hub.classList.add('hidden');
+        target.classList.remove('hidden');
+    } else {
+        hub.classList.remove('hidden');
+    }
+}
+
 function initHubDialog(dialog) {
     if (!dialog) return;
     const hub = dialog.querySelector('.hub-menu');
     if (!hub) return; // dialog has no hub screens (e.g. History, PIN)
-    const screens = dialog.querySelectorAll('.hub-screen');
-
-    const showHub = () => {
-        hub.classList.remove('hidden');
-        screens.forEach(s => s.classList.add('hidden'));
-    };
 
     hub.querySelectorAll('[data-hub-target]').forEach(row => {
-        row.onclick = () => {
-            const target = dialog.querySelector(`#${row.dataset.hubTarget}`);
-            if (!target) return;
-            hub.classList.add('hidden');
-            screens.forEach(s => s.classList.add('hidden'));
-            target.classList.remove('hidden');
-        };
+        row.onclick = () => showHubScreen(dialog, row.dataset.hubTarget);
     });
 
     dialog.querySelectorAll('[data-hub-back]').forEach(btn => {
-        btn.onclick = showHub;
+        btn.onclick = () => showHubScreen(dialog, null);
     });
 
-    dialog.addEventListener('close', showHub);
-    showHub();
+    dialog.addEventListener('close', () => showHubScreen(dialog, null));
+    showHubScreen(dialog, null);
 }
 
 // Initialization
@@ -1082,6 +1089,7 @@ async function init() {
     initTactileFeedback();
     initStickyOffsets();
     initHubDialog(dom.settingsModal);
+    initHubDialog(dom.editModal);
 
     // Setup voice loading BEFORE initial load
     if (window.speechSynthesis) {
@@ -1868,6 +1876,7 @@ window.editItem = (id) => {
     const item = state.items.find(i => i.id === id);
     if (!item) return;
 
+    showHubScreen(dom.editModal, 'screen-add-item');
     dom.itemText.value = item.text;
     dom.itemCategory.value = item.category;
     dom.itemColor.value = item.color;

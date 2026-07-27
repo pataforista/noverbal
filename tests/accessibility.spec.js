@@ -248,6 +248,7 @@ test.describe('editor', () => {
   test('el input de archivo nativo no se muestra junto al botón', async ({ page }) => {
     await boot(page);
     await page.locator('#btnEdit').click();
+    await page.locator('.hub-menu-row[data-hub-target="screen-add-item"]').click();
     await expect(page.locator('.file-input-wrapper label')).toBeVisible();
     const native = await page.locator('#itemImage').evaluate((e) => {
       const b = e.getBoundingClientRect();
