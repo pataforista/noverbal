@@ -496,6 +496,9 @@ const dom = {
     downloadProgress: document.getElementById('downloadProgress'),
     downloadBarFill: document.getElementById('downloadBarFill'),
     downloadProgressText: document.getElementById('downloadProgressText'),
+    updateToast: document.getElementById('updateToast'),
+    btnUpdateNow: document.getElementById('btnUpdateNow'),
+    btnDismissUpdate: document.getElementById('btnDismissUpdate'),
     headerSpeakToggle: document.getElementById('headerSpeakToggle'),
     btnThemeToggle: document.getElementById('btnThemeToggle'),
     btnMore: document.getElementById('btnMore'),
@@ -749,14 +752,21 @@ async function init() {
 
     if ('serviceWorker' in navigator) {
         // Whether a SW was already controlling this page when it loaded. We only
-        // auto-reload on a *replacement* worker, never on the very first install.
+        // offer to reload on a *replacement* worker, never on the very first install.
         const hadController = !!navigator.serviceWorker.controller;
-        let refreshing = false;
         navigator.serviceWorker.addEventListener('controllerchange', () => {
-            if (refreshing || !hadController) return;
-            refreshing = true;
-            window.location.reload();
+            if (!hadController) return;
+            // The new worker is already in control; only the reload is deferred so
+            // whatever the user is writing isn't lost mid-keystroke (P2-17).
+            showUpdateToast();
         });
+
+        if (dom.btnUpdateNow) {
+            dom.btnUpdateNow.addEventListener('click', () => window.location.reload());
+        }
+        if (dom.btnDismissUpdate) {
+            dom.btnDismissUpdate.addEventListener('click', hideUpdateToast);
+        }
 
         // Progress + completion messages from the "Descargar todo" precache.
         navigator.serviceWorker.addEventListener('message', (event) => {
@@ -778,19 +788,6 @@ async function init() {
                 if (document.visibilityState === 'visible') checkForUpdate();
             });
             setInterval(checkForUpdate, 60 * 60 * 1000);
-
-            reg.addEventListener('updatefound', () => {
-                const installingWorker = reg.installing;
-                if (!installingWorker) return;
-                installingWorker.addEventListener('statechange', () => {
-                    // A new version finished installing while an old one was in
-                    // control. It will activate (skipWaiting) and trigger
-                    // controllerchange, which reloads the page.
-                    if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                        flashStatus("Nueva versión disponible, actualizando...");
-                    }
-                });
-            });
         }).catch(err => console.error('SW Error:', err));
     }
 
@@ -1833,6 +1830,14 @@ async function imageUrlToDataURL(url) {
         reader.onerror = reject;
         reader.readAsDataURL(blob);
     });
+}
+
+function showUpdateToast() {
+    if (dom.updateToast) dom.updateToast.classList.remove('hidden');
+}
+
+function hideUpdateToast() {
+    if (dom.updateToast) dom.updateToast.classList.add('hidden');
 }
 
 function flashStatus(msg) {

@@ -2841,6 +2841,54 @@ input:checked+.toggle-slider:before {
   text-align: right;
 }
 
+/* ── Toast: nueva versión del Service Worker lista para activarse ─────
+   El SW nuevo ya tomó control (skipWaiting + clients.claim); esto solo
+   pregunta antes de recargar la pestaña para no perder lo que el usuario
+   esté escribiendo. */
+.update-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: min(92vw, 360px);
+  padding: 16px 16px 16px 20px;
+  background: var(--md-surface-container-highest);
+  color: var(--text-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--md-shadow-4);
+  animation: update-toast-in 0.25s var(--md-easing-decelerated);
+}
+
+.update-toast.hidden { display: none; }
+
+.update-toast-text {
+  font-weight: 600;
+  font-size: 0.95rem;
+  line-height: 1.35;
+}
+
+.update-toast-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.update-toast-actions .btn-close {
+  width: 36px;
+  height: 36px;
+  font-size: 1.1rem;
+}
+
+@keyframes update-toast-in {
+  from { opacity: 0; transform: translate(-50%, 12px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
 /* ── Fase 4 · Núcleo fijo, breadcrumb, perfil/SOS, contraste ───────────── */
 
 /* Automatic text contrast on tiles painted with an arbitrary colour (P1-18).
