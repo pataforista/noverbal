@@ -44,10 +44,176 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png">
 
-  <meta name="theme-color" content="#fffbfe" />
+  <meta name="theme-color" content="#fbfaf9" />
 </head>
 
 <body>
+  <!-- Icon set.
+       The interface used emoji as its icons (⚙️ ✏️ 🌙 🔍 ⌫ 🗑️ …). Emoji are
+       drawn by the operating system, so the same control rendered as a flat
+       glyph on one device and a glossy 3D sticker on another, at a size and
+       weight nothing could control; they cannot take the current text colour,
+       so they stayed full-colour in dark mode and on a filled button; and a
+       row of them never lines up on a common baseline. One stroke set at a
+       single weight, inheriting `currentColor`, is what separates a finished
+       interface from a prototype — and it also renders identically for a user
+       whose device has no colour emoji font at all.
+
+       Drawn on a 24×24 grid, 1.75 stroke, round joins. -->
+  <svg width="0" height="0" aria-hidden="true" focusable="false" style="position:absolute">
+    <defs>
+      <g id="i-base" fill="none" stroke="currentColor" stroke-width="1.75"
+         stroke-linecap="round" stroke-linejoin="round"></g>
+    </defs>
+    <symbol id="i-sos" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+            stroke-linecap="round" stroke-linejoin="round">
+      <path d="M10.3 3.3 2.6 17a1.9 1.9 0 0 0 1.7 2.9h15.4a1.9 1.9 0 0 0 1.7-2.9L13.7 3.3a1.9 1.9 0 0 0-3.4 0Z"/>
+      <path d="M12 9v4"/><path d="M12 16.5h.01"/>
+    </symbol>
+    <symbol id="i-keyboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+            stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2" y="5" width="20" height="14" rx="2.5"/>
+      <path d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M6 12.5h.01M10 12.5h.01M14 12.5h.01M18 12.5h.01M8 16h8"/>
+    </symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+            stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20.5 14.3A8.5 8.5 0 1 1 9.7 3.5a6.8 6.8 0 0 0 10.8 10.8Z"/>
+    </symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+            stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="3.2"/>
+      <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.9 2.9l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.9-2.9l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 4.7 8.6a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.9-2.9l.1.1a1.7 1.7 0 0 0 1.9.3H9.3a1.7 1.7 0 0 0 1-1.6V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.9 2.9l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1a1.7 1.7 0 0 0 1.6 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/>
+    </symbol>
+    <symbol id="i-pencil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+            stroke-linecap="round" stroke-linejoin="round">
+      <path d="M17 3.5a2.1 2.1 0 0 1 3 3L7.5 19 3 20.5 4.5 16 17 3.5Z"/><path d="M15 5.5 18.5 9"/>
+    </symbol>
+    <symbol id="i-more" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+            stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="5.5" cy="12" r="1.4" fill="currentColor" stroke="none"/>
+      <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/>
+      <circle cx="18.5" cy="12" r="1.4" fill="currentColor" stroke="none"/>
+    </symbol>
+    <symbol id="i-speaker" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+            stroke-linecap="round" stroke-linejoin="round">
+      <path d="M11 4.8 6.5 8.5H3.5a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h3l4.5 3.7a.8.8 0 0 0 1.3-.6V5.4a.8.8 0 0 0-1.3-.6Z"/>
+      <path d="M16.2 8.8a4.5 4.5 0 0 1 0 6.4"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/>
+    </symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+            stroke-linecap="round" stroke-linejoin="round">
+      <rect x="7" y="5" width="3.6" height="14" rx="1.3"/><rect x="13.4" y="5" width="3.6" height="14" rx="1.3"/>
+    </symbol>
+    <symbol id="i-stop" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+            stroke-linecap="round" stroke-linejoin="round">
+      <rect x="6" y="6" width="12" height="12" rx="2.2"/>
+    </symbol>
+    <symbol id="i-backspace" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+            stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9.2 5h10A1.8 1.8 0 0 1 21 6.8v10.4a1.8 1.8 0 0 1-1.8 1.8h-10a1.8 1.8 0 0 1-1.3-.6l-4.6-5.2a1.5 1.5 0 0 1 0-2l4.6-5.2A1.8 1.8 0 0 1 9.2 5Z"/>
+      <path d="M17 9.5 12 14.5M12 9.5l5 5"/>
+    </symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+            stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3.8 6h16.4"/><path d="M9 6V4.4A1.4 1.4 0 0 1 10.4 3h3.2A1.4 1.4 0 0 1 15 4.4V6"/>
+      <path d="M18.2 6v13.1a1.9 1.9 0 0 1-1.9 1.9H7.7a1.9 1.9 0 0 1-1.9-1.9V6"/>
+      <path d="M10.2 10.5v6M13.8 10.5v6"/>
+    </symbol>
+    <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+            stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="10.8" cy="10.8" r="6.8"/><path d="M20 20l-4.4-4.4"/>
+    </symbol>
+    <symbol id="i-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+            stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 6l12 12M18 6 6 18"/>
+    </symbol>
+    <symbol id="i-chevron-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+      <path d="M14.5 5 8 12l6.5 7"/>
+    </symbol>
+    <symbol id="i-chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9.5 5 16 12l-6.5 7"/>
+    </symbol>
+    <symbol id="i-star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+            stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 3.6l2.6 5.3 5.8.85-4.2 4.1 1 5.8-5.2-2.75L6.8 19.6l1-5.8-4.2-4.1 5.8-.85L12 3.6Z"/>
+    </symbol>
+    <symbol id="i-speech" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+            stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20.5 12.2a7.7 7.7 0 0 1-8.3 7.7 8.6 8.6 0 0 1-2.6-.5L4 21l1.5-4.4a7.4 7.4 0 0 1-1-3.8 7.7 7.7 0 0 1 7.7-7.7h.5a7.7 7.7 0 0 1 7.8 7.1Z"/>
+    </symbol>
+    <symbol id="i-pen-write" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+            stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 20h9"/><path d="M16.4 3.6a2 2 0 0 1 2.9 2.8L7.6 18.1 3.5 19.3l1.2-4.1L16.4 3.6Z"/>
+    </symbol>
+    <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+            stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3.5 10.2 12 3.5l8.5 6.7V19a1.6 1.6 0 0 1-1.6 1.6H5.1A1.6 1.6 0 0 1 3.5 19v-8.8Z"/>
+      <path d="M9.4 20.6v-7h5.2v7"/>
+    </symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+            stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 5v14M5 12h14"/>
+    </symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+            stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="4.2"/>
+      <path d="M12 2.4v2.2M12 19.4v2.2M4.2 12H2M22 12h-2.2M6.5 6.5 4.9 4.9M19.1 19.1l-1.6-1.6M17.5 6.5l1.6-1.6M4.9 19.1l1.6-1.6"/>
+    </symbol>
+    <symbol id="i-save" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+            stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5.2 3.5h10.3L20.5 8.5v12a1.5 1.5 0 0 1-1.5 1.5H5.2a1.5 1.5 0 0 1-1.5-1.5V5a1.5 1.5 0 0 1 1.5-1.5Z"/>
+      <path d="M7.7 3.5v6h8.6v-6"/><path d="M7.7 14.6h8.6V22H7.7z"/>
+    </symbol>
+    <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+            stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 3.5v11.5"/><path d="M7.6 10.6 12 15l4.4-4.4"/>
+      <path d="M4 17v2.2A1.8 1.8 0 0 0 5.8 21h12.4a1.8 1.8 0 0 0 1.8-1.8V17"/>
+    </symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+            stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 15V3.5"/><path d="M7.6 7.9 12 3.5l4.4 4.4"/>
+      <path d="M4 17v2.2A1.8 1.8 0 0 0 5.8 21h12.4a1.8 1.8 0 0 0 1.8-1.8V17"/>
+    </symbol>
+    <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+            stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3.5 5.2A1.7 1.7 0 0 1 5.2 3.5H10a2.8 2.8 0 0 1 2 .8 2.8 2.8 0 0 1 2-.8h4.8a1.7 1.7 0 0 1 1.7 1.7v12.4a1.4 1.4 0 0 1-1.4 1.4H14a2 2 0 0 0-2 2 2 2 0 0 0-2-2H4.9a1.4 1.4 0 0 1-1.4-1.4V5.2Z"/>
+      <path d="M12 4.3v16.6"/>
+    </symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+            stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 20V4"/><path d="M4 20h16"/>
+      <path d="M8 20v-6M12.7 20V9M17.3 20v-8"/>
+    </symbol>
+    <symbol id="i-warning" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+            stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="8.6"/><path d="M12 7.6v5"/><path d="M12 16.1h.01"/>
+    </symbol>
+    <symbol id="i-health" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+            stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20.6 5.3a5.1 5.1 0 0 0-7.2 0L12 6.7l-1.4-1.4a5.1 5.1 0 1 0-7.2 7.2l8.6 8.6 8.6-8.6a5.1 5.1 0 0 0 0-7.2Z"/>
+    </symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+            stroke-linecap="round" stroke-linejoin="round">
+      <rect x="4.4" y="10.4" width="15.2" height="10.2" rx="2.2"/>
+      <path d="M7.9 10.4V7.3a4.1 4.1 0 0 1 8.2 0v3.1"/>
+    </symbol>
+    <symbol id="i-image" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+            stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3.4" y="4.6" width="17.2" height="14.8" rx="2.4"/>
+      <circle cx="8.8" cy="9.6" r="1.7"/><path d="M20.6 15.6 16 11.2 5.1 19.4"/>
+    </symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+            stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2.8" y="5" width="18.4" height="14" rx="2.2"/><path d="M3.4 6.9 12 13l8.6-6.1"/>
+    </symbol>
+    <symbol id="i-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+            stroke-linecap="round" stroke-linejoin="round">
+      <path d="M10.3 13.7a4 4 0 0 0 5.7 0l3-3a4 4 0 1 0-5.7-5.7l-1.5 1.5"/>
+      <path d="M13.7 10.3a4 4 0 0 0-5.7 0l-3 3a4 4 0 1 0 5.7 5.7l1.5-1.5"/>
+    </symbol>
+  </svg>
+
   <a class="skip-link" href="#mainContent">Saltar al contenido principal</a>
   <header class="topbar" role="banner">
     <div class="brand">
@@ -57,18 +223,26 @@
 
     <nav class="actions" role="toolbar" aria-label="Controles principales">
       <button class="btn btn--labeled sos-btn" id="btnSOS" aria-label="Ir al tablero de emergencias (SOS)" title="Emergencias">
-        <span class="btn-icon" aria-hidden="true">🆘</span><span class="btn-label">SOS</span>
+        <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-sos"/></svg><span class="btn-label">SOS</span>
       </button>
       <label class="header-profile" title="Perfil de tablero">
         <span class="sr-only">Perfil de tablero</span>
         <select id="headerProfile" aria-label="Perfil de tablero">
-          <option value="default">🗂️ General</option>
-          <option value="home">🏠 Casa</option>
-          <option value="school">🎓 Escuela</option>
-          <option value="sos">🆘 Emergencias</option>
+          <!-- No emoji: a native <select> renders its options with the OS
+               popup, where the glyphs came out at a different size and style
+               from every other icon in the header and could not be styled.
+               The same four profiles are also listed, without emoji, in
+               Ajustes. -->
+          <option value="default">General</option>
+          <option value="home">Casa</option>
+          <option value="school">Escuela</option>
+          <option value="sos">Emergencias</option>
         </select>
       </label>
       <div class="header-toggle-group" role="group" aria-label="Modo de habla inmediata">
+        <!-- Real icon rather than the 🗣 emoji this control fell back to once
+             its label was hidden on a phone. -->
+        <svg class="btn-icon toggle-icon" aria-hidden="true" focusable="false"><use href="#i-speech"/></svg>
         <span class="toggle-label">Hablar al tocar</span>
         <label class="switch mini">
           <input type="checkbox" id="headerSpeakToggle" aria-label="Activar habla inmediata: cada palabra suena al tocarla">
@@ -76,7 +250,7 @@
         </label>
       </div>
       <button class="btn btn--labeled" id="btnWriting" aria-label="Abrir teclado para escribir libremente" title="Escribir">
-        <span class="btn-icon" aria-hidden="true">⌨️</span><span class="btn-label">Escribir</span>
+        <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-keyboard"/></svg><span class="btn-label">Escribir</span>
       </button>
 
       <!-- Caregiver tools. On a phone these collapse behind «Más» so the header
@@ -86,17 +260,17 @@
            exactly as before and the toggle button is hidden. -->
       <button class="btn btn--labeled header-more-btn" id="btnMore" aria-label="Más herramientas"
         aria-expanded="false" aria-controls="headerOverflow" title="Más">
-        <span class="btn-icon" aria-hidden="true">⋯</span><span class="btn-label">Más</span>
+        <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-more"/></svg><span class="btn-label">Más</span>
       </button>
       <div class="header-overflow" id="headerOverflow">
         <button class="btn btn--labeled" id="btnThemeToggle" aria-label="Cambiar entre tema claro y oscuro" title="Cambiar tema">
-          <span class="btn-icon" aria-hidden="true">🌙</span><span class="btn-label">Tema</span>
+          <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-moon"/></svg><span class="btn-label">Tema</span>
         </button>
         <button class="btn btn--labeled" id="btnSettings" aria-label="Abrir ajustes y configuración" title="Ajustes">
-          <span class="btn-icon" aria-hidden="true">⚙️</span><span class="btn-label">Ajustes</span>
+          <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-settings"/></svg><span class="btn-label">Ajustes</span>
         </button>
         <button class="btn btn--labeled" id="btnEdit" aria-label="Editar el tablero de comunicación" title="Editar">
-          <span class="btn-icon" aria-hidden="true">✏️</span><span class="btn-label">Editar</span>
+          <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-pencil"/></svg><span class="btn-label">Editar</span>
         </button>
       </div>
     </nav>
@@ -114,39 +288,46 @@
            own: the composer was 231px tall on a phone, and the speak button is
            the action the strip exists for. Same arrangement as Proloquo2Go,
            LetMeTalk and Hablalo. -->
+      <!-- Sentence strip, its edit controls and «Hablar Frase» on ONE line.
+           They were on two, and the composer stood 270px tall on a desktop and
+           231px on a phone — mostly empty space, directly above the board it
+           was pushing off screen. Reading order is now the order of use: the
+           words you built, the controls that fix them, then the button that
+           speaks them. Same arrangement as Proloquo2Go, LetMeTalk and Hablalo. -->
       <div class="composer-row">
         <div class="chips" id="chips" role="region" aria-label="Palabras seleccionadas" aria-live="polite"></div>
+
+        <div class="composer-actions">
+          <!-- Shown only while something is actually playing (body.is-speaking). -->
+          <div class="speech-controls" role="group" aria-label="Controles de reproducción">
+            <button class="btn btn--labeled" id="btnPause" aria-label="Pausar o reanudar la voz">
+              <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-pause"/></svg><span class="btn-label">Pausa</span>
+            </button>
+            <button class="btn danger btn--labeled" id="btnStop" aria-label="Detener la voz">
+              <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-stop"/></svg><span class="btn-label">Detener</span>
+            </button>
+          </div>
+          <div class="utility-actions" role="group" aria-label="Funciones de edición">
+            <button class="btn btn--labeled" id="btnBackspace" aria-label="Borrar la última palabra">
+              <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-backspace"/></svg><span class="btn-label">Borrar</span>
+            </button>
+            <button class="btn danger btn--labeled" id="btnClear" aria-label="Limpiar toda la frase">
+              <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-trash"/></svg><span class="btn-label">Limpiar</span>
+            </button>
+          </div>
+        </div>
+
         <button class="btn primary-action speak-btn" id="btnSpeak" aria-label="Leer la frase completa en voz alta">
-          <span class="icon" aria-hidden="true">🔊</span>
+          <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-speaker"/></svg>
           <span class="text">Hablar Frase</span>
         </button>
-      </div>
-
-      <div class="composer-actions">
-        <!-- Shown only while something is actually playing (body.is-speaking). -->
-        <div class="speech-controls" role="group" aria-label="Controles de reproducción">
-          <button class="btn btn--labeled" id="btnPause" aria-label="Pausar o reanudar la voz">
-            <span class="btn-icon" aria-hidden="true">⏸</span><span class="btn-label">Pausa</span>
-          </button>
-          <button class="btn danger btn--labeled" id="btnStop" aria-label="Detener la voz">
-            <span class="btn-icon" aria-hidden="true">⏹</span><span class="btn-label">Detener</span>
-          </button>
-        </div>
-        <div class="utility-actions" role="group" aria-label="Funciones de edición">
-          <button class="btn btn--labeled" id="btnBackspace" aria-label="Borrar la última palabra">
-            <span class="btn-icon" aria-hidden="true">⌫</span><span class="btn-label">Borrar</span>
-          </button>
-          <button class="btn danger btn--labeled" id="btnClear" aria-label="Limpiar toda la frase">
-            <span class="btn-icon" aria-hidden="true">🗑️</span><span class="btn-label">Limpiar</span>
-          </button>
-        </div>
       </div>
     </section>
 
     <section class="writing-panel hidden" id="writingPanel" aria-label="Módulo de escritura libre">
       <div class="writing-header">
-        <h2 class="writing-title">✍️ Escritura libre</h2>
-        <button class="btn-close" id="btnCloseWriting" aria-label="Cerrar módulo de escritura">✕</button>
+        <h2 class="writing-title"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-pen-write"/></svg> Escritura libre</h2>
+        <button class="btn-close" id="btnCloseWriting" aria-label="Cerrar módulo de escritura"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-close"/></svg></button>
       </div>
       <textarea
         id="writingInput"
@@ -158,9 +339,9 @@
       ></textarea>
       <p id="writingHelp" class="sr-only">Escribe tu mensaje aquí. Puedes usar Ctrl+Enter para leer el texto.</p>
       <div class="writing-actions">
-        <button class="btn danger" id="btnClearWriting" aria-label="Limpiar todo el texto">🗑️ Limpiar</button>
+        <button class="btn danger" id="btnClearWriting" aria-label="Limpiar todo el texto"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-trash"/></svg> Limpiar</button>
         <button class="btn primary-action writing-speak-btn" id="btnSpeakWriting" aria-label="Leer el texto en voz alta">
-          <span class="icon" aria-hidden="true">🔊</span>
+          <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-speaker"/></svg>
           <span class="text">Leer texto</span>
         </button>
       </div>
@@ -169,25 +350,25 @@
     <section class="toolbar" aria-label="Filtros de categoría y búsqueda">
       <nav class="category-menu" role="group" aria-label="Navegación de categorías">
         <button class="pill-nav" id="categoryPrev" type="button"
-          aria-label="Mostrar categorías anteriores">◀</button>
+          aria-label="Mostrar categorías anteriores"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-chevron-left"/></svg></button>
         <div class="pill-container" id="categoryBar" role="tablist" aria-label="Categorías disponibles"></div>
         <button class="pill-nav" id="categoryNext" type="button"
-          aria-label="Mostrar categorías siguientes">▶</button>
+          aria-label="Mostrar categorías siguientes"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-chevron-right"/></svg></button>
       </nav>
       <div class="search-wrapper" role="search">
-        <span class="search-icon" aria-hidden="true">🔍</span>
+        <svg class="search-icon" aria-hidden="true" focusable="false"><use href="#i-search"/></svg>
         <input class="search-input" id="searchBox" type="search"
           placeholder="Buscar palabras o categorías..."
           aria-label="Buscar elementos del tablero"
           autocomplete="off" />
-        <button class="search-clear" id="btnClearSearch" type="button" aria-label="Limpiar búsqueda">✕</button>
+        <button class="search-clear" id="btnClearSearch" type="button" aria-label="Limpiar búsqueda"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-close"/></svg></button>
       </div>
     </section>
 
     <section class="routine-bar hidden" id="routineBar" aria-label="Panel de rutina visual" role="region" aria-live="polite">
       <div class="routine-label">Rutina:</div>
       <div id="routineItems" class="routine-items" role="list"></div>
-      <button class="btn danger" id="btnResetRoutine" aria-label="Limpiar rutina actual">✕</button>
+      <button class="btn danger" id="btnResetRoutine" aria-label="Limpiar rutina actual"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-close"/></svg></button>
     </section>
 
     <section class="core-row" id="coreRow" role="region" aria-labelledby="coreHeading">
@@ -219,13 +400,21 @@
                container, so bare text nodes around <strong> would each become a
                separate flex item and break the sentence into columns. -->
           <ol class="intro-steps">
-            <li><span class="intro-step-emoji" aria-hidden="true">👆</span><span>Toca las palabras que quieras decir.</span></li>
-            <li><span class="intro-step-emoji" aria-hidden="true">📝</span><span>Se juntan arriba y forman tu frase.</span></li>
-            <li><span class="intro-step-emoji" aria-hidden="true">🔊</span><span>Pulsa <strong>«Hablar Frase»</strong> para escucharla.</span></li>
+            <!-- Numbered, not emoji-bulleted. The list already says «en 3
+                 pasos»; a 👆/📝/🔊 in front of each line neither numbers them
+                 nor illustrates anything the sentence does not. Step 3 keeps a
+                 real glyph, because it is the exact icon the user has to find
+                 on the button — the picture is doing work there. -->
+            <li><span>Toca las palabras que quieras decir.</span></li>
+            <li><span>Se juntan arriba y forman tu frase.</span></li>
+            <li><span>Pulsa <strong>«Hablar Frase»</strong>
+              <svg class="intro-inline-icon" aria-hidden="true" focusable="false"><use href="#i-speaker"/></svg>
+              para escucharla.</span></li>
           </ol>
           <p class="intro-tip"><strong>Consejo:</strong> activa <strong>«Hablar al tocar»</strong> arriba si prefieres que cada palabra suene apenas la tocas.</p>
         </div>
-        <p class="intro-copy">Abajo eliges qué temas verás. Podrás cambiarlos cuando quieras desde <strong>Ajustes ⚙️</strong>.</p>
+        <p class="intro-copy">Abajo eliges qué temas verás. Podrás cambiarlos cuando quieras desde <strong>Ajustes</strong>
+          <svg class="intro-inline-icon" aria-hidden="true" focusable="false"><use href="#i-settings"/></svg>.</p>
         <div id="introCategoryList" class="category-toggle-list" role="group" aria-label="Selección de categorías"></div>
       </div>
 
@@ -244,7 +433,7 @@
           <h1 class="modal-title">Configurar Tablero</h1>
           <p class="modal-sub">Gestiona tus elementos de comunicación</p>
         </div>
-        <button type="button" class="btn-close" data-close-dialog="editModal" aria-label="Cerrar editor de tablero">✕</button>
+        <button type="button" class="btn-close" data-close-dialog="editModal" aria-label="Cerrar editor de tablero"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-close"/></svg></button>
       </div>
 
       <div class="modal-body">
@@ -272,14 +461,14 @@
                   </div>
                   <div class="arasaac-search-trigger">
                     <input id="arasaacQuery" class="glass-input" placeholder="Buscar en ARASAAC..." />
-                    <button type="button" class="btn glass" id="btnSearchArasaac">🔍</button>
+                    <button type="button" class="btn glass" id="btnSearchArasaac"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-search"/></svg></button>
                   </div>
                 </div>
               </div>
 
               <label class="field">
                 <span>Color de Borde</span>
-                <input id="itemColor" type="color" value="#22c55e" />
+                <input id="itemColor" type="color" value="#c6e6c8" />
               </label>
             </div>
 
@@ -292,17 +481,20 @@
               <div class="preview glass-card" id="preview">Esperando datos...</div>
             </div>
 
-            <button class="btn primary full-width" id="btnAddItem">➕ Añadir al Catálogo</button>
+            <!-- Icon and wording both swap between «add» and «save» modes, so
+                 the label needs its own element for setAddItemMode to write to
+                 without clobbering the <svg>. -->
+            <button class="btn primary full-width" id="btnAddItem"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-plus"/></svg><span class="btn-label">Añadir al Catálogo</span></button>
           </div>
 
           <div class="data-mgmt">
             <div class="divider text">Respaldo y Datos</div>
             <div class="row compact">
-              <button class="btn primary-action flex-grow" id="btnLoadLibrary">📚 Cargar Biblioteca Ilustrada</button>
+              <button class="btn secondary flex-grow" id="btnLoadLibrary"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-book"/></svg> Cargar Biblioteca Ilustrada</button>
             </div>
             <div class="row compact" style="margin-top: 10px;">
-              <button class="btn glass secondary flex-grow" id="btnExport">💾 Exportar JSON</button>
-              <button class="btn glass secondary flex-grow" id="btnImport">📥 Importar JSON</button>
+              <button class="btn glass secondary flex-grow" id="btnExport"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-download"/></svg> Exportar JSON</button>
+              <button class="btn glass secondary flex-grow" id="btnImport"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-upload"/></svg> Importar JSON</button>
               <input id="importFile" type="file" accept="application/json" hidden />
             </div>
           </div>
@@ -311,7 +503,7 @@
         <div class="divider text">Tus Elementos</div>
         <div class="row">
           <div class="search-wrapper full-width" style="margin-bottom: 10px;">
-            <span class="search-icon">🔍</span>
+            <svg class="search-icon" aria-hidden="true" focusable="false"><use href="#i-search"/></svg>
             <input class="search-input glass" id="editorSearchBox" placeholder="Filtrar tus elementos..." />
           </div>
         </div>
@@ -332,7 +524,7 @@
           <h1 class="modal-title">Ajustes del Sistema</h1>
           <p class="modal-sub">Personalización y accesibilidad</p>
         </div>
-        <button type="button" class="btn-close" data-close-dialog="settingsModal" aria-label="Cerrar ajustes">✕</button>
+        <button type="button" class="btn-close" data-close-dialog="settingsModal" aria-label="Cerrar ajustes"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-close"/></svg></button>
       </div>
 
       <div class="modal-body">
@@ -470,7 +662,7 @@
         <div class="settings-section">
           <h3>Uso sin conexión</h3>
           <p class="settings-hint">Descarga todos los pictogramas y audios al dispositivo para que la app funcione completa sin internet.</p>
-          <button type="button" class="btn primary-action full-width" id="btnDownloadAll">⬇️ Descargar todo para uso sin conexión</button>
+          <button type="button" class="btn primary-action full-width" id="btnDownloadAll"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-download"/></svg> Descargar todo para uso sin conexión</button>
           <div class="download-progress hidden" id="downloadProgress" role="status" aria-live="polite">
             <div class="download-bar"><div class="download-bar-fill" id="downloadBarFill"></div></div>
             <span class="download-progress-text" id="downloadProgressText">0%</span>
@@ -520,8 +712,8 @@
                 <p class="about-role">Psiquiatra · Desarrollador</p>
               </div>
               <div class="about-links">
-                <a href="mailto:drceladapsiquiatria@gmail.com" class="about-link" aria-label="Enviar correo al autor">✉️</a>
-                <a href="https://github.com/pataforista/noverbal" target="_blank" rel="noopener" class="about-link" aria-label="Ver código fuente en GitHub">🔗</a>
+                <a href="mailto:drceladapsiquiatria@gmail.com" class="about-link" aria-label="Enviar correo al autor"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-mail"/></svg></a>
+                <a href="https://github.com/pataforista/noverbal" target="_blank" rel="noopener" class="about-link" aria-label="Ver código fuente en GitHub"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-link"/></svg></a>
               </div>
             </div>
 
@@ -536,31 +728,31 @@
         </div>
 
         <div class="settings-section">
-          <h3>⚠️ Aviso Legal</h3>
+          <h3><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-warning"/></svg> Aviso Legal</h3>
           <div class="disclaimer-card" role="note" aria-label="Aviso legal y condiciones de uso">
             <div class="disclaimer-item disclaimer-clinical">
-              <span class="disclaimer-icon" aria-hidden="true">🏥</span>
+              <svg class="disclaimer-icon" aria-hidden="true" focusable="false"><use href="#i-health"/></svg>
               <div>
                 <strong>Herramienta de apoyo, no dispositivo médico</strong>
                 <p>HolAAC! es un apoyo a la comunicación. No reemplaza la evaluación ni el tratamiento por profesionales de salud, fonoaudiología o terapia ocupacional. Siempre consulte a un especialista.</p>
               </div>
             </div>
             <div class="disclaimer-item">
-              <span class="disclaimer-icon" aria-hidden="true">🔒</span>
+              <svg class="disclaimer-icon" aria-hidden="true" focusable="false"><use href="#i-lock"/></svg>
               <div>
                 <strong>Privacidad de datos</strong>
                 <p>Toda la información —historial clínico, tableros y configuración— se almacena <em>únicamente</em> en este dispositivo. No se envía ningún dato a servidores externos.</p>
               </div>
             </div>
             <div class="disclaimer-item">
-              <span class="disclaimer-icon" aria-hidden="true">🖼️</span>
+              <svg class="disclaimer-icon" aria-hidden="true" focusable="false"><use href="#i-image"/></svg>
               <div>
                 <strong>Pictogramas: ARASAAC</strong>
                 <p>Los pictogramas son © del Gobierno de Aragón y ARASAAC, bajo licencia <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a>. Uso no comercial.</p>
               </div>
             </div>
             <div class="disclaimer-item">
-              <span class="disclaimer-icon" aria-hidden="true">📖</span>
+              <svg class="disclaimer-icon" aria-hidden="true" focusable="false"><use href="#i-book"/></svg>
               <div>
                 <strong>Código abierto (MIT)</strong>
                 <p>HolAAC! es software libre. Puedes ver, modificar y distribuir el código en <a href="https://github.com/pataforista/noverbal" target="_blank" rel="noopener">GitHub</a> respetando la licencia MIT.</p>
@@ -571,7 +763,7 @@
 
         <div class="settings-section">
           <h3>Clínico</h3>
-          <button type="button" class="btn glass warning full-width" id="btnOpenHistory">📊 Ver Bitácora de Uso</button>
+          <button type="button" class="btn glass warning full-width" id="btnOpenHistory"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-chart"/></svg> Ver Bitácora de Uso</button>
         </div>
       </div>
 
@@ -589,7 +781,7 @@
           <h1 class="modal-title">Bitácora Clínica</h1>
           <p class="modal-sub">Registro local y privado de actividad</p>
         </div>
-        <button type="button" class="btn-close" data-close-dialog="historyModal" aria-label="Cerrar bitácora">✕</button>
+        <button type="button" class="btn-close" data-close-dialog="historyModal" aria-label="Cerrar bitácora"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-close"/></svg></button>
       </div>
       <div class="modal-body">
         <div id="historyList" class="history-list">
@@ -608,7 +800,7 @@
     <form method="dialog" class="modal-card mini">
       <div class="modal-head">
         <h2 class="modal-title">PIN de Seguridad</h2>
-        <button type="button" class="btn-close" data-close-dialog="pinModal" aria-label="Cancelar entrada de PIN">✕</button>
+        <button type="button" class="btn-close" data-close-dialog="pinModal" aria-label="Cancelar entrada de PIN"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-close"/></svg></button>
       </div>
       <div class="modal-body">
         <p>Ingresa el PIN de 4 dígitos para entrar al Modo Tutor:</p>

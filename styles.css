@@ -24,20 +24,25 @@
   --md-tertiary-container: #eaddff;
   --md-on-tertiary-container: #21005e;
 
-  /* Neutral Colors - Background & Surface */
-  --md-background: #fffbfe;
-  --md-on-background: #1c1b1f;
+  /* Neutral Colors - Background & Surface
+     A warm *neutral* ramp, not the MD3 baseline purple tint. The board is a
+     wall of saturated pictogram colour; when the chrome is also tinted, the
+     two compete and nothing reads as foreground. Keeping every surface a
+     near-achromatic warm grey lets the pictograms be the only colour on
+     screen — the single biggest change in how finished the app looks. */
+  --md-background: #fbfaf9;
+  --md-on-background: #16151a;
 
-  --md-surface: #fffbfe;
-  --md-on-surface: #1c1b1f;
-  --md-on-surface-variant: #49454f;
-  --md-surface-dim: #ded8e1;
-  --md-surface-bright: #fffbfe;
+  --md-surface: #ffffff;
+  --md-on-surface: #16151a;
+  --md-on-surface-variant: #5d5a63;
+  --md-surface-dim: #e7e5e2;
+  --md-surface-bright: #ffffff;
   --md-surface-container-lowest: #ffffff;
-  --md-surface-container-low: #f7f2fa;
-  --md-surface-container: #f3eef7;
-  --md-surface-container-high: #ede6f0;
-  --md-surface-container-highest: #e8e1eb;
+  --md-surface-container-low: #f7f6f4;
+  --md-surface-container: #f2f0ed;
+  --md-surface-container-high: #ebe9e5;
+  --md-surface-container-highest: #e4e1dd;
 
   /* Error & Success */
   --md-error: #f2b8b5;
@@ -48,10 +53,21 @@
   --md-success: #4caf50;
   --md-on-success: #ffffff;
 
+  /* «On» state for switches. Green rather than the app accent: coral is the
+     action/alert colour here, and a control that is merely enabled should not
+     borrow the palette that SOS depends on. 3.6:1 against white — above the
+     3:1 WCAG 1.4.11 asks of a UI component. */
+  --md-switch-on: #2f7d4f;
+
   /* Outline & Shadow */
-  --md-outline: #79747e;
-  --md-outline-variant: #ccc7d0;
+  --md-outline: #78757e;
+  --md-outline-variant: #dedbd6;
   --md-scrim: #000000;
+
+  /* Hairline used to separate bands of content. Modern interfaces lean on a
+     1px rule plus whitespace where this app used a filled panel per section —
+     five stacked grey slabs read as clutter, a hairline reads as structure. */
+  --hairline: #e6e3de;
 
   /* Legacy support for existing components */
   --bg-primary: var(--md-background);
@@ -83,12 +99,23 @@
   --md-spacing-xl: 24px;
   --md-spacing-2xl: 32px;
 
-  /* MD3 Elevation & Shadows */
+  /* Elevation. The old ramp was the 2014 Material recipe — a tight, dark
+     double-drop that reads as a hard edge rather than as depth. These are
+     wide, low-opacity and tinted with the surface hue, which is what makes
+     current interfaces look soft rather than stamped-on. */
   --md-shadow-0: none;
-  --md-shadow-1: 0px 1px 3px rgba(0, 0, 0, 0.12), 0px 1px 2px rgba(0, 0, 0, 0.24);
-  --md-shadow-2: 0px 3px 6px rgba(0, 0, 0, 0.15), 0px 2px 4px rgba(0, 0, 0, 0.12);
-  --md-shadow-3: 0px 10px 20px rgba(0, 0, 0, 0.15), 0px 3px 6px rgba(0, 0, 0, 0.12);
-  --md-shadow-4: 0px 15px 30px rgba(0, 0, 0, 0.2), 0px 5px 10px rgba(0, 0, 0, 0.12);
+  --md-shadow-1:
+    0 1px 2px rgba(25, 22, 18, 0.05),
+    0 1px 1px rgba(25, 22, 18, 0.03);
+  --md-shadow-2:
+    0 2px 6px rgba(25, 22, 18, 0.06),
+    0 1px 2px rgba(25, 22, 18, 0.04);
+  --md-shadow-3:
+    0 8px 24px rgba(25, 22, 18, 0.09),
+    0 2px 6px rgba(25, 22, 18, 0.05);
+  --md-shadow-4:
+    0 20px 48px rgba(25, 22, 18, 0.14),
+    0 6px 16px rgba(25, 22, 18, 0.07);
 
   --shadow: var(--md-shadow-2);
 
@@ -103,26 +130,36 @@
   /* Border System */
   --border-thick: 2px solid var(--md-outline);
 
-  /* Fitzgerald Key (AAC Standard) - Semantic Palette - Enhanced for MD3 */
-  --fitz-people-bg: #fff59d;
-  --fitz-people-fg: #1a1a00;
-  --fitz-people-brd: #f9a825;
-  --fitz-verbs-bg: #81c784;
-  --fitz-verbs-fg: #1b5e20;
-  --fitz-verbs-brd: #4caf50;
-  --fitz-adj-bg: #64b5f6;
-  --fitz-adj-fg: #0d47a1;
-  --fitz-adj-brd: #1976d2;
-  --fitz-noun-bg: #ffb74d;
-  --fitz-noun-fg: #e65100;
-  --fitz-noun-brd: #f57c00;
-  --fitz-social-bg: #f48fb1;
-  --fitz-social-fg: #880e4f;
-  --fitz-social-brd: #e91e63;
+  /* Fitzgerald Key (AAC standard) — hue identity kept, chroma reduced.
+     ARASAAC pictograms are black line drawings. Painted on a fully saturated
+     Tailwind-500 tone the line art loses most of its contrast, which is why
+     the old design needed an opaque label chip floating over the symbol to
+     stay readable. Holding every category at roughly the same light tint
+     (L*≈86) does three things at once: the black line art keeps a >10:1 ratio
+     on every card, the dark label ink is legible without a plate, and a full
+     board of 300 symbols stops competing for attention. Light tints are also
+     how the Fitzgerald key is drawn on paper boards, so this is closer to the
+     convention than the saturated version was, not further from it. */
+  --fitz-people-bg: #f6e7a8;
+  --fitz-people-fg: #4a3d00;
+  --fitz-people-brd: #d9bd54;
+  --fitz-verbs-bg: #c3e2c0;
+  --fitz-verbs-fg: #1e4620;
+  --fitz-verbs-brd: #7bb377;
+  --fitz-adj-bg: #bcd9f5;
+  --fitz-adj-fg: #10375c;
+  --fitz-adj-brd: #71a8dc;
+  --fitz-noun-bg: #f7d4a8;
+  --fitz-noun-fg: #6b3c07;
+  --fitz-noun-brd: #dda65c;
+  --fitz-social-bg: #f6c6d7;
+  --fitz-social-fg: #5e1533;
+  --fitz-social-brd: #dd8bab;
 
   /* Motor Accessibility & Touch Targets */
   --tile-size: clamp(120px, 19vw, 210px);
   --grid-gap: clamp(8px, 2vw, 16px);
+  --tile-radius: 18px;
 }
 
 /* Material Design 3 Dark Theme */
@@ -146,22 +183,30 @@
   --md-on-tertiary: #381e72;
   --md-on-tertiary-container: #6750a4;
 
-  --md-background: #1c1b1f;
-  --md-on-background: #e6e0e9;
+  /* Neutral, matching the light theme's ramp. The old dark surfaces drifted
+     between a purple base (#1c1b1f, #423f4a) and blue-grey containers
+     (#2d3135, #37393f) — two different casts stacked in one interface, which
+     is why dark mode read as muddy rather than as the same app with the lights
+     off. One warm-neutral ramp, evenly stepped. */
+  --md-background: #141317;
+  --md-on-background: #eae7e3;
 
-  --md-surface: #1c1b1f;
-  --md-on-surface: #e6e0e9;
-  --md-on-surface-variant: #cac4d0;
-  --md-surface-dim: #0f0e13;
-  --md-surface-bright: #333236;
-  --md-surface-container-lowest: #0f0e13;
-  --md-surface-container-low: #262a2f;
-  --md-surface-container: #2d3135;
-  --md-surface-container-high: #37393f;
-  --md-surface-container-highest: #423f4a;
+  --md-surface: #1b1a1e;
+  --md-on-surface: #eae7e3;
+  --md-on-surface-variant: #b3aeb8;
+  --md-surface-dim: #0f0e11;
+  --md-surface-bright: #34323a;
+  --md-surface-container-lowest: #0f0e11;
+  --md-surface-container-low: #1f1e23;
+  --md-surface-container: #26252a;
+  --md-surface-container-high: #2f2e34;
+  --md-surface-container-highest: #3a383f;
 
-  --md-outline: #9e9da7;
-  --md-outline-variant: #49454f;
+  --md-outline: #9e9ba5;
+  --md-outline-variant: #3c3a42;
+  --hairline: #302e36;
+  /* Lighter on a dark ground so the «on» state keeps its 3:1 contrast. */
+  --md-switch-on: #4caf7a;
 
   /* Legacy support */
   --bg-primary: var(--md-background);
@@ -197,14 +242,12 @@
   --tile-dark-filter: saturate(1.15) contrast(1.2) brightness(1.05);
 }
 
-.dark-theme .btn,
-.dark-theme .tile,
+/* Shadows barely register on a dark ground — depth there comes from surface
+   lightness, not from a drop shadow. Only the genuinely floating layers keep
+   one. */
 .dark-theme .composer,
-.dark-theme .modal,
-.dark-theme input,
-.dark-theme select,
-.dark-theme .pill {
-  box-shadow: var(--md-shadow-1);
+.dark-theme .modal {
+  box-shadow: var(--md-shadow-3);
 }
 
 .skip-link {
@@ -255,26 +298,14 @@
   box-shadow: var(--md-shadow-1);
 }
 
-.dark-theme .tile-img {
-  background: rgba(255, 255, 255, 0.96);
-  border-color: var(--md-outline);
-  padding: 4px;
-}
-
+/* Cards are painted with the item's own colour, which is a light tint in both
+   themes — so they need no dark-mode repaint. The white plate behind the
+   pictogram and the near-black label bar existed to rescue black line art from
+   a fully saturated background; with the tint palette the drawing already sits
+   at >10:1 and the label band derives its own shade from the card. Overriding
+   them here would put a white box inside an already-light card. */
 .dark-theme .tile {
-  border-color: var(--md-outline);
-}
-
-.dark-theme .tile-cat {
-  color: var(--md-on-surface);
-}
-
-.dark-theme .tile-img img {
-  filter: none;
-}
-
-.dark-theme .tile-label {
-  background: rgba(28, 27, 31, 0.9);
+  border-color: rgba(25, 22, 18, 0.16);
 }
 
 
@@ -564,16 +595,47 @@ h3 {
   line-height: 1.4;
 }
 
-/* Layout - MD3 Topbar */
+/* ── Icon set ───────────────────────────────────────────────────────────── */
+/* One sizing rule for every `<use>` glyph, so icons in a header button, a
+   composer button and a dialog close button are all the same optical weight.
+   `currentColor` is inherited from the button, which is what lets the same
+   glyph sit on a filled SOS button and on a quiet grey one. */
+.btn-icon,
+.ui-icon,
+.icon,
+.search-icon {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  display: inline-block;
+  vertical-align: middle;
+  color: currentColor;
+  /* Round joins on a 1.75 stroke go soft below ~18px; this keeps the geometry
+     crisp without bumping the stroke weight. */
+  shape-rendering: geometricPrecision;
+}
+
+.icon {
+  width: 24px;
+  height: 24px;
+}
+
+/* Layout - Topbar */
 .topbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--md-spacing-md) var(--md-spacing-lg);
+  padding: 10px var(--md-spacing-lg);
   background-color: var(--md-surface);
-  border-bottom: 1px solid var(--md-outline-variant);
+  border-bottom: 1px solid var(--hairline);
   gap: var(--md-spacing-lg);
-  box-shadow: var(--md-shadow-1);
+  /* A hairline, not a drop shadow. The header does not float above the board;
+     it is the top of the same sheet, and a shadow there only added a grey
+     smear under a row that is already busy. */
+  box-shadow: none;
+  position: sticky;
+  top: 0;
+  z-index: 50;
 }
 
 .brand {
@@ -582,10 +644,13 @@ h3 {
   gap: var(--md-spacing-md);
 }
 
+/* The mark was rendered at up to 72px — larger than any control beside it, and
+   at that size the small raster icon showed its pixels. At 40px it is crisp,
+   and the header row is 32px shorter. */
 .header-logo {
-  height: clamp(48px, 8vw, 72px);
-  width: auto;
-  border-radius: var(--md-radius-md);
+  height: 40px;
+  width: 40px;
+  border-radius: 11px;
   border: none;
   background: transparent;
   object-fit: contain;
@@ -623,24 +688,35 @@ h3 {
 }
 
 .layout {
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
-  padding: 1.5rem;
+  padding: 16px 20px;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  /* 1.5rem between every band gave five sections the same separation, so none
+     of them grouped. The composer keeps a full gap below it; the toolbar, core
+     row and board read as one unit and sit closer together. */
+  gap: 14px;
 }
 
-/* Composer (Phrase Bar) - MD3 */
+.grid {
+  margin-top: 2px;
+}
+
+/* Composer (Phrase Bar).
+   This is the one element on screen that should read as elevated — it is the
+   thing the user is building. It gets a white sheet and a real (soft) shadow;
+   the toolbar, core row and board below it lost theirs, so the composer no
+   longer has to compete with four other panels for the same emphasis. */
 .composer {
-  background: var(--md-surface-container);
-  border: none;
-  border-radius: var(--md-radius-lg);
-  padding: var(--md-spacing-lg);
+  background: var(--md-surface);
+  border: 1px solid var(--hairline);
+  border-radius: 20px;
+  padding: 14px;
   box-shadow: var(--md-shadow-2);
   display: flex;
   flex-direction: column;
-  gap: var(--md-spacing-md);
+  gap: 10px;
 }
 
 .chips {
@@ -648,18 +724,21 @@ h3 {
   align-items: center;
   gap: var(--md-spacing-sm);
   overflow-x: auto;
-  padding: var(--md-spacing-sm);
+  padding: 8px 10px;
   min-height: 60px;
+  /* An inset well makes the sentence strip legible as a *field* you fill,
+     rather than as blank space in a card. */
+  background: var(--md-surface-container-low);
+  border-radius: 14px;
   scroll-behavior: smooth;
   scrollbar-width: none;
 }
 
 .chips:empty::before {
-  content: "Toca palabras para formar tu frase y pulsa «Hablar Frase»";
-  color: var(--text-secondary);
-  font-weight: 600;
+  content: "Toca palabras para formar tu frase";
+  color: var(--md-on-surface-variant);
+  font-weight: 500;
   font-size: 0.95rem;
-  opacity: 0.65;
   margin: 0 auto;
   text-align: center;
   padding: 0 var(--md-spacing-md);
@@ -670,10 +749,10 @@ h3 {
 }
 
 .chip {
-  background: var(--md-primary-container);
-  border: none;
-  border-radius: var(--md-radius-lg);
-  padding: var(--md-spacing-sm) var(--md-spacing-lg);
+  background: var(--md-surface);
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  padding: var(--md-spacing-sm) var(--md-spacing-md);
   display: flex;
   align-items: center;
   gap: var(--md-spacing-sm);
@@ -681,34 +760,57 @@ h3 {
   font-size: 0.95rem;
   white-space: nowrap;
   animation: popIn 0.3s var(--md-easing-emphasized);
-  color: var(--md-on-primary-container);
+  color: var(--md-on-surface);
   box-shadow: var(--md-shadow-1);
 }
 
 .chip .remove {
   cursor: pointer;
-  opacity: 0.7;
-  font-size: 0.9rem;
-  transition: opacity 0.2s;
+  opacity: 0.55;
+  border: none;
+  background: transparent;
+  color: inherit;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 8px;
+  transition: opacity 0.2s, background-color 0.2s;
+}
+
+.chip .remove .ui-icon {
+  width: 14px;
+  height: 14px;
 }
 
 .chip .remove:hover {
   opacity: 1;
+  background: rgba(25, 22, 18, 0.07);
 }
 
 .composer-actions {
   display: flex;
-  gap: 1rem;
+  gap: 6px;
   align-items: center;
   justify-content: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .speech-controls,
 .utility-actions {
   display: flex;
-  gap: 0.6rem;
+  gap: 6px;
   justify-content: center;
+}
+
+/* On one line with the sentence strip, «Borrar» and «Limpiar» are icon-only:
+   two more word-buttons beside «Hablar Frase» would blunt the one control that
+   has to be found instantly. Both keep their aria-label and title. */
+.composer-actions .btn--labeled .btn-label {
+  display: none;
+}
+
+.composer-actions .btn--labeled {
+  min-width: 44px;
+  padding: 10px;
 }
 
 .speak-btn {
@@ -737,22 +839,32 @@ h3 {
   touch-action: manipulation;
 }
 
-/* Buttons - MD3 Style */
+/* Buttons.
+   The default button is *quiet*: a soft fill, a hairline, no shadow. The old
+   default carried an elevation shadow, which meant nine header controls all
+   claimed to float — with everything emphasised nothing was, and the one
+   control that genuinely matters («Hablar Frase») could not stand out. Weight
+   is now spent only where it buys hierarchy: `.primary-action` is filled, SOS
+   is filled, everything else recedes. */
 .btn {
   cursor: pointer;
-  border: none;
-  border-radius: var(--md-radius-lg);
-  padding: 12px 24px;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  padding: 10px 18px;
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 0.94rem;
+  letter-spacing: -0.005em;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  background: var(--md-surface-container-highest);
+  gap: 9px;
+  background: var(--md-surface-container);
   color: var(--md-on-surface);
-  transition: var(--transition);
-  box-shadow: var(--md-shadow-1);
+  transition:
+    background-color 0.18s var(--md-easing-standard),
+    box-shadow 0.18s var(--md-easing-standard),
+    transform 0.09s var(--md-easing-emphasized);
+  box-shadow: none;
   font-family: inherit;
   position: relative;
   overflow: hidden;
@@ -772,7 +884,7 @@ h3 {
 }
 
 .btn:active {
-  opacity: 0.9;
+  transform: scale(0.97);
 }
 
 .btn:active::before {
@@ -780,7 +892,7 @@ h3 {
 }
 
 .btn:focus-visible {
-  outline: 3px solid var(--md-primary);
+  outline: 3px solid var(--md-primary-strong);
   outline-offset: 2px;
 }
 
@@ -791,6 +903,24 @@ h3 {
   font-size: 1rem;
   font-weight: 700;
   box-shadow: var(--md-shadow-2);
+}
+
+/* A disabled primary action must read as *waiting*, not as broken. «Hablar
+   Frase» sat at a flat pale coral with no cue that it needed words first, so
+   the app's main control looked permanently out of order on a fresh board. */
+.btn.primary-action:disabled,
+.btn:disabled {
+  background: var(--md-surface-container-high);
+  color: var(--md-on-surface-variant);
+  border-color: transparent;
+  box-shadow: none;
+  opacity: 0.75;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn:disabled::before {
+  display: none;
 }
 
 .btn.primary-action::before {
@@ -807,13 +937,22 @@ h3 {
   background: var(--md-on-primary-strong);
 }
 
+/* Tonal rather than solid red. «Limpiar» and «Detener» are ordinary, instantly
+   repeatable edits — painting them the same emergency red as SOS spent the
+   loudest colour in the palette on the least urgent controls, and left the one
+   button that must be unmistakable under stress with nothing left to be louder
+   with. Solid red is now reserved for SOS alone. #7a1c1c on #fadcda is 8.1:1. */
 .btn.danger {
-  background: #d32f2f;
-  color: white;
+  background: #fadcda;
+  color: #7a1c1c;
 }
 
 .btn.danger::before {
-  background: white;
+  background: #7a1c1c;
+}
+
+.btn.danger:hover {
+  background: #f6cbc8;
 }
 
 .btn.secondary {
@@ -859,36 +998,112 @@ h3 {
 .toolbar {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 10px;
+}
+
+/* The search field had a full 56px band to itself on every screen. On a phone
+   that is 7% of the viewport permanently spent on a control the communicator
+   almost never uses — while the board it pushes down is the reason the app
+   exists. Categories and search now share one line at every width.
+   Wide screens: both at full size, side by side. */
+@media (min-width: 900px) {
+  .toolbar {
+    flex-direction: row;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .toolbar .category-menu {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .toolbar .search-wrapper {
+    flex: 0 0 auto;
+    width: clamp(200px, 22vw, 300px);
+  }
+}
+
+/* Narrow screens: search collapses to its own icon and grows back on focus.
+   No JavaScript and no toggle button — the collapsed control *is* the input,
+   so tapping it (or reaching it with Tab) focuses and expands it in one step,
+   and it keeps its accessible name the whole time. */
+@media (max-width: 899px) {
+  .toolbar {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .toolbar .category-menu {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .toolbar .search-wrapper {
+    flex: 0 0 auto;
+    width: 44px;
+    overflow: hidden;
+    transition: width 0.22s var(--md-easing-emphasized);
+  }
+
+  /* Expanded while being typed in — and while a query is still active, so a
+     filtered board never hides the thing that filtered it. */
+  .toolbar .search-wrapper:focus-within,
+  .toolbar .search-wrapper:has(.search-clear.visible) {
+    width: min(72vw, 300px);
+  }
+
+  .toolbar .search-input {
+    padding-left: 40px;
+    padding-right: 40px;
+  }
+
+  .toolbar .search-icon {
+    left: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toolbar .search-wrapper {
+    transition: none;
+  }
 }
 
 
 .category-menu {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  min-width: 0;
 }
 
 .pill-nav {
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  border: none;
-  background: var(--md-surface-container-highest);
+  border: 1px solid var(--hairline);
+  background: var(--md-surface);
   font-weight: 700;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s var(--md-easing-standard);
-  box-shadow: var(--md-shadow-1);
-  color: var(--md-on-surface);
+  transition: all 0.18s var(--md-easing-standard);
+  box-shadow: none;
+  color: var(--md-on-surface-variant);
 }
 
 .pill-nav:hover {
-  background: var(--md-surface-container-high);
-  box-shadow: var(--md-shadow-2);
+  background: var(--md-surface-container);
+  color: var(--md-on-surface);
+  box-shadow: none;
+}
+
+.pill-nav .ui-icon {
+  width: 18px;
+  height: 18px;
 }
 
 .pill-nav:active {
@@ -904,7 +1119,8 @@ h3 {
   display: flex;
   gap: 8px;
   overflow-x: auto;
-  padding-bottom: 5px;
+  min-width: 0;
+  padding-bottom: 2px;
   scrollbar-width: none;
 }
 
@@ -915,10 +1131,12 @@ h3 {
 .pill {
   padding: var(--md-spacing-sm) var(--md-spacing-lg);
   border-radius: var(--md-radius-xl);
-  border: none;
-  background: var(--md-surface-container);
+  border: 1px solid var(--hairline);
+  background: var(--md-surface);
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.92rem;
+  letter-spacing: -0.005em;
+  gap: 7px;
   white-space: nowrap;
   /* Without this the flex container shrinks every pill to ~45% of its content
      width and `overflow: hidden` silently clips the label: «Social», «Salud»
@@ -938,14 +1156,24 @@ h3 {
 }
 
 .pill:hover {
-  background: var(--md-surface-container-high);
+  background: var(--md-surface-container);
 }
 
 .pill.active {
-  background: var(--md-primary-strong);
-  color: var(--md-on-primary-strong);
-  font-weight: 700;
-  box-shadow: var(--md-shadow-1);
+  background: var(--md-on-surface);
+  color: var(--md-surface);
+  border-color: var(--md-on-surface);
+  font-weight: 650;
+  box-shadow: none;
+}
+
+/* The selected category is marked with ink, not with the accent colour. Coral
+   is the app's action colour — it means «this does something». Using it for
+   «you are here» too made the two meanings indistinguishable, and put a
+   saturated red pill immediately above a board of coloured cards. */
+.pill.active:hover {
+  background: #33313a;
+  border-color: #33313a;
 }
 
 
@@ -962,29 +1190,37 @@ h3 {
 
 .search-input {
   width: 100%;
-  padding: var(--md-spacing-md) var(--md-spacing-lg) var(--md-spacing-md) 45px;
-  border: 1px solid var(--md-outline);
-  border-radius: var(--md-radius-md);
+  padding: 11px var(--md-spacing-lg) 11px 44px;
+  border: 1px solid var(--hairline);
+  border-radius: 14px;
   font-weight: 500;
-  font-size: 1rem;
-  background: var(--md-surface-container-highest);
+  font-size: 0.98rem;
+  background: var(--md-surface);
   font-family: inherit;
   color: var(--md-on-surface);
-  transition: all 0.2s var(--md-easing-standard);
+  transition: all 0.18s var(--md-easing-standard);
+}
+
+.search-input::placeholder {
+  color: var(--md-on-surface-variant);
+  opacity: 0.85;
 }
 
 .search-input:focus {
   outline: none;
-  border-color: var(--md-primary);
-  box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+  border-color: var(--md-primary-strong);
+  box-shadow: 0 0 0 3px rgba(204, 59, 59, 0.14);
 }
 
 .search-icon {
   position: absolute;
-  left: 15px;
+  left: 14px;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 1.2rem;
+  width: 19px;
+  height: 19px;
+  color: var(--md-on-surface-variant);
+  pointer-events: none;
 }
 
 
@@ -993,16 +1229,24 @@ h3 {
   right: 10px;
   top: 50%;
   transform: translateY(-50%);
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   border-radius: 999px;
-  border: 2px solid var(--text-primary);
-  background: var(--bg-card);
-  font-weight: 800;
+  border: none;
+  background: var(--md-surface-container-high);
+  color: var(--md-on-surface-variant);
+  display: grid;
+  place-items: center;
+  font-weight: 600;
   cursor: pointer;
   opacity: 0;
   pointer-events: none;
   transition: var(--transition);
+}
+
+.search-clear .ui-icon {
+  width: 15px;
+  height: 15px;
 }
 
 .search-clear.visible {
@@ -1042,20 +1286,24 @@ h3 {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(var(--tile-size), 1fr));
   gap: var(--grid-gap);
-  padding: var(--grid-gap);
-  padding-bottom: 120px;
+  padding: 0 0 120px;
 }
 
 .tile {
   background: var(--md-surface-container-highest);
   min-width: 0;
-  border: none;
-  border-radius: var(--md-radius-lg);
-  padding: var(--md-spacing-md);
+  /* A hairline mixed from the tile's own tint, not a grey stroke: it separates
+     neighbouring cards of the same colour without reading as an outline. */
+  border: 1px solid rgba(25, 22, 18, 0.08);
+  border-radius: var(--tile-radius);
+  /* No padding — the label is a band flush with the bottom edge (see
+     .tile-label), which is what removes the floating chip from over the
+     pictogram. Inner spacing belongs to the two children. */
+  padding: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: var(--md-spacing-sm);
+  align-items: stretch;
+  gap: 0;
   cursor: pointer;
   /* Targeted, fast transitions instead of `all 0.3s`: the press must feel
      instant. Transform reacts in ~90ms, shadow/color follow more slowly. */
@@ -1171,7 +1419,10 @@ h3 {
   width: 100%;
   flex: 0 0 64%;
   min-height: 64%;
-  border-radius: var(--md-radius-md);
+  /* The card lost its padding so the label could reach the bottom edge; the
+     pictogram keeps its breathing room here instead. */
+  padding: 10px 10px 6px;
+  border-radius: 0;
   overflow: hidden;
   background: transparent;
   display: flex;
@@ -1194,9 +1445,9 @@ h3 {
 
 .category-toggle-item {
   margin: 0;
-  padding: 8px;
-  border: 2px solid color-mix(in oklab, var(--text-primary) 25%, transparent);
-  border-radius: 12px;
+  padding: 10px 12px;
+  border: 1.5px solid var(--md-outline-variant);
+  border-radius: 14px;
 }
 
 
@@ -1208,10 +1459,13 @@ h3 {
   font-weight: 700;
 }
 
+/* Selected, not alarmed. Fifteen cards tinted with the accent red and ringed
+   by a 3px red glow made the ordinary state of this dialog — every category
+   switched on — look like fifteen simultaneous warnings. */
 .category-toggle-item.is-active {
-  background: color-mix(in oklab, var(--accent) 22%, var(--bg-secondary));
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 35%, transparent);
+  background: var(--md-surface-container);
+  border-color: var(--md-on-surface);
+  box-shadow: none;
 }
 
 .category-toggle-item.is-active .main {
@@ -1223,17 +1477,9 @@ h3 {
   outline-offset: 2px;
 }
 
-.dark-theme .category-toggle-item {
-  border-color: #cbd5e1;
-}
-
 .dark-theme .category-toggle-item.is-active {
-  background: color-mix(in oklab, var(--accent) 28%, #1e293b);
-  border-color: #e2e8f0;
-}
-
-.dark-theme .category-toggle-item .state-text {
-  color: #e2e8f0;
+  background: var(--md-surface-container-high);
+  border-color: var(--md-on-surface);
 }
 
 .intro-copy {
@@ -1250,9 +1496,9 @@ h3 {
 
 .category-toggle-item {
   margin: 0;
-  padding: 8px;
-  border: 2px solid color-mix(in oklab, var(--text-primary) 25%, transparent);
-  border-radius: 12px;
+  padding: 10px 12px;
+  border: 1.5px solid var(--md-outline-variant);
+  border-radius: 14px;
 }
 
 
@@ -1264,10 +1510,13 @@ h3 {
   font-weight: 700;
 }
 
+/* Selected, not alarmed. Fifteen cards tinted with the accent red and ringed
+   by a 3px red glow made the ordinary state of this dialog — every category
+   switched on — look like fifteen simultaneous warnings. */
 .category-toggle-item.is-active {
-  background: color-mix(in oklab, var(--accent) 22%, var(--bg-secondary));
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 35%, transparent);
+  background: var(--md-surface-container);
+  border-color: var(--md-on-surface);
+  box-shadow: none;
 }
 
 .category-toggle-item.is-active .main {
@@ -1279,17 +1528,9 @@ h3 {
   outline-offset: 2px;
 }
 
-.dark-theme .category-toggle-item {
-  border-color: #cbd5e1;
-}
-
 .dark-theme .category-toggle-item.is-active {
-  background: color-mix(in oklab, var(--accent) 28%, #1e293b);
-  border-color: #e2e8f0;
-}
-
-.dark-theme .category-toggle-item .state-text {
-  color: #e2e8f0;
+  background: var(--md-surface-container-high);
+  border-color: var(--md-on-surface);
 }
 
 .intro-copy {
@@ -1312,13 +1553,29 @@ h3 {
   opacity: 0.3;
 }
 
- .tile-label {
+.tile-nav-icon {
+  width: 44%;
+  max-width: 56px;
+  height: auto;
+  aspect-ratio: 1;
+  color: var(--md-on-surface-variant);
+}
+
+/* The word sits in a band flush with the bottom edge of the card, not on a
+   rounded plate floating over the pictogram. The old chip covered the middle
+   of the symbol — the part that carries the meaning — and its inset corners
+   read as a sticker stuck on the tile. A full-width band is the convention in
+   every established AAC grid (Proloquo, TD Snap, LAMP) for exactly this
+   reason: it never occludes the drawing, and the eye learns one place to
+   look for the word. */
+.tile-label {
   text-align: center;
   width: 100%;
-  min-height: 42px;
-  padding: 4px 6px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.78);
+  min-height: 38px;
+  padding: 6px 8px;
+  border-radius: 0;
+  background: rgba(25, 22, 18, 0.07);
+  border-top: 1px solid rgba(25, 22, 18, 0.07);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -1346,20 +1603,33 @@ h3 {
   hyphens: auto;
 }
 
+/* Category caption under every word.
+   Hidden in the ordinary board: it repeated on all 323 cards, truncated to
+   noise («NAVEGACI…»), and said what the section heading above and the card's
+   own colour already say. It earns its place only where the board mixes
+   categories — search results — and in Tutor mode, where the therapist is
+   auditing the board rather than talking with it. The category is still in
+   each tile's aria-label, so screen-reader users never lose it. */
 .tile-cat {
-  display: block;
+  display: none;
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  font-size: 0.6rem;
+  font-size: 0.58rem;
   line-height: 1;
+  margin-top: 3px;
   text-transform: uppercase;
-  color: var(--text-secondary);
-  font-weight: 800;
-  letter-spacing: 0.35px;
+  opacity: 0.62;
+  font-weight: 700;
+  letter-spacing: 0.4px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+body.is-searching .grid .tile-cat,
+body.tutor-active .grid .tile-cat {
+  display: block;
 }
 
 /* Scanning Focus */
@@ -1404,8 +1674,11 @@ h3 {
 }
 
 .modal-title {
-  font-size: 1.75rem;
+  font-size: 1.5rem;
   font-weight: 700;
+  /* Display sizes need tighter tracking than body text or they read as
+     enlarged paragraphs rather than as titles. */
+  letter-spacing: -0.02em;
   color: var(--md-on-surface);
 }
 
@@ -1490,26 +1763,38 @@ h3 {
   min-width: 200px;
 }
 
+/* Field labels in sentence case at a readable size. Every label in the
+   settings dialog was 0.75rem ALL CAPS with tracking — the hardest possible
+   setting to read, applied to the text that explains what each control does,
+   in an app whose audience includes people with reading and processing
+   difficulties. Caps now survive only where a word is a section marker rather
+   than something to read (`.settings-section h3`). */
 .field span {
   font-weight: 600;
-  font-size: 0.75rem;
-  text-transform: uppercase;
+  font-size: 0.9rem;
+  text-transform: none;
   color: var(--md-on-surface);
-  opacity: 0.8;
-  letter-spacing: 0.5px;
+  opacity: 0.9;
+  letter-spacing: 0;
 }
 
+/* Kept as a bare element selector on purpose. Narrowing it to
+   `input:not([type="range"]):not([type="checkbox"])` raises the specificity to
+   (0,2,1), which then beats `.search-input`'s own padding and let the search
+   glyph sit on top of the first letter the user typed. `input[type="range"]`
+   below resets what it needs; checkboxes are zero-sized inside their switch
+   wrappers, so neither needs excluding here. */
 input,
 select {
-  padding: var(--md-spacing-md) var(--md-spacing-lg);
-  border: 1px solid var(--md-outline);
-  border-radius: var(--md-radius-md);
+  padding: 11px var(--md-spacing-lg);
+  border: 1px solid var(--md-outline-variant);
+  border-radius: 12px;
   font-weight: 500;
   font-family: inherit;
-  font-size: 1rem;
-  background: var(--md-surface-container-highest);
+  font-size: 0.98rem;
+  background: var(--md-surface-container-low);
   color: var(--md-on-surface);
-  transition: all 0.2s var(--md-easing-standard);
+  transition: all 0.18s var(--md-easing-standard);
 }
 
 input:hover,
@@ -1580,21 +1865,31 @@ select:focus {
 }
 
 .settings-section h3 {
-  font-size: 0.9rem;
+  font-size: 0.72rem;
+  font-weight: 700;
   text-transform: uppercase;
   margin-bottom: 1rem;
-  letter-spacing: 1px;
+  letter-spacing: 0.09em;
+  color: var(--md-on-surface-variant);
 }
 
+/* A settings row is a row, not a framed box. `--border-thick` put a 2px
+   near-black outline around it, so the one toggle in this dialog was heavier
+   than the dialog's own title. */
 .field-row {
   display: flex;
   align-items: center;
-  gap: 15px;
-  padding: 1rem;
-  background: var(--bg-secondary);
-  border: var(--border-thick);
-  border-radius: var(--radius-md);
+  gap: 14px;
+  padding: 14px 16px;
+  margin: 8px 0;
+  background: var(--md-surface-container-low);
+  border: 1px solid var(--md-outline-variant);
+  border-radius: 14px;
   cursor: pointer;
+}
+
+.field-row:hover {
+  background: var(--md-surface-container);
 }
 
 .toggle-wrapper {
@@ -1615,23 +1910,35 @@ select:focus {
   outline-offset: 2px;
 }
 
-/* Header Toggle Switch */
+/* Header Toggle Switch.
+   Was a 2px black-outlined capsule wrapping an ALL-CAPS 800-weight label —
+   heavier than the SOS button beside it, for a preference. It now matches the
+   quiet header buttons; the switch itself carries the state. */
 .header-toggle-group {
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: var(--bg-primary);
-  padding: 4px 12px;
-  border: 2px solid var(--text-primary);
-  border-radius: 20px;
-  margin-right: 8px;
+  gap: 9px;
+  background: var(--md-surface-container);
+  padding: 7px 14px 7px 12px;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  margin-right: 4px;
+  min-height: 44px;
+}
+
+.toggle-icon {
+  width: 19px;
+  height: 19px;
+  color: var(--md-on-surface-variant);
 }
 
 .toggle-label {
-  font-size: 0.75rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  color: var(--text-secondary);
+  font-size: 0.86rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  text-transform: none;
+  color: var(--md-on-surface);
+  white-space: nowrap;
 }
 
 .switch.mini {
@@ -1677,13 +1984,68 @@ select:focus {
 }
 
 input:checked+.slider {
-  background-color: var(--md-primary);
-  border-color: var(--md-primary);
+  background-color: var(--md-switch-on);
+  border-color: var(--md-switch-on);
 }
 
 input:checked+.slider:before {
   transform: translateX(12px);
-  background-color: var(--md-on-primary);
+  background-color: #ffffff;
+}
+
+/* Range inputs.
+   These were never styled, so they rendered with the browser's default control
+   — a saturated system blue that appears nowhere else in the app, sitting in
+   the middle of the settings dialog. A slider is also a fine motor task for
+   this audience, so the thumb is 24px (over the 44px target once its hit area
+   is counted) rather than the ~14px default. */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 24px;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  border: none;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--md-surface-container-highest);
+}
+
+input[type="range"]::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--md-surface-container-highest);
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  margin-top: -9px;
+  border-radius: 50%;
+  background: var(--md-primary-strong);
+  border: 3px solid var(--md-surface);
+  box-shadow: var(--md-shadow-2);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--md-primary-strong);
+  border: 3px solid var(--md-surface);
+  box-shadow: var(--md-shadow-2);
+}
+
+input[type="range"]:focus-visible {
+  outline: 3px solid var(--md-primary-strong);
+  outline-offset: 4px;
 }
 
 /* MD3 Toggle Slider (larger variant) */
@@ -1713,19 +2075,24 @@ input:checked+.slider:before {
   box-shadow: var(--md-shadow-1);
 }
 
+/* «On» is green, not coral. A switch in the alert colour tells the user
+   something is wrong when in fact it is enabled — and this app spends red on
+   SOS, so nothing else should compete for it. */
 input:checked+.toggle-slider {
-  background-color: var(--md-primary);
-  border-color: var(--md-primary);
+  background-color: var(--md-switch-on);
+  border-color: var(--md-switch-on);
 }
 
 input:checked+.toggle-slider:before {
   transform: translateX(24px);
-  background-color: var(--md-on-primary);
+  background-color: #ffffff;
 }
 
 .text-content .main {
-  display: block;
-  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
 }
 
 .text-content .sub {
@@ -1799,6 +2166,17 @@ input:checked+.toggle-slider:before {
 .glass-card {
   border-radius: var(--md-radius-lg);
   padding: var(--md-spacing-lg);
+}
+
+/* Every tile carries `glass-card` as well, and inherited a 16px pad and a grey
+   1px border from it — which is why the label band could not reach the bottom
+   edge of the card and sat as an inset block with the tile colour showing
+   underneath it. The tile owns its own geometry. */
+.tile.glass-card {
+  padding: 0;
+  border-color: rgba(25, 22, 18, 0.08);
+  border-radius: var(--tile-radius);
+  backdrop-filter: none;
 }
 
 /* Animations */
@@ -2142,19 +2520,24 @@ input:checked+.toggle-slider:before {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border-radius: var(--radius-full);
-  background: var(--md-surface-container-high);
-  border: var(--border);
+  background: var(--md-surface-container);
+  border: 1px solid var(--md-outline-variant);
+  color: var(--md-on-surface-variant);
   text-decoration: none;
-  font-size: 1rem;
   transition: var(--transition);
 }
 
+.about-link .ui-icon {
+  width: 19px;
+  height: 19px;
+}
+
 .about-link:hover {
-  background: var(--md-primary);
-  transform: scale(1.1);
+  background: var(--md-surface-container-high);
+  color: var(--md-on-surface);
 }
 
 .donation-section {
@@ -2198,9 +2581,11 @@ input:checked+.toggle-slider:before {
 }
 
 .disclaimer-icon {
-  font-size: 1.3rem;
+  width: 20px;
+  height: 20px;
   flex-shrink: 0;
   margin-top: 2px;
+  color: var(--md-on-surface-variant);
 }
 
 .disclaimer-item strong {
@@ -2226,50 +2611,52 @@ input:checked+.toggle-slider:before {
 /* Enhanced Category Navigation */
 .category-picker-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(124px, 1fr));
   gap: 12px;
   padding: 20px;
 }
 
+/* Painted in the category's own colour (set inline in showCategoryPicker), so
+   the picker previews the board rather than describing it. */
 .category-card {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 16px;
-  border-radius: 12px;
+  padding: 14px 10px;
+  border-radius: 14px;
   background: var(--md-surface-container);
-  border: 2px solid transparent;
+  border: 1px solid rgba(25, 22, 18, 0.08);
+  color: var(--tile-ink, var(--md-on-surface));
   cursor: pointer;
-  transition: all 0.2s var(--md-easing-standard);
+  transition:
+    transform 0.12s var(--md-easing-emphasized),
+    box-shadow 0.2s var(--md-easing-standard);
   text-align: center;
-  min-height: 100px;
+  min-height: 76px;
 }
 
 .category-card:hover {
-  background: var(--md-surface-container-high);
-  border-color: var(--md-primary);
   transform: translateY(-2px);
-  box-shadow: var(--md-shadow-2);
+  box-shadow: var(--md-shadow-3);
 }
 
 .category-card.active {
-  background: var(--md-primary);
-  color: var(--md-on-primary);
-  border-color: var(--md-primary);
+  box-shadow: 0 0 0 3px var(--md-on-surface);
   font-weight: 700;
 }
 
-.category-icon {
-  font-size: 32px;
-  line-height: 1;
-}
-
 .category-name {
-  font-weight: 600;
-  font-size: 0.85rem;
-  word-break: break-word;
+  font-weight: 650;
+  font-size: 0.88rem;
+  line-height: 1.2;
+  /* `break-word` split «Emociones» as «Emocione / s» and «Necesidad» as
+     «Necesida / d». Hyphenate at real syllables, or let the name overflow into
+     an ellipsis, rather than cutting a word one letter from its end. */
+  word-break: normal;
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 
 .category-modal {
@@ -2283,7 +2670,7 @@ input:checked+.toggle-slider:before {
 
 @media (max-width: 768px) {
   .category-picker-grid {
-    grid-template-columns: repeat(auto-fit, minmax(85px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
     gap: 10px;
     padding: 16px;
   }
@@ -2291,10 +2678,6 @@ input:checked+.toggle-slider:before {
   .category-card {
     padding: 12px;
     min-height: 85px;
-  }
-
-  .category-icon {
-    font-size: 28px;
   }
 
   .category-name {
@@ -2309,7 +2692,6 @@ input:checked+.toggle-slider:before {
 }
 
 .btn--labeled .btn-icon {
-  font-size: 1.15rem;
   line-height: 1;
 }
 
@@ -2324,11 +2706,18 @@ input:checked+.toggle-slider:before {
 }
 
 /* Welcome "how to use" guide */
+/* The first thing a new user sees is a set of instructions — so it should not
+   be painted in the colour this app uses for emergencies. It was a solid
+   coral-pink panel (`--md-primary-container`), which reads as a warning right
+   where the app is trying to be welcoming. A neutral card with an accent rule
+   down its edge says "read this" without saying "something is wrong". */
 .intro-guide {
-  background: var(--md-primary-container);
-  color: var(--md-on-primary-container);
-  border-radius: var(--md-radius-lg);
-  padding: var(--md-spacing-lg);
+  background: var(--md-surface-container-low);
+  color: var(--md-on-surface);
+  border: 1px solid var(--md-outline-variant);
+  border-left: 4px solid var(--md-primary-strong);
+  border-radius: 14px;
+  padding: 18px;
   margin-bottom: var(--md-spacing-lg);
 }
 
@@ -2338,13 +2727,17 @@ input:checked+.toggle-slider:before {
   margin: 0 0 10px;
 }
 
+/* Real numbers on a numbered list. The <ol> had `list-style: none` and leaned
+   on an emoji per row, so "en 3 pasos" was nowhere reflected in the markup or
+   on screen — a counter states the order the heading promises. */
 .intro-steps {
   margin: 0;
   padding: 0;
   list-style: none;
+  counter-reset: intro-step;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .intro-steps li {
@@ -2352,8 +2745,33 @@ input:checked+.toggle-slider:before {
   align-items: flex-start;
   gap: 12px;
   font-size: 1rem;
-  font-weight: 600;
-  line-height: 1.35;
+  font-weight: 500;
+  line-height: 1.4;
+  counter-increment: intro-step;
+}
+
+.intro-steps li::before {
+  content: counter(intro-step);
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--md-primary-strong);
+  color: var(--md-on-primary-strong);
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* An icon shown inline in a sentence, naming the control the reader has to
+   find. Sized and baseline-shifted to sit inside the line of text. */
+.intro-inline-icon {
+  width: 1.05em;
+  height: 1.05em;
+  vertical-align: -0.18em;
+  margin: 0 1px;
 }
 
 .intro-steps li > span:last-child {
@@ -2361,9 +2779,8 @@ input:checked+.toggle-slider:before {
   min-width: 0;
 }
 
-.intro-step-emoji {
-  font-size: 1.5rem;
-  flex: 0 0 auto;
+.intro-guide-title {
+  letter-spacing: -0.015em;
 }
 
 .intro-tip {
@@ -2430,33 +2847,58 @@ input:checked+.toggle-slider:before {
    The item colour decides the label background + ink, so words stay legible
    whatever colour the user picked, in light and dark themes alike. */
 .tile { --tile-ink: #141218; }
-.tile.tile-dark-bg .tile-label { background: rgba(20, 18, 24, 0.82); }
+
+/* Both variants shade the band *away* from their own ink, so the label always
+   gains contrast rather than losing it: a dark card darkens (white ink), a
+   light card darkens too (dark ink on a tint is already far from black, so it
+   keeps its distance). Lightening a dark card was the wrong direction — on the
+   S.O.S red it pushed white text down to 3.65:1, under the 4.5:1 AA needs, on
+   the one card that must stay readable when someone is in trouble. Darkening
+   by 18% puts it at 6.25:1. Either way it is a shift in the tile's own colour,
+   not an opaque plate laid on top, so the card still reads as one object. */
+.tile.tile-dark-bg .tile-label {
+  background: rgba(0, 0, 0, 0.18);
+  border-top-color: rgba(0, 0, 0, 0.22);
+}
+.tile.tile-dark-bg {
+  border-color: rgba(255, 255, 255, 0.14);
+}
 .tile.tile-dark-bg .tile-text,
 .tile.tile-dark-bg .tile-cat { color: #ffffff; }
-.tile:not(.tile-dark-bg) .tile-label { background: rgba(255, 255, 255, 0.86); }
+
+.tile:not(.tile-dark-bg) .tile-label {
+  background: rgba(25, 22, 18, 0.07);
+  border-top-color: rgba(25, 22, 18, 0.08);
+}
 .tile:not(.tile-dark-bg) .tile-text,
 .tile:not(.tile-dark-bg) .tile-cat { color: #141218; }
 .tile-placeholder { color: var(--tile-ink); }
 
-/* Fixed core-vocabulary row (N-2): always visible, horizontally scrollable. */
+/* Fixed core-vocabulary row (N-2): always visible, horizontally scrollable.
+   The filled panel is gone: composer, toolbar, core row and board were four
+   stacked grey slabs, which read as stripes rather than as structure. A rule
+   above the row separates it just as well and costs no visual weight. */
 .core-row {
   display: flex;
   gap: var(--grid-gap, 12px);
   overflow-x: auto;
-  padding: 8px 12px;
-  margin: 4px 0 2px;
+  padding: 12px 2px 4px;
+  margin: 0;
   scroll-snap-type: x proximity;
   -webkit-overflow-scrolling: touch;
-  border-radius: var(--md-radius-lg, 16px);
-  background: var(--md-surface-container, rgba(0,0,0,0.03));
+  border-radius: 0;
+  border-top: 1px solid var(--hairline);
+  background: transparent;
+  scrollbar-width: none;
 }
+.core-row::-webkit-scrollbar { display: none; }
 .core-row.hidden { display: none; }
+/* The ⭐ that used to label this row was an emoji doing a caption's job, and
+   said nothing about what the row is. The row identifies itself by never
+   moving — it is the same eight words above every board — and it keeps its
+   `sr-only` heading for screen readers, so the glyph bought nothing. */
 .core-row::before {
-  content: "⭐";
-  align-self: center;
-  font-size: 1rem;
-  opacity: 0.6;
-  flex: 0 0 auto;
+  content: none;
 }
 .core-row .tile {
   flex: 0 0 auto;
@@ -2486,40 +2928,86 @@ input:checked+.toggle-slider:before {
 /* Location breadcrumb above the board (N-8). */
 .board-breadcrumb {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 8px;
-  padding: 6px 14px 2px;
+  padding: 4px 2px 0;
   font-weight: 700;
   color: var(--text-primary);
 }
-.board-breadcrumb .breadcrumb-icon { font-size: 1.1rem; }
-.board-breadcrumb .breadcrumb-label { font-size: 1.05rem; }
+/* Colour swatch, matching the pill dot and the cards below it. */
+.board-breadcrumb .breadcrumb-icon {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  align-self: center;
+  box-shadow: inset 0 0 0 1px rgba(25, 22, 18, 0.12);
+}
+
+.pill-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  box-shadow: inset 0 0 0 1px rgba(25, 22, 18, 0.14);
+}
+
+/* On the selected (ink-filled) pill a pale swatch would vanish; a light ring
+   keeps it visible against the dark fill. */
+.pill.active .pill-dot {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45);
+}
+
+.category-picker-btn .pill-dot { display: none; }
+.board-breadcrumb .breadcrumb-label {
+  font-size: 1.15rem;
+  font-weight: 700;
+  /* Negative tracking on display-size text is what keeps a heading from
+     looking like enlarged body copy. */
+  letter-spacing: -0.018em;
+}
 .board-breadcrumb .breadcrumb-count {
   margin-left: auto;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 600;
-  opacity: 0.7;
-  background: var(--glass, rgba(0,0,0,0.06));
-  padding: 2px 10px;
-  border-radius: 999px;
+  color: var(--md-on-surface-variant);
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Header board-profile selector + SOS button (N-5). */
 .header-profile select {
   font: inherit;
-  padding: 8px 10px;
-  border-radius: var(--md-radius-md, 12px);
-  border: var(--border, 1px solid #ccc);
-  background: var(--bg-card, #fff);
-  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 0.94rem;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid transparent;
+  background: var(--md-surface-container);
+  color: var(--md-on-surface);
   cursor: pointer;
   max-width: 46vw;
 }
-.sos-btn {
-  background: var(--md-error-container, #8c1d18) !important;
-  color: #fff !important;
-  font-weight: 800;
+
+.header-profile select:hover {
+  background: var(--md-surface-container-high);
 }
+
+/* SOS is now the only saturated control in the chrome — everything around it
+   went quiet precisely so this one reads first. */
+.sos-btn {
+  background: #c62828 !important;
+  color: #fff !important;
+  font-weight: 700;
+  box-shadow: 0 1px 2px rgba(140, 29, 24, 0.3);
+}
+
+.sos-btn:hover {
+  background: #b02121 !important;
+}
+
 .sos-btn .btn-icon { filter: none; }
 
 /* ── Fase 5 · Cambio de PIN ────────────────────────────────────────────── */
@@ -2612,10 +3100,12 @@ body.paged-mode .grid {
   top: calc(var(--topbar-h, 72px) + var(--composer-h, 132px));
   z-index: 20;
   margin: 0;
-  /* Opaque: sticky layers must not let the board show through as it slides
-     underneath. */
-  background: var(--md-surface-container);
-  box-shadow: var(--md-shadow-1);
+  /* Opaque, because a sticky layer must not let the board show through as it
+     slides underneath — but painted in the *page* colour, not a grey panel.
+     The row needs to be solid, not to look like a separate tray. */
+  background: var(--md-background);
+  box-shadow: none;
+  border-bottom: 1px solid var(--hairline);
 }
 
 /* The star was a decorative ::before pushed into the scroll flow, stealing a
@@ -2629,10 +3119,6 @@ body.paged-mode .grid {
 .topbar,
 .composer {
   background-color: var(--md-surface);
-}
-
-.composer {
-  background: var(--md-surface-container);
 }
 
 /* ── Compact header ─────────────────────────────────────────────────────── */
@@ -2758,22 +3244,31 @@ textarea:focus-visible,
   text-overflow: ellipsis;
 }
 
+/* Removing a word is an ordinary correction, so its badge is neutral. In the
+   accent colour it read as an error marker — three filled red dots hovering
+   over the sentence you had just successfully built. It stays fully visible
+   and full size: this is a primary target for users with limited fine motor
+   control, not a hover-reveal. */
 .chip .remove {
   position: absolute;
   top: -6px;
   right: -6px;
-  border: 2px solid var(--md-surface-container);
+  border: 2px solid var(--md-surface-container-low);
   border-radius: 999px;
-  background: var(--md-primary-strong);
-  color: var(--md-on-primary-strong);
-  font-size: 0.75rem;
-  font-weight: 800;
+  background: var(--md-surface-container-highest);
+  color: var(--md-on-surface);
   line-height: 1;
   display: grid;
   place-items: center;
   cursor: pointer;
   opacity: 1;
   padding: 0;
+  box-shadow: var(--md-shadow-1);
+}
+
+.chip .remove:hover {
+  background: #fadcda;
+  color: #7a1c1c;
 }
 
 /* ── Playback controls appear when there is something to control ────────── */
@@ -2848,10 +3343,22 @@ input[type="color"] {
   width: 100%;
   min-height: 48px;
   padding: 4px;
-  border: 1px solid var(--md-outline);
-  border-radius: var(--md-radius-md);
-  background: var(--md-surface-container-highest);
+  border: 1px solid var(--md-outline-variant);
+  border-radius: 12px;
+  background: var(--md-surface-container-low);
   cursor: pointer;
+}
+
+/* The swatch itself gets the tile's corner radius, so the control previews the
+   card it is going to paint. */
+input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+input[type="color"]::-webkit-color-swatch {
+  border: 1px solid rgba(25, 22, 18, 0.12);
+  border-radius: 8px;
+}
+input[type="color"]::-moz-color-swatch {
+  border: 1px solid rgba(25, 22, 18, 0.12);
+  border-radius: 8px;
 }
 
 /* ── Windows High Contrast ──────────────────────────────────────────────── */
@@ -2881,8 +3388,8 @@ input[type="color"] {
   }
 
   .composer {
-    padding: var(--md-spacing-md);
-    gap: var(--md-spacing-sm);
+    padding: 10px;
+    gap: 8px;
   }
 }
 
@@ -2970,7 +3477,7 @@ input[type="color"] {
   }
 
   .chips {
-    min-height: 68px;
+    min-height: 60px;
   }
 
   .core-row .tile {
@@ -3065,8 +3572,8 @@ input[type="color"] {
 
 .composer-row {
   display: flex;
-  align-items: stretch;
-  gap: var(--md-spacing-md);
+  align-items: center;
+  gap: 10px;
   min-width: 0;
 }
 
@@ -3077,37 +3584,62 @@ input[type="color"] {
 
 .composer-row .speak-btn {
   flex: 0 0 auto;
-  min-width: min(38%, 220px);
+  min-width: min(34%, 200px);
   align-self: stretch;
 }
 
 .composer-actions {
+  flex: 0 0 auto;
   justify-content: flex-end;
-  gap: var(--md-spacing-sm);
+  gap: 6px;
+  align-items: center;
 }
 
-@media (max-width: 720px), (max-height: 560px) {
+/* On a phone there is not enough width for strip + edit controls + speak on one
+   line: the sentence strip was squeezed to ~140px, wrapping its own hint over
+   four lines, and «Hablar Frase» became a 96px square with 0.72rem type. Two
+   lines instead — the strip gets the full width, and the controls sit beneath
+   it with the speak button taking all the room the others leave. */
+@media (max-width: 720px) {
+  .composer-row {
+    flex-wrap: wrap;
+  }
+
+  .composer-row .chips {
+    flex: 1 0 100%;
+  }
+
+  .composer-actions {
+    flex: 0 0 auto;
+  }
+
   .composer-row .speak-btn {
+    flex: 1 1 auto;
     min-width: 0;
-    width: 96px;
-    padding: 10px;
-    flex-direction: column;
-    gap: 2px;
+    width: auto;
+    padding: 12px 16px;
   }
 
   .composer-row .speak-btn .text {
-    font-size: 0.72rem;
-    line-height: 1.05;
-    white-space: normal;
+    font-size: 0.95rem;
+    white-space: nowrap;
+  }
+}
+
+/* Landscape: width is plentiful and height is not, so everything stays on the
+   single line it was designed for. */
+@media (max-height: 560px) and (orientation: landscape) {
+  .composer-row {
+    flex-wrap: nowrap;
   }
 
-  .composer-actions .btn--labeled .btn-label {
-    display: none;
+  .composer-row .chips {
+    flex: 1 1 auto;
   }
 
-  .composer-actions .btn--labeled {
-    min-width: 44px;
-    padding: 10px;
+  .composer-row .speak-btn {
+    flex: 0 0 auto;
+    min-width: 150px;
   }
 }
 
@@ -3170,10 +3702,26 @@ input[type="color"] {
   }
 
   .header-profile select {
-    max-width: 76px;
-    font-size: 0.8rem;
-    padding-left: 6px;
-    padding-right: 6px;
+    max-width: 96px;
+    font-size: 0.82rem;
+    padding-left: 8px;
+    padding-right: 4px;
+  }
+
+  .actions .sos-btn {
+    padding: 10px 12px;
+  }
+}
+
+/* At 320px the header still did not fit: SOS was pushed to x=-60, entirely off
+   screen — the one control that must never be missed. The board-profile picker
+   is the right thing to drop, because it is the only header control that is
+   duplicated elsewhere: #boardProfile in Ajustes is the same setting and the
+   two are kept in sync (see setBoardProfile). Everything else here is either
+   an emergency, a communication function, or the way to reach the rest. */
+@media (max-width: 380px) {
+  .header-profile {
+    display: none;
   }
 
   .actions .sos-btn {
@@ -3197,9 +3745,9 @@ input[type="color"] {
     background: var(--md-surface-container-highest);
   }
 
+  /* The icon is a real element in the markup now (`.toggle-icon`). */
   .header-toggle-group::before {
-    content: "🗣";
-    font-size: 1.05rem;
+    content: none;
   }
 }
 
