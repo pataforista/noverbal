@@ -813,6 +813,15 @@
     </form>
   </dialog>
 
+  <!-- Toast: nueva versión de la app lista, espera confirmación para recargar -->
+  <div class="update-toast hidden" id="updateToast" role="status" aria-live="polite">
+    <span class="update-toast-text">Hay una nueva versión disponible</span>
+    <div class="update-toast-actions">
+      <button type="button" class="btn primary" id="btnUpdateNow">Actualizar</button>
+      <button type="button" class="btn-close" id="btnDismissUpdate" aria-label="Ahora no"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-close"/></svg></button>
+    </div>
+  </div>
+
   <script type="module" src="app.js"></script>
 </body>
 
