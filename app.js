@@ -17,45 +17,57 @@ const LS_KEYS = {
 };
 
 const DEFAULT_ITEMS = [
-    { id: "1", text: "Sí", category: "General", color: "#22c55e", image: "assets/pictos/si.png" },
-    { id: "2", text: "No", category: "General", color: "#ef4444", image: "assets/pictos/no.png" },
-    { id: "3", text: "Hola", category: "Social", color: "#3b82f6", image: "assets/pictos/hola.png" },
-    { id: "4", text: "Por favor", category: "Social", color: "#a855f7", image: "assets/pictos/por_favor.png" },
-    { id: "5", text: "Agua", category: "Necesidad", color: "#0ea5e9", image: "assets/pictos/agua.png" },
-    { id: "6", text: "Comida", category: "Necesidad", color: "#f59e0b", image: "assets/pictos/comida.png" },
-    { id: "7", text: "Baño", category: "Necesidad", color: "#64748b", image: "assets/pictos/bano.png" },
-    { id: "8", text: "Dolor", category: "Salud", color: "#f43f5e", image: "assets/pictos/dolor.png" },
+    { id: "1", text: "Sí", category: "General", color: "#bfe3c1", image: "assets/pictos/si.png" },
+    { id: "2", text: "No", category: "General", color: "#f5c5c1", image: "assets/pictos/no.png" },
+    { id: "3", text: "Hola", category: "Social", color: "#bcd9f5", image: "assets/pictos/hola.png" },
+    { id: "4", text: "Por favor", category: "Social", color: "#d8ccf2", image: "assets/pictos/por_favor.png" },
+    { id: "5", text: "Agua", category: "Necesidad", color: "#b5dced", image: "assets/pictos/agua.png" },
+    { id: "6", text: "Comida", category: "Necesidad", color: "#f7d4a8", image: "assets/pictos/comida.png" },
+    { id: "7", text: "Baño", category: "Necesidad", color: "#d7dce2", image: "assets/pictos/bano.png" },
+    { id: "8", text: "Dolor", category: "Salud", color: "#f5c5c1", image: "assets/pictos/dolor.png" },
 ];
 
-// Enhanced Category Metadata with Icons and Colors
+// Enhanced Category Metadata with Icons and Colors.
+//
+// The colours are a single tint family held at roughly the same lightness
+// (L*≈86) rather than the fully saturated Tailwind-500 ramp they replace.
+// Every pictogram in the library is black line art: on a 500-tone the drawing
+// is barely separable from its background, which is what forced the opaque
+// label plate over the symbol. On these tints the line art keeps a >10:1
+// ratio, dark ink is readable directly on the card, and fifteen categories
+// side by side read as one board instead of fifteen competing signals — while
+// each hue stays distinct enough to keep the colour coding useful.
+//
+// S.O.S is the deliberate exception: it stays a strong red, because being
+// louder than everything around it is its entire job.
 const CATEGORY_METADATA = {
     // Sociales y Emocionales
-    "Social": { icon: "👋", color: "#3b82f6", order: 1 },
-    "Emociones": { icon: "😊", color: "#ec4899", order: 2 },
-    "Personas": { icon: "👨‍👩‍👧", color: "#f59e0b", order: 3 },
+    "Social": { color: "#bcd9f5", order: 1 },
+    "Emociones": { color: "#f6c6d7", order: 2 },
+    "Personas": { color: "#f6e7a8", order: 3 },
 
     // Necesidades Básicas
-    "Necesidad": { icon: "🤝", color: "#0ea5e9", order: 10 },
-    "Comida": { icon: "🍽️", color: "#f97316", order: 11 },
-    "Salud": { icon: "⚕️", color: "#ef4444", order: 12 },
-    "S.O.S": { icon: "🆘", color: "#dc2626", order: 13 },
+    "Necesidad": { color: "#b5dced", order: 10 },
+    "Comida": { color: "#f7d4a8", order: 11 },
+    "Salud": { color: "#f5c5c1", order: 12 },
+    "S.O.S": { color: "#d93b3b", order: 13 },
 
     // Acciones y Movimiento
-    "Acciones": { icon: "🎯", color: "#81c784", order: 20 },
-    "Lugares": { icon: "🏠", color: "#8b5cf6", order: 21 },
+    "Acciones": { color: "#c3e2c0", order: 20 },
+    "Lugares": { color: "#d8ccf2", order: 21 },
 
     // Objetos y Conceptos
-    "Objetos": { icon: "📦", color: "#06b6d4", order: 30 },
-    "Sensorial": { icon: "👃", color: "#a1e230", order: 31 },
+    "Objetos": { color: "#b6e0e2", order: 30 },
+    "Sensorial": { color: "#dbe8ab", order: 31 },
 
     // Bienestar Mental
-    "Mente+": { icon: "🧠", color: "#6366f1", order: 40 },
-    "Vínculos": { icon: "💕", color: "#f472b6", order: 41 },
+    "Mente+": { color: "#ccd1f2", order: 40 },
+    "Vínculos": { color: "#f7cbda", order: 41 },
 
     // Otros
-    "General": { icon: "⭐", color: "#22c55e", order: 50 },
-    "C. Médica": { icon: "📋", color: "#84cc16", order: 51 },
-    "Varios": { icon: "📌", color: "#64748b", order: 99 },
+    "General": { color: "#c6e6c8", order: 50 },
+    "C. Médica": { color: "#d9e8ae", order: 51 },
+    "Varios": { color: "#d7dce2", order: 99 },
 };
 
 // Real grammatical category (parte de la oración) per semantic category, so the
@@ -515,12 +527,44 @@ function loadJSON(key, fallback) {
 
 
 
+// Build an <svg><use href="#i-…"> node, so JS-created controls carry the same
+// icon set as the ones written in the markup.
+function makeIcon(id, cls = 'ui-icon') {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', cls);
+    svg.setAttribute('aria-hidden', 'true');
+    svg.setAttribute('focusable', 'false');
+    const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+    use.setAttribute('href', `#i-${id}`);
+    svg.appendChild(use);
+    return svg;
+}
+
+// Swap the glyph a `<use>` points at. Assigning textContent to an <svg> would
+// wipe the <use> child and leave a button with no icon at all — which is what
+// happened to «Tema» the moment its emoji became an SVG.
+function setIcon(el, id) {
+    if (!el) return;
+    const use = el.querySelector('use');
+    if (use) use.setAttribute('href', `#i-${id}`);
+}
+
+// The add/save button swaps both its icon and its wording between «add a new
+// word» and «save the one being edited». Assigning textContent would drop the
+// <svg> the markup ships with, so icon and label are set separately.
+function setAddItemMode(mode) {
+    if (!dom.btnAddItem) return;
+    const editing = mode === 'edit';
+    setIcon(dom.btnAddItem.querySelector('.btn-icon'), editing ? 'save' : 'plus');
+    const label = dom.btnAddItem.querySelector('.btn-label');
+    const text = editing ? 'Guardar Cambios' : 'Añadir al Catálogo';
+    if (label) label.textContent = text;
+}
+
 function updateThemeToggleIcon() {
     if (!dom.btnThemeToggle) return;
     const isDark = !!state.settings.darkMode;
-    const icon = dom.btnThemeToggle.querySelector('.btn-icon');
-    if (icon) icon.textContent = isDark ? '☀️' : '🌙';
-    else dom.btnThemeToggle.textContent = isDark ? '☀️' : '🌙';
+    setIcon(dom.btnThemeToggle.querySelector('.btn-icon'), isDark ? 'sun' : 'moon');
     dom.btnThemeToggle.setAttribute('aria-label', isDark ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro');
     dom.btnThemeToggle.title = isDark ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro';
 }
@@ -528,7 +572,7 @@ function updateThemeToggleIcon() {
 // Keep the system UI (status bar / address bar) in sync with the app theme.
 function updateThemeColorMeta() {
     const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute('content', state.settings.darkMode ? '#1c1b1f' : '#fffbfe');
+    if (meta) meta.setAttribute('content', state.settings.darkMode ? '#141317' : '#fbfaf9');
 }
 
 function save() {
@@ -1410,7 +1454,7 @@ function updateItem() {
     dom.itemText.value = "";
     dom.itemCategory.value = "";
     dom.itemImage.value = "";
-    dom.btnAddItem.textContent = "➕ Añadir al Catálogo";
+    setAddItemMode('add');
     dom.btnAddItem.removeAttribute('data-edit-id');
     dom.preview.textContent = "¡Actualizado!";
     state.pendingImage = null;
@@ -1432,7 +1476,7 @@ window.editItem = (id) => {
         dom.preview.textContent = "Sin imagen";
     }
 
-    dom.btnAddItem.textContent = "💾 Guardar Cambios";
+    setAddItemMode('edit');
     dom.btnAddItem.setAttribute('data-edit-id', id);
 
     // Scroll to top of editor
@@ -1493,7 +1537,7 @@ async function ensureLibraryItemsPresent() {
             const fallback = byId.get(existing.id);
             const repaired = {
                 ...existing,
-                color: existing.color || fallback?.color || '#22c55e',
+                color: existing.color || fallback?.color || '#c6e6c8',
                 image: existing.image || fallback?.image || null
             };
 
@@ -1648,11 +1692,11 @@ function sanitizeImage(image) {
 
 // Accept only a safe CSS colour token so it can't break out of an inline style.
 function sanitizeColor(color) {
-    if (typeof color !== 'string') return '#22c55e';
+    if (typeof color !== 'string') return '#c6e6c8';
     const value = color.trim();
     if (/^#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(value)) return value;
     if (/^rgb\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*\)$/i.test(value)) return value;
-    return '#22c55e';
+    return '#c6e6c8';
 }
 
 // Relative luminance (0 dark … 1 light) of a hex colour, for contrast decisions.
@@ -1847,9 +1891,11 @@ function renderBreadcrumb() {
     if (!dom.boardBreadcrumb) return;
     dom.boardBreadcrumb.textContent = '';
     const cat = state.currentCategory;
+    // Same swatch as the category's pill and its cards, rather than an emoji.
     const icon = document.createElement('span');
     icon.className = 'breadcrumb-icon';
-    icon.textContent = getCategoryIcon(cat);
+    icon.style.background = getCategoryColor(cat);
+    icon.setAttribute('aria-hidden', 'true');
     const label = document.createElement('span');
     label.className = 'breadcrumb-label';
     if (cat === 'Todas') label.textContent = 'Todas las palabras';
@@ -1973,9 +2019,11 @@ function getVisibleItems() {
 function makeNavAnchor() {
     const atHome = state.currentCategory === "Todas";
     return createTile({
-        text: atHome ? "🏠 Inicio" : "← Volver",
+        // No emoji in the label: the card draws the matching stroke icon (see
+        // createTile), so the word does not have to carry a picture in it.
+        text: atHome ? "Inicio" : "Volver",
         category: "Navegación",
-        color: "#64748b",
+        color: "#d7dce2",
         id: "nav-anchor"
     }, () => {
         if (!atHome) {
@@ -2010,6 +2058,9 @@ function renderGrid() {
     dom.grid.innerHTML = "";
     updateSearchClearButton();
     document.body.classList.toggle('paged-mode', !!state.settings.pagedMode);
+    // Search results mix categories, so the per-tile category caption is worth
+    // its clutter there; on a single-category board it is not (see .tile-cat).
+    document.body.classList.toggle('is-searching', !!state.searchQuery);
 
     const items = getVisibleItems();
 
@@ -2078,7 +2129,7 @@ function renderPageControls(totalPages) {
     const prev = document.createElement('button');
     prev.type = 'button';
     prev.className = 'btn pill-nav page-prev';
-    prev.textContent = '◀';
+    prev.appendChild(makeIcon('chevron-left'));
     prev.setAttribute('aria-label', 'Página anterior');
     prev.disabled = state.currentPage <= 0;
     prev.onclick = () => { state.currentPage -= 1; renderGrid(); renderBreadcrumb(); scrollBoardToTop(); };
@@ -2090,7 +2141,7 @@ function renderPageControls(totalPages) {
     const next = document.createElement('button');
     next.type = 'button';
     next.className = 'btn pill-nav page-next';
-    next.textContent = '▶';
+    next.appendChild(makeIcon('chevron-right'));
     next.setAttribute('aria-label', 'Página siguiente');
     next.disabled = state.currentPage >= totalPages - 1;
     next.onclick = () => { state.currentPage += 1; renderGrid(); renderBreadcrumb(); scrollBoardToTop(); };
@@ -2172,7 +2223,12 @@ function createTile(item, onClick, opts = {}) {
     const imgContainer = document.createElement('div');
     imgContainer.className = 'tile-img';
 
-    if (item.image) {
+    if (isNav) {
+        // The navigation card is chrome, not vocabulary: it gets the interface
+        // icon set rather than a pictogram or the first-letter placeholder.
+        imgContainer.appendChild(
+            makeIcon(item.text === 'Inicio' ? 'home' : 'chevron-left', 'tile-nav-icon'));
+    } else if (item.image) {
         const img = document.createElement('img');
         img.src = item.image;
         img.alt = item.text;
@@ -2213,7 +2269,7 @@ dom.editModal.addEventListener('close', () => {
     dom.itemText.value = "";
     dom.itemCategory.value = "";
     dom.itemImage.value = "";
-    dom.btnAddItem.textContent = "➕ Añadir al Catálogo";
+    setAddItemMode('add');
     dom.btnAddItem.removeAttribute('data-edit-id');
     dom.preview.textContent = "Esperando datos...";
     state.pendingImage = null;
@@ -2325,7 +2381,7 @@ function renderPhrase() {
         const remove = document.createElement('button');
         remove.type = 'button';
         remove.className = 'remove';
-        remove.textContent = '✕';
+        remove.appendChild(makeIcon('close'));
         remove.setAttribute('aria-label', `Quitar «${item.text}» de la frase (palabra ${position + 1})`);
         // addEventListener instead of an inline handler so an item id can't be
         // interpolated into an executable string (P0-10).
@@ -2381,7 +2437,7 @@ function renderCategories() {
     const pickerBtn = document.createElement('button');
     pickerBtn.type = 'button';
     pickerBtn.className = 'pill category-picker-btn';
-    pickerBtn.textContent = '📂 Categorías';
+    pickerBtn.textContent = 'Categorías';
     pickerBtn.setAttribute('role', 'button');
     pickerBtn.setAttribute('aria-label', 'Abrir selector de categorías');
     pickerBtn.onclick = () => showCategoryPicker();
@@ -2391,8 +2447,22 @@ function renderCategories() {
         const pill = document.createElement('button');
         pill.type = 'button';
         pill.className = `pill ${state.currentCategory === cat ? 'active' : ''}`;
-        // textContent (icon is a trusted emoji, category name may be user data) (P0-10)
-        pill.textContent = getCategoryIcon(cat) + ' ' + (cat === "⭐ Favoritos" ? "Favoritos" : cat);
+        // A colour dot instead of the category emoji. The emoji were drawn by
+        // the OS at a size and style nothing here controlled, and several of
+        // them (🎯 for Acciones, 🤝 for Necesidad, 📦 for Objetos) named the
+        // category no better than the word beside them already did. The dot
+        // carries information the word cannot: it is the exact colour of that
+        // category's cards, so the filter bar becomes a legend for the board
+        // and reinforces the colour coding instead of competing with it.
+        const dot = document.createElement('span');
+        dot.className = 'pill-dot';
+        dot.style.background = getCategoryColor(cat);
+        dot.setAttribute('aria-hidden', 'true');
+        pill.appendChild(dot);
+        // textContent, never innerHTML: category names may be user data (P0-10)
+        const pillLabel = document.createElement('span');
+        pillLabel.textContent = (cat === "⭐ Favoritos" ? "Favoritos" : cat);
+        pill.appendChild(pillLabel);
         pill.setAttribute('role', 'tab');
         pill.setAttribute('aria-selected', String(state.currentCategory === cat));
         pill.setAttribute('tabindex', state.currentCategory === cat ? '0' : '-1');
@@ -2444,11 +2514,13 @@ function handleTablistKeys(event) {
     tabs[next].scrollIntoView({ block: 'nearest', inline: 'nearest' });
 }
 
-function getCategoryIcon(category) {
-    if (category === "Todas") return "🏠";
-    if (category === "⭐ Favoritos") return "⭐";
+// The swatch shown on a category pill: the same colour its cards are painted
+// with, so the filter bar doubles as the board's legend. "Todas" and
+// "Favoritos" are not categories and get neutral ink instead of a hue.
+function getCategoryColor(category) {
+    if (category === "Todas" || category === "⭐ Favoritos") return 'var(--md-on-surface-variant)';
     const meta = CATEGORY_METADATA[category];
-    return meta ? meta.icon : "📌";
+    return meta ? meta.color : '#d7dce2';
 }
 
 function showCategoryPicker() {
@@ -2472,10 +2544,10 @@ function showCategoryPicker() {
     header.className = 'modal-head';
     header.innerHTML = `
         <div>
-            <h1 class="modal-title">📂 Selecciona una Categoría</h1>
+            <h1 class="modal-title">Selecciona una categoría</h1>
             <p class="modal-sub">Elige el tema para ver elementos relacionados</p>
         </div>
-        <button type="button" class="btn-close" aria-label="Cerrar selector de categorías">✕</button>
+        <button type="button" class="btn-close" aria-label="Cerrar selector de categorías"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-close"/></svg></button>
     `;
 
     const body = document.createElement('div');
@@ -2485,18 +2557,18 @@ function showCategoryPicker() {
     grid.className = 'category-picker-grid';
 
     cats.forEach(cat => {
-        const meta = CATEGORY_METADATA[cat] || { icon: "📌", color: "#64748b" };
+        const meta = CATEGORY_METADATA[cat] || { color: "#d7dce2" };
         const card = document.createElement('button');
         card.type = 'button';
         card.className = `category-card ${state.currentCategory === cat ? 'active' : ''}`;
-        card.style.borderColor = meta.color;
-        const iconSpan = document.createElement('span');
-        iconSpan.className = 'category-icon';
-        iconSpan.textContent = meta.icon;
+        // The card is painted in the category's own colour rather than showing
+        // an emoji on grey, so the picker is a legend for the board: what you
+        // pick here is exactly what the cards will look like.
+        card.style.backgroundColor = meta.color;
+        applyReadableText(card, meta.color);
         const nameSpan = document.createElement('span');
         nameSpan.className = 'category-name';
         nameSpan.textContent = cat; // category name may be user data (P0-10)
-        card.appendChild(iconSpan);
         card.appendChild(nameSpan);
         card.onclick = (e) => {
             e.preventDefault();
@@ -2568,7 +2640,7 @@ function renderCategoryToggles() {
             const checked = isCategoryActive(category);
             if (checked) label.classList.add('is-active');
 
-            const meta = CATEGORY_METADATA[category] || { icon: "📌" };
+            const meta = CATEGORY_METADATA[category] || { color: "#d7dce2" };
             // Build via DOM so a user-defined category name can't inject markup
             // through the data-category attribute or the label text (P0-10).
             const wrapper = document.createElement('div');
@@ -2587,7 +2659,12 @@ function renderCategoryToggles() {
             textContent.className = 'text-content';
             const mainSpan = document.createElement('span');
             mainSpan.className = 'main';
-            mainSpan.textContent = `${meta.icon} ${category}`;
+            const dot = document.createElement('span');
+            dot.className = 'pill-dot';
+            dot.style.background = meta.color || '#d7dce2';
+            dot.setAttribute('aria-hidden', 'true');
+            mainSpan.appendChild(dot);
+            mainSpan.appendChild(document.createTextNode(category));
             const stateText = document.createElement('span');
             stateText.className = 'sub state-text';
             stateText.textContent = checked ? 'Activa' : 'Inactiva';
