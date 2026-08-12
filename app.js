@@ -117,6 +117,7 @@ const DEFAULT_SETTINGS = {
     activeCategories: [],
     hapticFeedback: true, // short vibration confirming each tap (where supported)
     pagedMode: false, // fixed-position pages instead of a long scroll (N-1)
+    calmMode: false, // strips colour, shadow and secondary labels for sensory load
 };
 
 // State Management
@@ -429,6 +430,7 @@ const dom = {
     categoryBar: document.getElementById('categoryBar'),
     categoryPrev: document.getElementById('categoryPrev'),
     categoryNext: document.getElementById('categoryNext'),
+    categoryPicker: document.getElementById('categoryPicker'),
     searchBox: document.getElementById('searchBox'),
     btnClearSearch: document.getElementById('btnClearSearch'),
     btnSpeak: document.getElementById('btnSpeak'),
@@ -492,6 +494,7 @@ const dom = {
     speechMode: document.getElementById('speechMode'),
     darkMode: document.getElementById('darkMode'),
     hapticFeedback: document.getElementById('hapticFeedback'),
+    calmMode: document.getElementById('calmMode'),
     // Offline precache
     btnDownloadAll: document.getElementById('btnDownloadAll'),
     downloadProgress: document.getElementById('downloadProgress'),
@@ -576,7 +579,15 @@ function updateThemeToggleIcon() {
 // Keep the system UI (status bar / address bar) in sync with the app theme.
 function updateThemeColorMeta() {
     const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute('content', state.settings.darkMode ? '#141317' : '#fbfaf9');
+    if (!meta) return;
+    // Calm mode repaints the whole surface, so the browser chrome has to follow
+    // it too — otherwise the one strip the app does not draw stays the colour
+    // the mode was turned on to get rid of.
+    const calm = state.settings.calmMode;
+    const dark = state.settings.darkMode;
+    let color = dark ? '#141317' : '#fbfaf9';
+    if (calm) color = dark ? '#17171a' : '#f2f1ef';
+    meta.setAttribute('content', color);
 }
 
 function save() {
@@ -947,6 +958,10 @@ function attachListeners() {
         window.addEventListener('resize', updateCategoryNavState);
     }
 
+    if (dom.categoryPicker) {
+        dom.categoryPicker.onclick = () => showCategoryPicker();
+    }
+
     // Editor
     dom.itemImage.onchange = handleImageSelect;
     dom.btnSearchArasaac.onclick = searchArasaac;
@@ -1053,6 +1068,15 @@ function attachListeners() {
             state.settings.hapticFeedback = e.target.checked;
             save();
             if (e.target.checked) haptic(); // confirm the new setting with a buzz
+        };
+    }
+
+    if (dom.calmMode) {
+        dom.calmMode.onchange = (e) => {
+            state.settings.calmMode = e.target.checked;
+            document.body.classList.toggle('calm-mode', state.settings.calmMode);
+            updateThemeColorMeta(); // the browser chrome follows the new surface
+            save();
         };
     }
 
@@ -1939,12 +1963,16 @@ function renderBreadcrumb() {
         dom.boardBreadcrumb.appendChild(badge);
     }
     if (!state.tutorMode.active && state.tutorMode.hiddenTags.size > 0) {
+        // `title` alone is a tooltip: no touch device shows it, and it is the
+        // kind of thing that must not be the only copy of the message — this
+        // badge is what tells a carer the board is filtered rather than empty.
+        // The visible text carries it, and the count reads as words.
+        const count = state.tutorMode.hiddenTags.size;
         const hiddenBadge = document.createElement('span');
         hiddenBadge.className = 'breadcrumb-count hidden-count';
-        hiddenBadge.style.opacity = '0.7';
-        hiddenBadge.style.marginLeft = '6px';
-        hiddenBadge.title = `${state.tutorMode.hiddenTags.size} palabras filtradas en Modo Tutor`;
-        hiddenBadge.textContent = `(${state.tutorMode.hiddenTags.size} ocultas)`;
+        hiddenBadge.textContent = `${count} ${count === 1 ? 'oculta' : 'ocultas'}`;
+        hiddenBadge.setAttribute('aria-label',
+            `${count} ${count === 1 ? 'palabra filtrada' : 'palabras filtradas'} en Modo Tutor`);
         dom.boardBreadcrumb.appendChild(hiddenBadge);
     }
 }
@@ -2493,16 +2521,6 @@ function renderCategories() {
     if (hasFavs) tabs.push("⭐ Favoritos");
     tabs.push(...cats);
 
-    // Add category picker button
-    const pickerBtn = document.createElement('button');
-    pickerBtn.type = 'button';
-    pickerBtn.className = 'pill category-picker-btn';
-    pickerBtn.textContent = 'Categorías';
-    pickerBtn.setAttribute('role', 'button');
-    pickerBtn.setAttribute('aria-label', 'Abrir selector de categorías');
-    pickerBtn.onclick = () => showCategoryPicker();
-    dom.categoryBar.appendChild(pickerBtn);
-
     tabs.forEach(cat => {
         const pill = document.createElement('button');
         pill.type = 'button';
@@ -2540,6 +2558,14 @@ function renderCategories() {
         };
         dom.categoryBar.appendChild(pill);
     });
+
+    // The strip is rebuilt at scrollLeft 0, so on a phone — where it shows about
+    // one pill — every category past the first few repainted with the active one
+    // off screen: the board changed and nothing visible said to what.
+    const activePill = dom.categoryBar.querySelector('.pill.active');
+    if (activePill) {
+        activePill.scrollIntoView({ block: 'nearest', inline: 'center' });
+    }
 
     updateCategoryNavState();
 }
@@ -3166,10 +3192,12 @@ function applySettings() {
     dom.speechMode.value = state.settings.speechMode || 'fluent';
     dom.darkMode.checked = state.settings.darkMode || false;
     if (dom.hapticFeedback) dom.hapticFeedback.checked = state.settings.hapticFeedback !== false;
+    if (dom.calmMode) dom.calmMode.checked = state.settings.calmMode || false;
     dom.headerSpeakToggle.checked = (state.settings.tapMode === 'speak');
     ensureActiveCategories();
     document.body.classList.toggle('show-grammar', state.settings.showGrammarTags);
     document.body.classList.toggle('dark-theme', state.settings.darkMode);
+    document.body.classList.toggle('calm-mode', state.settings.calmMode);
     updateThemeToggleIcon();
     updateThemeColorMeta();
 

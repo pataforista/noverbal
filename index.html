@@ -122,6 +122,11 @@
             stroke-linecap="round" stroke-linejoin="round">
       <circle cx="10.8" cy="10.8" r="6.8"/><path d="M20 20l-4.4-4.4"/>
     </symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+            stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.6"/>
+      <rect x="3.5" y="13.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.6"/>
+    </symbol>
     <symbol id="i-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
             stroke-linecap="round" stroke-linejoin="round">
       <path d="M6 6l12 12M18 6 6 18"/>
@@ -351,6 +356,14 @@
       <nav class="category-menu" role="group" aria-label="Navegación de categorías">
         <button class="pill-nav" id="categoryPrev" type="button"
           aria-label="Mostrar categorías anteriores"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-chevron-left"/></svg></button>
+        <!-- Outside the tablist on purpose: a `role="tablist"` may only contain
+             tabs, and this button opens a dialog — inside it, it was a non-tab
+             child of the tablist and the arrow-key handler skipped it anyway.
+             Its label collapses to the icon on narrow screens so the *active*
+             category — the only thing on this strip that says where you are —
+             stays legible. -->
+        <button class="pill pill-picker" id="categoryPicker" type="button"
+          aria-label="Abrir selector de categorías" aria-haspopup="dialog"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-grid"/></svg><span class="pill-picker-label">Categorías</span></button>
         <div class="pill-container" id="categoryBar" role="tablist" aria-label="Categorías disponibles"></div>
         <button class="pill-nav" id="categoryNext" type="button"
           aria-label="Mostrar categorías siguientes"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-chevron-right"/></svg></button>
@@ -597,6 +610,17 @@
 
         <div class="settings-section">
           <h3>Accesibilidad</h3>
+          <label class="field-row">
+            <div class="toggle-wrapper">
+              <input id="calmMode" type="checkbox" />
+              <span class="toggle-slider"></span>
+            </div>
+            <div class="text-content">
+              <span class="main">Modo Calma</span>
+              <span class="sub">Quita el color, las sombras y las etiquetas secundarias, y deja solo los pictogramas. Para momentos de sobrecarga sensorial o crisis</span>
+            </div>
+          </label>
+
           <label class="field-row">
             <div class="toggle-wrapper">
               <input id="hapticFeedback" type="checkbox" checked />

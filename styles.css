@@ -1050,10 +1050,41 @@ h3 {
 
 .category-menu {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px;
   min-width: 0;
+}
+
+/* The picker sits beside the strip, not inside it, so it never scrolls away
+   and never eats the room the active category needs. */
+.pill-picker {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.pill-picker .ui-icon {
+  width: 20px;
+  height: 20px;
+}
+
+/* Below 600px the strip is ~100px wide. Spending 105 of it on a button whose
+   job the pills already do left the active pill showing nothing but its dot —
+   at 320px it was 34% visible, so the one element that answers "where am I?"
+   was the one element you could not read. The label goes, the icon stays. */
+@media (max-width: 600px) {
+  .pill-picker .pill-picker-label {
+    display: none;
+  }
+
+  .pill-picker {
+    padding: 8px;
+    min-width: 44px;
+    justify-content: center;
+  }
 }
 
 /* ── Pills · Selectores limpios ──────────────────────────────────────── */
@@ -2975,7 +3006,7 @@ input:checked+.toggle-slider:before {
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45);
 }
 
-.category-picker-btn .pill-dot { display: none; }
+.pill-picker .pill-dot { display: none; }
 .board-breadcrumb .breadcrumb-label {
   font-size: 1.15rem;
   font-weight: 700;
@@ -2992,6 +3023,21 @@ input:checked+.toggle-slider:before {
   padding: 0;
   border-radius: 0;
   font-variant-numeric: tabular-nums;
+}
+
+/* "Some words are hidden" is a state, not a statistic: a board that is missing
+   half its vocabulary looks identical to one that never had it, and the person
+   who needs to know is the carer who left Tutor Mode filtering. It was set at
+   0.7 opacity beside the item count, which is where a reader's eye has already
+   stopped looking. A quiet chip instead, and it keeps its own margin so the
+   count's `margin-left: auto` does not push the two apart. */
+.board-breadcrumb .hidden-count {
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--md-outline-variant);
+  color: var(--md-on-surface);
+  background: var(--md-surface-container);
 }
 
 /* Header board-profile selector + SOS button (N-5). */
@@ -3488,6 +3534,16 @@ input[type="color"]::-moz-color-swatch {
     gap: var(--md-spacing-sm);
   }
 
+  /* «Hablar Frase» asked for 280px it could not have: at 320px wide, next to
+     the two 44px edit buttons, that forced it onto a third line and pushed the
+     board down ~50px on the smallest screens — where the vertical budget is
+     already tightest. It shares the line and takes whatever is left instead. */
+  .composer-actions .btn.primary-action,
+  .composer-actions .speak-btn {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
   .utility-actions,
   .speech-controls {
     flex: 0 0 auto;
@@ -3640,6 +3696,26 @@ input[type="color"]::-moz-color-swatch {
   .composer-row .speak-btn .text {
     font-size: 0.95rem;
     white-space: nowrap;
+  }
+}
+
+/* At 320px the two-line composer quietly became three: the edit controls take
+   116px, which leaves «Hablar Frase» 150px against a 154px minimum, so it
+   dropped to a line of its own and spent ~54px — on the narrowest screen,
+   directly above the board. Trimming the button's own padding and type by a
+   few pixels is enough to keep it beside the controls, and it stays well over
+   the 44px target. */
+@media (max-width: 359px) {
+  .composer-row .speak-btn {
+    padding: 12px 10px;
+  }
+
+  .composer-row .speak-btn .text {
+    font-size: 0.9rem;
+  }
+
+  .composer-actions .btn--labeled {
+    padding: 10px 8px;
   }
 }
 
@@ -3842,17 +3918,88 @@ input[type="color"]::-moz-color-swatch {
   hyphens: none;
 }
 
-@media (max-width: 720px) {
+/* ── Core row: reachable, not just present ─────────────────────────────── */
+/* The comment above this row says core vocabulary "is only core if it is
+   reachable from anywhere". On a phone it was not: eight words in a
+   horizontal scroller 366px wide showed three, and the scrollbar is hidden,
+   so the other five were not merely far away — there was nothing on screen to
+   say they existed. A hidden horizontal swipe is also the single worst
+   gesture to put in front of the motor profiles this row is for.
+
+   Two fixed rows of four instead. Every core word is on screen, each keeps a
+   constant position (the point of a core row is motor planning, so the
+   positions must not reflow), and the swipe is gone. The tiles go squat —
+   picture over word, no wasted height — so the second row costs ~40px rather
+   than doubling the block; the composer fix above gives back more than that
+   at 320px, where it matters most. */
+@media (min-width: 360px) and (max-width: 720px) {
+  .core-row {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    /* Fixed row height: left to the content, each row grew to a portrait tile
+       and the block came out taller than the single scrolling row it replaced,
+       which would have traded one problem for a worse one. */
+    grid-auto-rows: clamp(64px, 20vw, 84px);
+    gap: 8px;
+    overflow-x: hidden;
+    scroll-snap-type: none;
+    padding: 10px 2px 6px;
+  }
+
   .core-row .tile {
-    width: clamp(80px, 22vw, 104px);
+    width: auto;
+    height: 100%;
+    aspect-ratio: auto;
+    padding: 4px;
+    gap: 2px;
+  }
+
+  /* The board's 32px label band eats half a squat tile and leaves the drawing
+     a 14px sliver — on a board whose users read the picture first. Compact
+     here, and only here: the tiles on the board keep the full band. */
+  .core-row .tile .tile-label {
+    min-height: 0;
+    padding: 1px 4px 2px;
+  }
+
+  .core-row .tile .tile-img {
+    flex: 1 1 auto;
+    min-height: 0;
   }
 
   .core-row .tile .tile-text {
-    font-size: 0.75rem;
+    font-size: 0.72rem;
+    line-height: 1.2;
   }
 
   .core-row .tile .tile-cat {
     display: none;
+  }
+}
+
+/* Below 360px the two-row grid stops paying: four columns leave a 67px tile,
+   and once the word has its band the drawing is down to ~21px — unreadable on
+   a board whose users read the picture. There the row keeps scrolling, but the
+   scroll stops being invisible: the right edge fades, which is the standard
+   "there is more this way" cue, and it is the one thing the hidden scrollbar
+   never said. */
+@media (max-width: 359px) {
+  .core-row {
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent 100%);
+    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent 100%);
+    scroll-snap-type: x mandatory;
+  }
+
+  .core-row .tile .tile-cat {
+    display: none;
+  }
+}
+
+/* A mask would erase the row outright when the OS supplies the colours. */
+@media (forced-colors: active) {
+  .core-row {
+    -webkit-mask-image: none;
+    mask-image: none;
   }
 }
 
@@ -3918,12 +4065,30 @@ body.calm-mode .tile-label {
   border-top-color: var(--hairline);
 }
 
+/* Secondary annotation goes; orientation and function stay. The draft of this
+   mode also hid `.board-breadcrumb` and `.chip .remove`, which are neither:
+   the breadcrumb is the only thing saying which board you are on, and the ×
+   is the only way to take one wrong word out of a sentence without clearing
+   the whole thing. Calm mode is for quieting a screen, not for removing what
+   the person can do on it — least of all in the moment it is meant for. */
 body.calm-mode .grammar-tag,
 body.calm-mode .tile-cat,
-body.calm-mode .board-breadcrumb,
-body.calm-mode .routine-bar,
-body.calm-mode .chip .remove {
+body.calm-mode .routine-bar {
   display: none !important;
+}
+
+/* Muted, not faint: `--md-on-surface-variant` on the calm surface is 3.31:1,
+   under the 4.5:1 AA needs. The full ink colour is quiet enough here. */
+body.calm-mode .board-breadcrumb {
+  color: var(--md-on-surface);
+  font-weight: 600;
+}
+
+body.calm-mode .chip .remove {
+  background: transparent;
+  border: 1px solid var(--hairline);
+  color: var(--md-on-surface-variant);
+  box-shadow: none;
 }
 
 body.calm-mode .composer,
@@ -3949,8 +4114,46 @@ body.calm-mode .chips {
   background: var(--md-surface);
 }
 
+/* The dot on each pill is the legend for the board's category tints. Calm mode
+   takes those tints away, so the dot points at something no longer on screen —
+   and it is the one bit of colour left in a mode whose whole promise is that
+   there is none. JS paints it inline, hence `!important`. */
+body.calm-mode .pill-dot {
+  background: var(--md-on-surface-variant) !important;
+}
+
+/* «Limpiar» stays a destructive action, but in this mode a red-tinted button is
+   exactly the kind of alarm the person turned the mode on to get away from.
+   It keeps its label, its icon and its confirmation. */
+body.calm-mode .btn.danger {
+  background: var(--md-surface);
+  color: var(--md-on-surface);
+  border: 1px solid var(--hairline);
+}
+
+/* SOS is the deliberate exception, here as everywhere: being louder than
+   everything else is its entire job, and a crisis is when it matters most. It
+   needs no rule — `.sos-btn` already pins its red with `!important`, and this
+   mode leaves it alone on purpose. */
+
 body.calm-mode .btn {
   box-shadow: none !important;
+}
+
+/* The redesign gave the disabled primary action a state that reads as
+   *waiting*. Calm mode's muted variant token dropped it to 2.95:1 — faint
+   enough to read as broken again, on the app's main control. */
+/* `#btnSpeak:disabled` carries an ID, so a class-only rule here loses to it. */
+body.calm-mode #btnSpeak:disabled,
+body.calm-mode .btn:disabled,
+body.calm-mode .btn.primary-action:disabled {
+  color: #5f5b57;
+}
+
+body.calm-mode.dark-theme #btnSpeak:disabled,
+body.calm-mode.dark-theme .btn:disabled,
+body.calm-mode.dark-theme .btn.primary-action:disabled {
+  color: #a8a39d;
 }
 
 body.calm-mode .btn.primary-action {
@@ -3961,4 +4164,57 @@ body.calm-mode .btn.primary-action {
 /* En modo calma, el grid es lo único que importa */
 body.calm-mode .grid {
   gap: 10px;
+}
+
+/* Calm mode set a cream palette unconditionally, so turning it on while the
+   dark theme was active threw a bright screen at whoever chose dark — which,
+   for a light-sensitive user reaching for the mode that calms things down, is
+   the exact opposite of what it promises. Dark stays dark; the mode still does
+   its job, which is to take the colour and the shadows out. */
+body.calm-mode.dark-theme {
+  --md-background: #17171a;
+  --md-surface: #1e1e21;
+  --md-on-surface: #ddd9d4;
+  --md-on-surface-variant: #918d88;
+  --md-primary: #8f8a85;
+  --md-primary-strong: #6f6a65;
+  --md-on-primary-strong: #f5f3f0;
+
+  --hairline: #33322f;
+  --md-outline-variant: #2b2a28;
+}
+
+body.calm-mode.dark-theme .tile {
+  background: #24242a !important;
+  border-color: #33322f !important;
+}
+
+/* The word rides a band tinted from its own tile, so a dark tile gives a dark
+   band — and the label kept the dark ink it uses on the light palette, landing
+   at 1.19:1. Invisible, on the element that carries the word. */
+body.calm-mode.dark-theme .tile-text,
+body.calm-mode.dark-theme .tile-cat {
+  color: #e6e2dd;
+}
+
+body.calm-mode.dark-theme .tile-label {
+  border-top-color: #33322f;
+}
+
+body.calm-mode.dark-theme .pill.active {
+  background: #ddd9d4;
+  color: #1e1e21;
+}
+
+body.calm-mode.dark-theme .btn.primary-action {
+  background: #6f6a65;
+  color: #f5f3f0;
+}
+
+/* The tiles lose their category tint in this mode, so the pictogram is the
+   only thing carrying meaning — ARASAAC draws in black line, which needs a
+   light plate under it whatever the theme. */
+body.calm-mode.dark-theme .tile-img {
+  background: #e9e7e3;
+  border-radius: 8px;
 }
