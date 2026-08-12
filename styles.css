@@ -2,16 +2,11 @@
   /* === Material Design 3 Color System === */
 
   /* Primary & Secondary Colors - Modern & Accessible */
-  --md-primary: #ff6b6b;
+  --md-primary: #e85d5d;
   --md-on-primary: #ffffff;
   --md-primary-container: #ffdfdc;
   --md-on-primary-container: #370b0e;
-  /* Filled surfaces need a deeper tone: white text on #ff6b6b is only 2.78:1,
-     below the 4.5:1 that WCAG AA asks for body text. #cc3b3b keeps the coral
-     identity while reaching 4.93:1, so «Hablar Frase» — the single most
-     important control in the app — is legible for low-vision users. The bright
-     coral stays the accent/focus colour, where 3:1 (non-text) is enough. */
-  --md-primary-strong: #cc3b3b;
+  --md-primary-strong: #b83a3a;
   --md-on-primary-strong: #ffffff;
 
   --md-secondary: #79747e;
@@ -24,13 +19,8 @@
   --md-tertiary-container: #eaddff;
   --md-on-tertiary-container: #21005e;
 
-  /* Neutral Colors - Background & Surface
-     A warm *neutral* ramp, not the MD3 baseline purple tint. The board is a
-     wall of saturated pictogram colour; when the chrome is also tinted, the
-     two compete and nothing reads as foreground. Keeping every surface a
-     near-achromatic warm grey lets the pictograms be the only colour on
-     screen — the single biggest change in how finished the app looks. */
-  --md-background: #fbfaf9;
+  /* Superficies neutras más cálidas y apagadas */
+  --md-background: #f7f6f4;
   --md-on-background: #16151a;
 
   --md-surface: #ffffff;
@@ -39,10 +29,10 @@
   --md-surface-dim: #e7e5e2;
   --md-surface-bright: #ffffff;
   --md-surface-container-lowest: #ffffff;
-  --md-surface-container-low: #f7f6f4;
-  --md-surface-container: #f2f0ed;
-  --md-surface-container-high: #ebe9e5;
-  --md-surface-container-highest: #e4e1dd;
+  --md-surface-container-low: #f9f8f6;
+  --md-surface-container: #f2f1ef;
+  --md-surface-container-high: #eae9e7;
+  --md-surface-container-highest: #e2e1df;
 
   /* Error & Success */
   --md-error: #f2b8b5;
@@ -53,10 +43,6 @@
   --md-success: #4caf50;
   --md-on-success: #ffffff;
 
-  /* «On» state for switches. Green rather than the app accent: coral is the
-     action/alert colour here, and a control that is merely enabled should not
-     borrow the palette that SOS depends on. 3.6:1 against white — above the
-     3:1 WCAG 1.4.11 asks of a UI component. */
   --md-switch-on: #2f7d4f;
 
   /* Outline & Shadow */
@@ -64,10 +50,7 @@
   --md-outline-variant: #dedbd6;
   --md-scrim: #000000;
 
-  /* Hairline used to separate bands of content. Modern interfaces lean on a
-     1px rule plus whitespace where this app used a filled panel per section —
-     five stacked grey slabs read as clutter, a hairline reads as structure. */
-  --hairline: #e6e3de;
+  --hairline: #eceae6;
 
   /* Legacy support for existing components */
   --bg-primary: var(--md-background);
@@ -76,7 +59,7 @@
   --text-primary: var(--md-on-background);
   --text-secondary: var(--md-on-surface);
   --accent: var(--md-primary);
-  --accent-glow: rgba(255, 107, 107, 0.2);
+  --accent-glow: rgba(184, 58, 58, 0.12);
 
   /* MD3 Border Radius - Rounded Corners System */
   --md-radius-none: 0px;
@@ -99,25 +82,14 @@
   --md-spacing-xl: 24px;
   --md-spacing-2xl: 32px;
 
-  /* Elevation. The old ramp was the 2014 Material recipe — a tight, dark
-     double-drop that reads as a hard edge rather than as depth. These are
-     wide, low-opacity and tinted with the surface hue, which is what makes
-     current interfaces look soft rather than stamped-on. */
+  /* Sombras casi invisibles: solo para modales flotantes */
   --md-shadow-0: none;
-  --md-shadow-1:
-    0 1px 2px rgba(25, 22, 18, 0.05),
-    0 1px 1px rgba(25, 22, 18, 0.03);
-  --md-shadow-2:
-    0 2px 6px rgba(25, 22, 18, 0.06),
-    0 1px 2px rgba(25, 22, 18, 0.04);
-  --md-shadow-3:
-    0 8px 24px rgba(25, 22, 18, 0.09),
-    0 2px 6px rgba(25, 22, 18, 0.05);
-  --md-shadow-4:
-    0 20px 48px rgba(25, 22, 18, 0.14),
-    0 6px 16px rgba(25, 22, 18, 0.07);
+  --md-shadow-1: 0 1px 1px rgba(25, 22, 18, 0.04);
+  --md-shadow-2: 0 1px 3px rgba(25, 22, 18, 0.06);
+  --md-shadow-3: 0 4px 12px rgba(25, 22, 18, 0.08);
+  --md-shadow-4: 0 12px 32px rgba(25, 22, 18, 0.12);
 
-  --shadow: var(--md-shadow-2);
+  --shadow: none; /* El grid no necesita sombra base */
 
   /* MD3 Motion System - Easing Curves */
   --md-easing-standard: cubic-bezier(0.2, 0, 0.8, 1);
@@ -130,114 +102,95 @@
   /* Border System */
   --border-thick: 2px solid var(--md-outline);
 
-  /* Fitzgerald Key (AAC standard) — hue identity kept, chroma reduced.
-     ARASAAC pictograms are black line drawings. Painted on a fully saturated
-     Tailwind-500 tone the line art loses most of its contrast, which is why
-     the old design needed an opaque label chip floating over the symbol to
-     stay readable. Holding every category at roughly the same light tint
-     (L*≈86) does three things at once: the black line art keeps a >10:1 ratio
-     on every card, the dark label ink is legible without a plate, and a full
-     board of 300 symbols stops competing for attention. Light tints are also
-     how the Fitzgerald key is drawn on paper boards, so this is closer to the
-     convention than the saturated version was, not further from it. */
-  --fitz-people-bg: #f6e7a8;
-  --fitz-people-fg: #4a3d00;
-  --fitz-people-brd: #d9bd54;
-  --fitz-verbs-bg: #c3e2c0;
-  --fitz-verbs-fg: #1e4620;
-  --fitz-verbs-brd: #7bb377;
-  --fitz-adj-bg: #bcd9f5;
-  --fitz-adj-fg: #10375c;
-  --fitz-adj-brd: #71a8dc;
-  --fitz-noun-bg: #f7d4a8;
-  --fitz-noun-fg: #6b3c07;
-  --fitz-noun-brd: #dda65c;
-  --fitz-social-bg: #f6c6d7;
-  --fitz-social-fg: #5e1533;
-  --fitz-social-brd: #dd8bab;
+  /* === Fitzgerald Key · Versión Low-Arousal ===
+     Mismo matiz, 60-70% más blanco. En un tablero lleno de tiles,
+     estos leen como "categoría" en lugar de "luces de discoteca". */
+  --fitz-people-bg: #faf5e6;
+  --fitz-people-fg: #5c4d20;
+  --fitz-people-brd: #eaddb3;
+
+  --fitz-verbs-bg: #e8f5e6;
+  --fitz-verbs-fg: #2d5a2f;
+  --fitz-verbs-brd: #c3e2c0;
+
+  --fitz-adj-bg: #e3f0fa;
+  --fitz-adj-fg: #1e3d5c;
+  --fitz-adj-brd: #bcd9f5;
+
+  --fitz-noun-bg: #faf0e3;
+  --fitz-noun-fg: #6b4a1e;
+  --fitz-noun-brd: #eaddb3;
+
+  --fitz-social-bg: #fae8f0;
+  --fitz-social-fg: #5c1e3d;
+  --fitz-social-brd: #e8c6d7;
 
   /* Motor Accessibility & Touch Targets */
   --tile-size: clamp(120px, 19vw, 210px);
   --grid-gap: clamp(8px, 2vw, 16px);
-  --tile-radius: 18px;
+  --tile-radius: 12px; /* Menos redondo = más calmado y predecible */
 }
 
 /* Material Design 3 Dark Theme */
 .dark-theme {
-  /* Dark Mode Color Palette */
-  --md-primary: #ffb4ac;
-  --md-on-primary: #601410;
-  --md-primary-container: #8c1d18;
-  --md-on-primary-container: #ffb4ac;
-  /* On dark surfaces the light coral already clears AA (7.7:1 with #601410),
-     so the filled tone is the primary itself. */
-  --md-primary-strong: #ffb4ac;
-  --md-on-primary-strong: #601410;
+  --md-primary: #e8a5a0;
+  --md-on-primary: #4a1512;
+  --md-primary-container: #6b2a26;
+  --md-on-primary-container: #e8a5a0;
+  --md-primary-strong: #d4857e;
+  --md-on-primary-strong: #3d100d;
 
-  --md-secondary: #cbc7d0;
+  --md-secondary: #c4c0c9;
   --md-on-secondary: #3f3747;
-  --md-secondary-container: #57505e;
-  --md-on-secondary-container: #e8def8;
 
-  --md-tertiary: #d0bcff;
-  --md-on-tertiary: #381e72;
-  --md-on-tertiary-container: #6750a4;
+  /* Rampas neutras, sin tinte púrpura/azul mezclado */
+  --md-background: #1a1918;
+  --md-on-background: #e8e6e3;
+  --md-surface: #201f1e;
+  --md-on-surface: #e8e6e3;
+  --md-on-surface-variant: #9e9a95;
+  --md-surface-dim: #141312;
+  --md-surface-bright: #2e2d2c;
+  --md-surface-container-lowest: #141312;
+  --md-surface-container-low: #1e1d1c;
+  --md-surface-container: #252423;
+  --md-surface-container-high: #2e2d2b;
+  --md-surface-container-highest: #383735;
 
-  /* Neutral, matching the light theme's ramp. The old dark surfaces drifted
-     between a purple base (#1c1b1f, #423f4a) and blue-grey containers
-     (#2d3135, #37393f) — two different casts stacked in one interface, which
-     is why dark mode read as muddy rather than as the same app with the lights
-     off. One warm-neutral ramp, evenly stepped. */
-  --md-background: #141317;
-  --md-on-background: #eae7e3;
+  --md-outline: #8a8680;
+  --md-outline-variant: #3e3d3b;
+  --hairline: #2e2d2b;
+  --md-switch-on: #5a9e7a;
 
-  --md-surface: #1b1a1e;
-  --md-on-surface: #eae7e3;
-  --md-on-surface-variant: #b3aeb8;
-  --md-surface-dim: #0f0e11;
-  --md-surface-bright: #34323a;
-  --md-surface-container-lowest: #0f0e11;
-  --md-surface-container-low: #1f1e23;
-  --md-surface-container: #26252a;
-  --md-surface-container-high: #2f2e34;
-  --md-surface-container-highest: #3a383f;
-
-  --md-outline: #9e9ba5;
-  --md-outline-variant: #3c3a42;
-  --hairline: #302e36;
-  /* Lighter on a dark ground so the «on» state keeps its 3:1 contrast. */
-  --md-switch-on: #4caf7a;
-
-  /* Legacy support */
   --bg-primary: var(--md-background);
   --bg-secondary: var(--md-surface-container);
   --bg-card: var(--md-surface-container-low);
   --text-primary: var(--md-on-background);
   --text-secondary: var(--md-on-surface);
   --accent: var(--md-primary);
-  --accent-glow: rgba(255, 180, 172, 0.2);
-  --border-thick: 2px solid var(--md-outline);
+  --accent-glow: rgba(232, 165, 160, 0.12);
+  --border-thick: 1px solid var(--md-outline);
 
-  /* Fitzgerald Overrides for Dark Mode */
-  --fitz-people-bg: #664d00;
-  --fitz-people-brd: #ffd740;
-  --fitz-people-fg: #fff;
+  /* Fitzgerald en dark: versiones muy apagadas */
+  --fitz-people-bg: #3d3518;
+  --fitz-people-brd: #8a7a40;
+  --fitz-people-fg: #eaddb3;
 
-  --fitz-verbs-bg: #2d6a4f;
-  --fitz-verbs-brd: #81c784;
-  --fitz-verbs-fg: #fff;
+  --fitz-verbs-bg: #1e3d20;
+  --fitz-verbs-brd: #5a8a5c;
+  --fitz-verbs-fg: #c3e2c0;
 
-  --fitz-adj-bg: #1565c0;
-  --fitz-adj-brd: #64b5f6;
-  --fitz-adj-fg: #fff;
+  --fitz-adj-bg: #1a3045;
+  --fitz-adj-brd: #4a7a9e;
+  --fitz-adj-fg: #bcd9f5;
 
-  --fitz-noun-bg: #bf360c;
-  --fitz-noun-brd: #ffb74d;
-  --fitz-noun-fg: #fff;
+  --fitz-noun-bg: #3d2e18;
+  --fitz-noun-brd: #9a7a4a;
+  --fitz-noun-fg: #f7d4a8;
 
-  --fitz-social-bg: #ad1457;
-  --fitz-social-brd: #ec407a;
-  --fitz-social-fg: #fff;
+  --fitz-social-bg: #3d1e2e;
+  --fitz-social-brd: #9a5a7a;
+  --fitz-social-fg: #f6c6d7;
 
   --tile-dark-filter: saturate(1.15) contrast(1.2) brightness(1.05);
 }
@@ -620,18 +573,16 @@ h3 {
   height: 24px;
 }
 
-/* Layout - Topbar */
+/* ── Topbar · Desaparece visualmente ─────────────────────────────────── */
+
 .topbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px var(--md-spacing-lg);
-  background-color: var(--md-surface);
+  padding: 8px 14px;
+  background-color: var(--md-background); /* Igual al fondo: no es una banda */
   border-bottom: 1px solid var(--hairline);
-  gap: var(--md-spacing-lg);
-  /* A hairline, not a drop shadow. The header does not float above the board;
-     it is the top of the same sheet, and a shadow there only added a grey
-     smear under a row that is already busy. */
+  gap: var(--md-spacing-md);
   box-shadow: none;
   position: sticky;
   top: 0;
@@ -644,13 +595,10 @@ h3 {
   gap: var(--md-spacing-md);
 }
 
-/* The mark was rendered at up to 72px — larger than any control beside it, and
-   at that size the small raster icon showed its pixels. At 40px it is crisp,
-   and the header row is 32px shorter. */
 .header-logo {
-  height: 40px;
-  width: 40px;
-  border-radius: 11px;
+  height: 32px; /* Un poco más pequeño */
+  width: 32px;
+  border-radius: 8px;
   border: none;
   background: transparent;
   object-fit: contain;
@@ -674,10 +622,12 @@ h3 {
   font-weight: 800;
 }
 
+/* Status text: muy sutil, no compite */
 .subtitle {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  font-weight: 600;
+  font-size: 0.75rem;
+  color: var(--md-on-surface-variant);
+  font-weight: 500;
+  opacity: 0.7;
 }
 
 .actions {
@@ -693,43 +643,32 @@ h3 {
   padding: 16px 20px;
   display: flex;
   flex-direction: column;
-  /* 1.5rem between every band gave five sections the same separation, so none
-     of them grouped. The composer keeps a full gap below it; the toolbar, core
-     row and board read as one unit and sit closer together. */
   gap: 14px;
 }
 
-.grid {
-  margin-top: 2px;
-}
+/* ── Composer · Banda limpia, sin tarjeta ───────────────────────────── */
 
-/* Composer (Phrase Bar).
-   This is the one element on screen that should read as elevated — it is the
-   thing the user is building. It gets a white sheet and a real (soft) shadow;
-   the toolbar, core row and board below it lost theirs, so the composer no
-   longer has to compete with four other panels for the same emphasis. */
 .composer {
-  background: var(--md-surface);
-  border: 1px solid var(--hairline);
-  border-radius: 20px;
-  padding: 14px;
-  box-shadow: var(--md-shadow-2);
+  background: transparent; /* Sin fondo propio */
+  border: none;
+  border-radius: 0;
+  padding: 10px 0;
+  box-shadow: none;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .chips {
   display: flex;
   align-items: center;
-  gap: var(--md-spacing-sm);
+  gap: 8px;
   overflow-x: auto;
-  padding: 8px 10px;
-  min-height: 60px;
-  /* An inset well makes the sentence strip legible as a *field* you fill,
-     rather than as blank space in a card. */
+  padding: 6px;
+  min-height: 56px;
   background: var(--md-surface-container-low);
-  border-radius: 14px;
+  border-radius: 10px;
+  border: 1px solid var(--hairline);
   scroll-behavior: smooth;
   scrollbar-width: none;
 }
@@ -738,10 +677,10 @@ h3 {
   content: "Toca palabras para formar tu frase";
   color: var(--md-on-surface-variant);
   font-weight: 500;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   margin: 0 auto;
   text-align: center;
-  padding: 0 var(--md-spacing-md);
+  opacity: 0.6;
 }
 
 .chips::-webkit-scrollbar {
@@ -751,17 +690,26 @@ h3 {
 .chip {
   background: var(--md-surface);
   border: 1px solid var(--hairline);
-  border-radius: 12px;
-  padding: var(--md-spacing-sm) var(--md-spacing-md);
+  border-radius: 10px;
+  padding: 4px 10px;
   display: flex;
   align-items: center;
-  gap: var(--md-spacing-sm);
+  gap: 6px;
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   white-space: nowrap;
-  animation: popIn 0.3s var(--md-easing-emphasized);
+  animation: popIn 0.2s var(--md-easing-emphasized);
   color: var(--md-on-surface);
-  box-shadow: var(--md-shadow-1);
+  box-shadow: none;
+}
+
+.chip-img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  background: transparent; /* Sin caja blanca alrededor */
+  border-radius: 4px;
+  padding: 0;
 }
 
 .chip .remove {
@@ -813,8 +761,35 @@ h3 {
   padding: 10px;
 }
 
-.speak-btn {
-  min-width: min(100%, 320px);
+/* Botón Hablar Frase: prominente pero sin sombra agresiva */
+.speak-btn,
+.composer-actions .btn.primary-action {
+  min-width: min(100%, 280px);
+  background: var(--md-primary-strong);
+  color: var(--md-on-primary-strong);
+  border: none;
+  box-shadow: none;
+  min-height: 44px;
+}
+
+.speak-btn:hover {
+  background: #a03030;
+}
+
+/* Botones de acción del composer: más pequeños y limpios */
+.composer-actions .btn {
+  padding: 8px 14px;
+  font-size: 0.88rem;
+  background: var(--md-surface-container);
+  border: 1px solid var(--hairline);
+  min-height: 44px;
+}
+
+.composer-actions .btn.primary-action,
+.composer-actions .speak-btn {
+  background: var(--md-primary-strong);
+  color: var(--md-on-primary-strong);
+  border: none;
 }
 
 .speak-btn .text {
@@ -1079,26 +1054,74 @@ h3 {
   min-width: 0;
 }
 
+/* ── Pills · Selectores limpios ──────────────────────────────────────── */
+
+.pill-container {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  min-width: 0;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+
+.pill-container::-webkit-scrollbar {
+  display: none;
+}
+
+.pill {
+  padding: 8px 14px;
+  border-radius: 10px; /* Menos redondo = más serio/funcional */
+  border: 1px solid var(--hairline);
+  background: var(--md-surface);
+  font-weight: 600;
+  font-size: 0.88rem;
+  letter-spacing: 0;
+  gap: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-height: 44px; /* Sigue siendo táctil (WCAG 2.5.5 >=44px) */
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--md-on-surface);
+  transition: all 0.15s var(--md-easing-standard);
+  box-shadow: none;
+}
+
+.pill:hover {
+  background: var(--md-surface-container);
+}
+
+.pill.active {
+  background: var(--md-on-surface);
+  color: var(--md-surface);
+  border-color: var(--md-on-surface);
+  font-weight: 600;
+}
+
+/* El dot de categoría más pequeño y sutil */
+.pill-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  box-shadow: none;
+}
+
+/* Flechas de navegación de categorías: más sutiles */
 .pill-nav {
   width: 44px;
   height: 44px;
-  border-radius: 50%;
+  border-radius: 8px;
   border: 1px solid var(--hairline);
   background: var(--md-surface);
-  font-weight: 700;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.18s var(--md-easing-standard);
-  box-shadow: none;
   color: var(--md-on-surface-variant);
 }
 
 .pill-nav:hover {
   background: var(--md-surface-container);
-  color: var(--md-on-surface);
-  box-shadow: none;
 }
 
 .pill-nav .ui-icon {
@@ -1113,67 +1136,6 @@ h3 {
 .pill-nav:disabled {
   opacity: 0.4;
   cursor: not-allowed;
-}
-
-.pill-container {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  min-width: 0;
-  padding-bottom: 2px;
-  scrollbar-width: none;
-}
-
-.pill-container::-webkit-scrollbar {
-  display: none;
-}
-
-.pill {
-  padding: var(--md-spacing-sm) var(--md-spacing-lg);
-  border-radius: var(--md-radius-xl);
-  border: 1px solid var(--hairline);
-  background: var(--md-surface);
-  font-weight: 600;
-  font-size: 0.92rem;
-  letter-spacing: -0.005em;
-  gap: 7px;
-  white-space: nowrap;
-  /* Without this the flex container shrinks every pill to ~45% of its content
-     width and `overflow: hidden` silently clips the label: «Social», «Salud»
-     and «S.O.S» all rendered as a bare «S». Pills must keep their intrinsic
-     width and let the container scroll instead. */
-  flex-shrink: 0;
-  /* Minimum comfortable touch target for users with reduced fine motor
-     control (WCAG 2.5.5 Target Size asks for 44×44 CSS px). */
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-  cursor: pointer;
-  font-family: inherit;
-  color: var(--md-on-surface);
-  transition: all 0.2s var(--md-easing-standard);
-  box-shadow: var(--md-shadow-0);
-}
-
-.pill:hover {
-  background: var(--md-surface-container);
-}
-
-.pill.active {
-  background: var(--md-on-surface);
-  color: var(--md-surface);
-  border-color: var(--md-on-surface);
-  font-weight: 650;
-  box-shadow: none;
-}
-
-/* The selected category is marked with ink, not with the accent colour. Coral
-   is the app's action colour — it means «this does something». Using it for
-   «you are here» too made the two meanings indistinguishable, and put a
-   saturated red pill immediately above a board of coloured cards. */
-.pill.active:hover {
-  background: #33313a;
-  border-color: #33313a;
 }
 
 
@@ -1259,16 +1221,43 @@ h3 {
   outline-offset: 2px;
 }
 
+/* ── Grid · Posiciones fijas para planificación motora ──────────────── */
+
+.grid {
+  display: grid;
+  /* En lugar de auto-fill que mueve las palabras, usa columnas fijas.
+     El usuario siempre sabe que la columna 3 es la tercera. */
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  padding: 0 0 80px;
+}
+
+/* En tablets anchas, puedes permitir 5 columnas */
+@media (min-width: 1024px) {
+  .grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+/* En móviles, 3 columnas fijas (nunca 2, nunca 4: predecible) */
+@media (max-width: 600px) {
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+}
+
+/* Empty state más limpio */
 .grid-empty {
   grid-column: 1 / -1;
-  min-height: 110px;
+  min-height: 100px;
   border: 1px dashed var(--md-outline-variant);
-  border-radius: var(--md-radius-lg);
+  border-radius: var(--md-radius-md);
   padding: var(--md-spacing-xl);
   display: grid;
   gap: var(--md-spacing-sm);
   align-content: center;
-  background: var(--md-surface-container-low);
+  background: transparent; /* Sin fondo gris */
 }
 
 .grid-empty p {
@@ -1281,40 +1270,25 @@ h3 {
   opacity: 0.7;
 }
 
-/* The Grid */
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(var(--tile-size), 1fr));
-  gap: var(--grid-gap);
-  padding: 0 0 120px;
-}
+/* ── Tile · Limpio y pictograma-centrado ─────────────────────────────── */
 
 .tile {
-  background: var(--md-surface-container-highest);
-  min-width: 0;
-  /* A hairline mixed from the tile's own tint, not a grey stroke: it separates
-     neighbouring cards of the same colour without reading as an outline. */
-  border: 1px solid rgba(25, 22, 18, 0.08);
+  background: var(--md-surface);
+  border: 1px solid var(--hairline);
   border-radius: var(--tile-radius);
-  /* No padding — the label is a band flush with the bottom edge (see
-     .tile-label), which is what removes the floating chip from over the
-     pictogram. Inner spacing belongs to the two children. */
   padding: 0;
   display: flex;
   flex-direction: column;
   align-items: stretch;
   gap: 0;
   cursor: pointer;
-  /* Targeted, fast transitions instead of `all 0.3s`: the press must feel
-     instant. Transform reacts in ~90ms, shadow/color follow more slowly. */
   transition:
-    transform 0.09s var(--md-easing-emphasized),
-    box-shadow 0.24s var(--md-easing-standard),
-    background-color 0.3s var(--md-easing-standard);
-  box-shadow: var(--md-shadow-1);
+    transform 0.08s var(--md-easing-emphasized),
+    box-shadow 0.2s var(--md-easing-standard);
+  box-shadow: none; /* Sin sombra base: el grid no flota */
   position: relative;
   overflow: hidden;
-  aspect-ratio: 1 / 1.18;
+  aspect-ratio: 1 / 1.12; /* Un poco más achatado para dar más aire */
   user-select: none;
   -webkit-user-select: none;
   touch-action: manipulation;
@@ -1322,14 +1296,14 @@ h3 {
 }
 
 .tile:hover {
-  box-shadow: var(--md-shadow-3);
-  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(25, 22, 18, 0.06); /* Sutil, casi imperceptible */
+  transform: translateY(-1px);
 }
 
 .tile:active {
-  transform: scale(0.94);
-  box-shadow: var(--md-shadow-1);
-  transition-duration: 0.05s;
+  transform: scale(0.96);
+  box-shadow: none;
+  transition-duration: 0.04s;
 }
 
 .tile:focus-visible {
@@ -1337,20 +1311,115 @@ h3 {
   outline-offset: 2px;
 }
 
+/* El color de categoría ya no pinta todo el fondo.
+   Solo una barra lateral sutil + tinte de fondo mínimo. */
+.tile[data-cat="Personas"] {
+  background: var(--fitz-people-bg);
+  border-left: 3px solid var(--fitz-people-brd);
+}
+.tile[data-cat="Acciones"] {
+  background: var(--fitz-verbs-bg);
+  border-left: 3px solid var(--fitz-verbs-brd);
+}
+.tile[data-cat="Descriptores"] {
+  background: var(--fitz-adj-bg);
+  border-left: 3px solid var(--fitz-adj-brd);
+}
+.tile[data-cat="Nombres"] {
+  background: var(--fitz-noun-bg);
+  border-left: 3px solid var(--fitz-noun-brd);
+}
+.tile[data-cat="Social"] {
+  background: var(--fitz-social-bg);
+  border-left: 3px solid var(--fitz-social-brd);
+}
+
+/* La imagen ahora ocupa más espacio y respira */
+.tile-img {
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 10px 10px 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  transition: transform 0.2s var(--md-easing-standard);
+}
+
+.tile:active .tile-img {
+  transform: scale(0.96);
+}
+
+/* El label es una banda limpia, sin fondo opaco que corte el tile */
+.tile-label {
+  text-align: center;
+  width: 100%;
+  min-height: 32px;
+  padding: 4px 8px 6px;
+  border-radius: 0;
+  background: transparent; /* Sin placa gris */
+  border-top: 1px solid rgba(25, 22, 18, 0.05);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.tile-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-weight: 600; /* Bajado de 800: menos gritón */
+  font-size: 0.88rem; /* Ligeramente más pequeño */
+  line-height: 1.15;
+  max-height: 2.3em;
+  margin-bottom: 1px;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  hyphens: auto;
+  color: var(--md-on-surface);
+}
+
+/* La categoría bajo la palabra: solo visible en búsqueda/tutor,
+   pero cuando aparece, es muy sutil. */
+.tile-cat {
+  display: none;
+  font-size: 0.6rem;
+  line-height: 1;
+  margin-top: 2px;
+  text-transform: uppercase;
+  opacity: 0.5;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* La estrella de favorito: más pequeña y transparente para no competir */
 .tile-fav {
   position: absolute;
-  top: var(--md-spacing-sm);
-  left: var(--md-spacing-sm);
+  top: 6px;
+  left: 6px;
   border: none;
-  background: rgba(0, 0, 0, 0.24);
+  background: rgba(0, 0, 0, 0.14);
   color: #fff;
-  width: 32px;
-  height: 32px;
+  width: 26px;
+  height: 26px;
   border-radius: var(--radius-full);
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 0.85rem;
   display: grid;
   place-items: center;
+  opacity: 0; /* Oculta por defecto; aparece en hover/tutor */
+  transition: opacity 0.2s;
+}
+.tile:hover .tile-fav,
+.tutor-active .tile-fav {
+  opacity: 1;
 }
 
 .tile-fav:focus-visible {
@@ -1366,74 +1435,26 @@ h3 {
   opacity: 1;
 }
 
-/* Grammar Tag Overlay */
+/* Grammar tag: mucho más sutil. Un punto, no una placa. */
 .grammar-tag {
   position: absolute;
-  top: var(--md-spacing-sm);
-  right: var(--md-spacing-sm);
-  background: var(--md-primary);
-  color: var(--md-on-primary);
-  font-size: 0.65rem;
+  top: 6px;
+  right: 6px;
+  background: var(--md-on-surface);
+  color: var(--md-surface);
+  font-size: 0.55rem;
   font-weight: 700;
-  padding: 2px 6px;
-  border-radius: var(--md-radius-xs);
+  padding: 2px 5px;
+  border-radius: 4px;
   text-transform: uppercase;
   z-index: 10;
   display: none;
   border: none;
-  box-shadow: var(--md-shadow-1);
+  box-shadow: none;
+  opacity: 0.7;
 }
-
 .show-grammar .grammar-tag {
   display: block;
-}
-
-/* Category Semantic Colors */
-.tile[data-cat="Personas"] {
-  background: var(--fitz-people-bg);
-  border-color: var(--fitz-people-brd);
-}
-
-.tile[data-cat="Acciones"] {
-  background: var(--fitz-verbs-bg);
-  border-color: var(--fitz-verbs-brd);
-}
-
-.tile[data-cat="Descriptores"] {
-  background: var(--fitz-adj-bg);
-  border-color: var(--fitz-adj-brd);
-}
-
-.tile[data-cat="Nombres"] {
-  background: var(--fitz-noun-bg);
-  border-color: var(--fitz-noun-brd);
-}
-
-.tile[data-cat="Social"] {
-  background: var(--fitz-social-bg);
-  border-color: var(--fitz-social-brd);
-}
-
-
-.tile-img {
-  width: 100%;
-  flex: 0 0 64%;
-  min-height: 64%;
-  /* The card lost its padding so the label could reach the bottom edge; the
-     pictogram keeps its breathing room here instead. */
-  padding: 10px 10px 6px;
-  border-radius: 0;
-  overflow: hidden;
-  background: transparent;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  transition: transform 0.3s var(--md-easing-standard);
-}
-
-.tile:active .tile-img {
-  transform: scale(0.95);
 }
 
 .category-toggle-list {
@@ -1568,63 +1589,9 @@ h3 {
    every established AAC grid (Proloquo, TD Snap, LAMP) for exactly this
    reason: it never occludes the drawing, and the eye learns one place to
    look for the word. */
-.tile-label {
-  text-align: center;
-  width: 100%;
-  min-height: 38px;
-  padding: 6px 8px;
-  border-radius: 0;
-  background: rgba(25, 22, 18, 0.07);
-  border-top: 1px solid rgba(25, 22, 18, 0.07);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
 .tile-label > * {
   min-width: 0;
   max-width: 100%;
-}
-
-.tile-text {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  font-weight: 800;
-  font-size: 0.98rem;
-  line-height: 1.1;
-  max-height: 2.2em;
-  margin-bottom: 2px;
-  word-break: break-word;
-  overflow-wrap: anywhere;
-  hyphens: auto;
-}
-
-/* Category caption under every word.
-   Hidden in the ordinary board: it repeated on all 323 cards, truncated to
-   noise («NAVEGACI…»), and said what the section heading above and the card's
-   own colour already say. It earns its place only where the board mixes
-   categories — search results — and in Tutor mode, where the therapist is
-   auditing the board rather than talking with it. The category is still in
-   each tile's aria-label, so screen-reader users never lose it. */
-.tile-cat {
-  display: none;
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  font-size: 0.58rem;
-  line-height: 1;
-  margin-top: 3px;
-  text-transform: uppercase;
-  opacity: 0.62;
-  font-weight: 700;
-  letter-spacing: 0.4px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 body.is-searching .grid .tile-cat,
@@ -3906,4 +3873,90 @@ input[type="color"]::-moz-color-swatch {
 
 .tile-label {
   flex: 0 0 auto;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Modo Calma · Para momentos de alta carga sensorial o crisis
+   ═══════════════════════════════════════════════════════════════════════ */
+
+body.calm-mode {
+  /* Todo se vuelve crema/gris cálido. Un solo acento muy apagado. */
+  --md-background: #f2f1ef;
+  --md-surface: #faf9f7;
+  --md-on-surface: #3a3835;
+  --md-on-surface-variant: #8a8782;
+  --md-primary: #8a8580;
+  --md-primary-strong: #6b6660;
+  --md-on-primary-strong: #ffffff;
+  --accent-glow: transparent;
+
+  --hairline: #e0deda;
+  --md-outline-variant: #e8e6e2;
+
+  /* Sin sombras en ningún elemento */
+  --md-shadow-1: none;
+  --md-shadow-2: none;
+  --md-shadow-3: none;
+  --md-shadow-4: none;
+  --shadow: none;
+}
+
+body.calm-mode .tile {
+  background: var(--md-surface) !important;
+  border-color: var(--hairline) !important;
+  border-left-width: 1px !important; /* Sin barra de color */
+  box-shadow: none !important;
+}
+
+body.calm-mode .tile:hover {
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04) !important;
+}
+
+body.calm-mode .tile-label {
+  border-top-color: var(--hairline);
+}
+
+body.calm-mode .grammar-tag,
+body.calm-mode .tile-cat,
+body.calm-mode .board-breadcrumb,
+body.calm-mode .routine-bar,
+body.calm-mode .chip .remove {
+  display: none !important;
+}
+
+body.calm-mode .composer,
+body.calm-mode .topbar,
+body.calm-mode .toolbar,
+body.calm-mode .core-row {
+  background: transparent !important;
+  box-shadow: none !important;
+  border-color: var(--hairline) !important;
+}
+
+body.calm-mode .pill {
+  background: var(--md-surface);
+  border-color: var(--hairline);
+}
+
+body.calm-mode .pill.active {
+  background: var(--md-on-surface);
+  color: var(--md-surface);
+}
+
+body.calm-mode .chips {
+  background: var(--md-surface);
+}
+
+body.calm-mode .btn {
+  box-shadow: none !important;
+}
+
+body.calm-mode .btn.primary-action {
+  background: #6b6660;
+  color: #fff;
+}
+
+/* En modo calma, el grid es lo único que importa */
+body.calm-mode .grid {
+  gap: 10px;
 }

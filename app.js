@@ -328,7 +328,7 @@ async function initDB() {
 }
 
 async function getAllItems() {
-    if (storageMode === "local") return loadJSON(LS_KEYS.items, []);
+    if (storageMode === "local" || !db) return loadJSON(LS_KEYS.items, []);
     return new Promise((resolve, reject) => {
         try {
             const transaction = db.transaction(["items"], "readonly");
@@ -343,7 +343,7 @@ async function getAllItems() {
 }
 
 async function saveItemDB(item) {
-    if (storageMode === "local") {
+    if (storageMode === "local" || !db) {
         const items = loadJSON(LS_KEYS.items, []);
         const idx = items.findIndex((i) => i.id === item.id);
         if (idx >= 0) items[idx] = item;
@@ -357,7 +357,7 @@ async function saveItemDB(item) {
 }
 
 async function deleteItemDB(id) {
-    if (storageMode === "local") {
+    if (storageMode === "local" || !db) {
         const items = loadJSON(LS_KEYS.items, []).filter((i) => i.id !== id);
         localStorage.setItem(LS_KEYS.items, JSON.stringify(items));
         return;
@@ -406,7 +406,7 @@ async function getAllHistory() {
 }
 
 async function clearHistoryDB() {
-    if (storageMode === "local") {
+    if (storageMode === "local" || !db) {
         localStorage.removeItem(LS_KEYS.history);
         return;
     }
@@ -477,6 +477,7 @@ const dom = {
     historyModal: document.getElementById('historyModal'),
     historyList: document.getElementById('historyList'),
     btnClearHistory: document.getElementById('btnClearHistory'),
+    btnExportHistory: document.getElementById('btnExportHistory'),
     // Tutor Mode & Security
     tutorMode: document.getElementById('tutorMode'),
     pinModal: document.getElementById('pinModal'),
@@ -1110,6 +1111,9 @@ function attachListeners() {
         renderHistory();
         dom.historyModal.showModal();
     };
+    if (dom.btnExportHistory) {
+        dom.btnExportHistory.onclick = () => exportHistoryCSV();
+    }
     dom.btnClearHistory.onclick = async () => {
         if (!confirm("¿Borrar historial clínico?")) return;
         if (!(await promptPin())) return; // clinical log is PIN-protected (P1-11)
@@ -1412,7 +1416,9 @@ function addItem() {
     if (!text) return;
 
     const item = {
-        id: crypto.randomUUID(),
+        id: (typeof crypto !== 'undefined' && crypto.randomUUID)
+            ? crypto.randomUUID()
+            : `${Date.now()}-${Math.random().toString(36).slice(2)}`,
         text,
         category: dom.itemCategory.value.trim() || "Varios",
         color: dom.itemColor.value,
@@ -1628,11 +1634,17 @@ async function importData(e) {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (file.size > 5 * 1024 * 1024) {
+        flashStatus('El archivo supera el límite de 5 MB');
+        dom.importFile.value = '';
+        return;
+    }
+
     try {
         const text = await file.text();
         const parsed = JSON.parse(text);
 
-        if (!Array.isArray(parsed.items)) {
+        if (!parsed || !Array.isArray(parsed.items)) {
             throw new Error('Formato inválido: items no encontrados');
         }
 
@@ -1735,7 +1747,7 @@ async function replaceAllItems(items) {
         .filter(item => item && item.id != null && item.text)
         .map(sanitizeItem);
 
-    if (storageMode === 'local') {
+    if (storageMode === 'local' || !db) {
         localStorage.setItem(LS_KEYS.items, JSON.stringify(sanitized));
         state.items = sanitized;
         return;
@@ -1763,14 +1775,23 @@ async function searchArasaac() {
     dom.arasaacResults.innerHTML = '<div class="loading-spinner">Buscando pictogramas...</div>';
     dom.arasaacResults.classList.remove('hidden');
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+
     try {
-        const response = await fetch(`https://api.arasaac.org/api/pictograms/es/search/${encodeURIComponent(query)}`);
+        const response = await fetch(`https://api.arasaac.org/api/pictograms/es/search/${encodeURIComponent(query)}`, {
+            signal: controller.signal
+        });
+        clearTimeout(timeoutId);
         if (!response.ok) throw new Error("No se encontraron resultados");
 
         const pictos = await response.json();
         renderArasaacResults(pictos);
     } catch (err) {
-        dom.arasaacResults.innerHTML = `<div class="loading-spinner">❌ ${err.message}</div>`;
+        clearTimeout(timeoutId);
+        const isTimeout = err.name === 'AbortError';
+        const msg = isTimeout ? 'Tiempo de espera agotado (8s)' : err.message;
+        dom.arasaacResults.innerHTML = `<div class="loading-spinner">❌ ${msg}</div>`;
     }
 }
 
@@ -1917,6 +1938,15 @@ function renderBreadcrumb() {
         badge.textContent = `${count}`;
         dom.boardBreadcrumb.appendChild(badge);
     }
+    if (!state.tutorMode.active && state.tutorMode.hiddenTags.size > 0) {
+        const hiddenBadge = document.createElement('span');
+        hiddenBadge.className = 'breadcrumb-count hidden-count';
+        hiddenBadge.style.opacity = '0.7';
+        hiddenBadge.style.marginLeft = '6px';
+        hiddenBadge.title = `${state.tutorMode.hiddenTags.size} palabras filtradas en Modo Tutor`;
+        hiddenBadge.textContent = `(${state.tutorMode.hiddenTags.size} ocultas)`;
+        dom.boardBreadcrumb.appendChild(hiddenBadge);
+    }
 }
 
 
@@ -1942,6 +1972,31 @@ async function renderHistory() {
         div.appendChild(content);
         dom.historyList.appendChild(div);
     });
+}
+
+async function exportHistoryCSV() {
+    const history = await getAllHistory();
+    if (!history || history.length === 0) {
+        flashStatus("No hay registros para exportar");
+        return;
+    }
+    const headers = ["Fecha y Hora", "Timestamp", "Frase / Actividad"];
+    const rows = history.map(entry => [
+        `"${String(entry.date || '').replace(/"/g, '""')}"`,
+        entry.timestamp || '',
+        `"${String(entry.content || '').replace(/"/g, '""')}"`
+    ]);
+    const csvContent = "\uFEFF" + [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `holaac-bitacora-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+    flashStatus("Bitácora exportada (CSV local)");
 }
 
 // Navigate between the top-level board ("Todas") and a category, integrating with
