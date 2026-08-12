@@ -74,6 +74,29 @@ test.describe('permanencia en pantalla', () => {
     });
     expect(onScreen).toEqual({ composer: true, speak: true, core: true, sos: true });
   });
+
+  // Sticky was only half of "reachable". The row was a horizontal scroller with
+  // a hidden scrollbar, so on a 390px phone it showed 3 of its 8 words and gave
+  // no sign the other 5 existed — a hidden swipe standing between the user and
+  // their core vocabulary, on the row whose whole premise is that nothing
+  // stands between them.
+  test('las 8 palabras del núcleo se alcanzan sin desplazar en móvil', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await boot(page);
+    const core = await page.evaluate(() => {
+      const row = document.querySelector('.core-row');
+      const box = row.getBoundingClientRect();
+      const tiles = [...row.querySelectorAll('.tile')];
+      return {
+        total: tiles.length,
+        inside: tiles.filter((t) => {
+          const b = t.getBoundingClientRect();
+          return b.left >= box.left - 1 && b.right <= box.right + 1;
+        }).length,
+      };
+    });
+    expect(core.inside).toBe(core.total);
+  });
 });
 
 test.describe('acceso por teclado y conmutador', () => {
@@ -180,6 +203,22 @@ test.describe('legibilidad', () => {
       .filter((e) => e.scrollWidth > e.clientWidth + 2)
       .map((e) => e.textContent.trim()));
     expect(clipped).toEqual([]);
+  });
+
+  // A pill can fit its own text and still be unreadable: at 320px the picker
+  // button sat *inside* the scroll strip and took 105 of its 132px, so the
+  // active category — the only thing on screen saying which board you are on —
+  // showed 34% of itself, which came to its dot and nothing else.
+  test('la categoría activa se lee entera en una pantalla de 320px', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 640 });
+    await boot(page);
+    const shown = await page.evaluate(() => {
+      const pill = document.querySelector('#categoryBar .pill.active');
+      const strip = pill.parentElement.getBoundingClientRect();
+      const b = pill.getBoundingClientRect();
+      return (Math.min(b.right, strip.right) - Math.max(b.left, strip.left)) / b.width;
+    });
+    expect(shown).toBeGreaterThan(0.9);
   });
 
   test('los controles cumplen el objetivo táctil de 44px en móvil', async ({ page }) => {
