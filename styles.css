@@ -871,6 +871,7 @@ h3 {
   outline-offset: 2px;
 }
 
+#btnSpeak,
 .btn.primary-action {
   background: var(--md-primary-strong);
   color: var(--md-on-primary-strong);
@@ -883,6 +884,7 @@ h3 {
 /* A disabled primary action must read as *waiting*, not as broken. «Hablar
    Frase» sat at a flat pale coral with no cue that it needed words first, so
    the app's main control looked permanently out of order on a fresh board. */
+#btnSpeak:disabled,
 .btn.primary-action:disabled,
 .btn:disabled {
   background: var(--md-surface-container-high);
