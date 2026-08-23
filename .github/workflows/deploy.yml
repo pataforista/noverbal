@@ -21,7 +21,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Stamp the Service Worker cache version with the commit hash so every
       # deploy invalidates the old cache automatically — no manual bump (P2-16).
