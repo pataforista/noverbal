@@ -7,6 +7,13 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
+  <!-- Security headers. This is a static app with no server, so a `Content-Security-Policy`
+       meta tag is the only one of these actually enforceable on GitHub Pages; X-Frame-Options,
+       X-Content-Type-Options, Permissions-Policy and HSTS need a real HTTP response header, so
+       they live in `_headers` for hosts that honour that file (Netlify, Cloudflare Pages). -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://static.arasaac.org; connect-src 'self' https://api.arasaac.org https://static.arasaac.org; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self';" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+
   <title>HolAAC! - Comunicación Aumentativa</title>
   <meta name="description"
     content="HolAAC! es un tablero de comunicación aumentativa y alternativa (SAAC) diseñado para personas con autismo, afasia y otras necesidades de comunicación. Gratuito y offline-first.">
