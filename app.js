@@ -4,6 +4,17 @@
  * Proyecto Sin Fines de Lucro
  */
 
+// Upgrade to HTTPS on any real hosting (GitHub Pages is already https-only, but
+// third-party static hosts may be reachable over plain http). Skip localhost/
+// file: so local development keeps working.
+if (
+    typeof location !== 'undefined' &&
+    location.protocol === 'http:' &&
+    !['localhost', '127.0.0.1', '[::1]'].includes(location.hostname)
+) {
+    location.replace(`https:${location.href.slice(location.protocol.length)}`);
+}
+
 const LS_KEYS = {
     items: "aac_items_v2",
     settings: "aac_settings_v2",
@@ -242,6 +253,24 @@ async function verifyPinValue(pin) {
         // insecure case, accept the default PIN so the user is never locked out.
         return String(pin) === '0000';
     }
+}
+
+// Throttle PIN guesses in memory (resets on reload): after 5 wrong attempts,
+// back off with a growing delay so the 4-digit PIN can't be brute-forced by
+// an automated loop of clicks/taps.
+const pinAttempts = { count: 0, lockedUntil: 0 };
+function pinLockRemainingMs() {
+    return Math.max(0, pinAttempts.lockedUntil - Date.now());
+}
+function registerPinFailure() {
+    pinAttempts.count += 1;
+    if (pinAttempts.count >= 5) {
+        pinAttempts.lockedUntil = Date.now() + Math.min(30000, 2000 * (pinAttempts.count - 4));
+    }
+}
+function registerPinSuccess() {
+    pinAttempts.count = 0;
+    pinAttempts.lockedUntil = 0;
 }
 
 // Show the PIN dialog and resolve true/false when verified or cancelled. Used
@@ -1171,13 +1200,21 @@ function attachListeners() {
     // hash and hand the result back to whoever opened it (promptPin).
     dom.btnVerifyPin.onclick = async (e) => {
         e.preventDefault();
+        const waitMs = pinLockRemainingMs();
+        if (waitMs > 0) {
+            flashStatus(`Demasiados intentos. Espera ${Math.ceil(waitMs / 1000)}s`);
+            dom.pinInput.value = "";
+            return;
+        }
         const ok = await verifyPinValue(dom.pinInput.value);
         if (ok) {
+            registerPinSuccess();
             dom.pinInput.value = "";
             dom.pinModal.close();
             // If nobody is awaiting (legacy direct open), default to activating tutor.
             if (!resolvePin(true)) activateTutorMode();
         } else {
+            registerPinFailure();
             flashStatus("PIN Incorrecto");
             dom.pinInput.value = "";
         }
@@ -1420,13 +1457,33 @@ function setPreviewImage(src) {
     dom.preview.appendChild(img);
 }
 
+const ALLOWED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/svg+xml'];
+const MAX_IMAGE_BYTES = 3 * 1024 * 1024; // keep local uploads well under IndexedDB/localStorage quotas
+
 function handleImageSelect(e) {
     const file = e.target.files[0];
     if (!file) return;
 
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+        flashStatus('Formato de imagen no admitido');
+        e.target.value = '';
+        return;
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+        flashStatus('La imagen supera el límite de 3 MB');
+        e.target.value = '';
+        return;
+    }
+
     const reader = new FileReader();
     reader.onload = (ev) => {
-        state.pendingImage = ev.target.result;
+        const dataUrl = sanitizeImage(ev.target.result);
+        if (!dataUrl) {
+            flashStatus('Imagen no válida');
+            e.target.value = '';
+            return;
+        }
+        state.pendingImage = dataUrl;
         setPreviewImage(state.pendingImage);
     };
     reader.readAsDataURL(file);
