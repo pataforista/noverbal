@@ -964,6 +964,16 @@ async function init() {
     });
 }
 
+// Shared by the header «Ajustes» button and the SOS menu's empty-contacts
+// hint, so both open the exact same modal state (scrolled to top, coachmark).
+function openSettingsModal() {
+    const card = dom.settingsModal?.querySelector('.modal-card');
+    if (card) card.scrollTop = 0;
+    dom.settingsModal.showModal();
+    showCoachmarkOnce(dom.settingsModal.querySelector('.modal-body'), 'settings',
+        '¿Te abruman tantas opciones? Prueba «Modo Simple», en Accesibilidad.');
+}
+
 function attachListeners() {
     // Writing Module
     dom.btnWriting.onclick = () => {
@@ -1001,7 +1011,13 @@ function attachListeners() {
         const setMenu = (open) => {
             dom.headerOverflow.classList.toggle('open', open);
             dom.btnMore.setAttribute('aria-expanded', String(open));
-            if (open) dom.headerOverflow.querySelector('.btn')?.focus();
+            if (open) {
+                dom.headerOverflow.querySelector('.btn')?.focus();
+                // Only one header popover open at a time — two stacked menus
+                // reads as broken, not as two features.
+                dom.sosMenu?.classList.remove('open');
+                dom.btnSOS?.setAttribute('aria-expanded', 'false');
+            }
         };
         dom.btnMore.onclick = (e) => {
             e.stopPropagation();
@@ -1042,13 +1058,7 @@ function attachListeners() {
     }
 
     // Top bar
-    dom.btnSettings.onclick = () => {
-        const card = dom.settingsModal?.querySelector('.modal-card');
-        if (card) card.scrollTop = 0;
-        dom.settingsModal.showModal();
-        showCoachmarkOnce(dom.settingsModal.querySelector('.modal-body'), 'settings',
-            '¿Te abruman tantas opciones? Prueba «Modo Simple», en Accesibilidad.');
-    };
+    dom.btnSettings.onclick = openSettingsModal;
     dom.btnThemeToggle.onclick = () => {
         state.settings.darkMode = !state.settings.darkMode;
         document.body.classList.toggle('dark-theme', state.settings.darkMode);
@@ -1335,7 +1345,11 @@ function attachListeners() {
         const setSosMenu = (open) => {
             dom.sosMenu.classList.toggle('open', open);
             dom.btnSOS.setAttribute('aria-expanded', String(open));
-            if (open) dom.sosMenu.querySelector('.sos-menu-item, .sos-contact')?.focus();
+            if (open) {
+                dom.sosMenu.querySelector('.sos-menu-item, .sos-contact, .sos-menu-empty a')?.focus();
+                dom.headerOverflow?.classList.remove('open');
+                dom.btnMore?.setAttribute('aria-expanded', 'false');
+            }
         };
         dom.btnSOS.onclick = (e) => {
             e.preventDefault();
@@ -1343,11 +1357,14 @@ function attachListeners() {
             setSosMenu(dom.btnSOS.getAttribute('aria-expanded') !== 'true');
         };
         if (dom.sosGoBoard) {
-            dom.sosGoBoard.onclick = () => {
-                setSosMenu(false);
-                goToSOS();
-            };
+            dom.sosGoBoard.onclick = () => goToSOS();
         }
+        // Any choice inside the menu closes it — the board shortcut, a
+        // contact's tel: link, or (when the list is empty) the Ajustes hint —
+        // same rule as the «Más» overflow menu above.
+        dom.sosMenu.addEventListener('click', (e) => {
+            if (e.target.closest('.sos-menu-item, .sos-contact, .sos-menu-empty a')) setSosMenu(false);
+        });
         document.addEventListener('click', (e) => {
             if (!e.target.closest('#sosMenu, #btnSOS')) setSosMenu(false);
         });
@@ -1359,7 +1376,7 @@ function attachListeners() {
                 return;
             }
             if (e.key === 'Tab') {
-                const items = [...dom.sosMenu.querySelectorAll('.sos-menu-item, .sos-contact')];
+                const items = [...dom.sosMenu.querySelectorAll('.sos-menu-item, .sos-contact, .sos-menu-empty a')];
                 if (!items.length) return;
                 const first = items[0];
                 const last = items[items.length - 1];
@@ -1383,6 +1400,14 @@ function attachListeners() {
                 dom.newContactName.focus();
             }
         };
+    }
+    if (dom.newContactName) {
+        dom.newContactName.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                dom.newContactPhone?.focus();
+            }
+        });
     }
     if (dom.newContactPhone) {
         dom.newContactPhone.addEventListener('keydown', (e) => {
@@ -2587,13 +2612,19 @@ function renderEmergencyContacts() {
             const row = document.createElement('div');
             row.className = 'emergency-contact-row';
 
+            // Name and number stack vertically (not side by side) so a long
+            // name wrapping to several lines doesn't strand the number
+            // floating mid-block, centered against the wrong line.
+            const text = document.createElement('span');
+            text.className = 'contact-text';
             const name = document.createElement('span');
             name.className = 'contact-name';
             name.textContent = contact.name;
-
             const phone = document.createElement('span');
             phone.className = 'contact-phone';
             phone.textContent = contact.phone;
+            text.appendChild(name);
+            text.appendChild(phone);
 
             const removeBtn = document.createElement('button');
             removeBtn.type = 'button';
@@ -2602,8 +2633,7 @@ function renderEmergencyContacts() {
             removeBtn.appendChild(makeIcon('trash'));
             removeBtn.addEventListener('click', () => removeEmergencyContact(contact.id));
 
-            row.appendChild(name);
-            row.appendChild(phone);
+            row.appendChild(text);
             row.appendChild(removeBtn);
             dom.emergencyContactsList.appendChild(row);
         });
@@ -2614,7 +2644,16 @@ function renderEmergencyContacts() {
         if (contacts.length === 0) {
             const empty = document.createElement('div');
             empty.className = 'sos-menu-empty';
-            empty.textContent = 'Agrega contactos de emergencia en Ajustes.';
+            empty.append('Todavía no hay contactos. ');
+            const link = document.createElement('a');
+            link.href = '#';
+            link.textContent = 'Agregar en Ajustes';
+            link.setAttribute('role', 'menuitem');
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                openSettingsModal();
+            });
+            empty.appendChild(link);
             dom.sosMenuContacts.appendChild(empty);
         } else {
             contacts.forEach(contact => {
@@ -2623,14 +2662,17 @@ function renderEmergencyContacts() {
                 link.href = phoneToTelHref(contact.phone);
                 link.setAttribute('role', 'menuitem');
                 link.appendChild(makeIcon('phone', 'btn-icon'));
+                const text = document.createElement('span');
+                text.className = 'sos-contact-text';
                 const name = document.createElement('span');
                 name.className = 'sos-contact-name';
                 name.textContent = contact.name;
                 const phone = document.createElement('span');
                 phone.className = 'sos-contact-phone';
                 phone.textContent = contact.phone;
-                link.appendChild(name);
-                link.appendChild(phone);
+                text.appendChild(name);
+                text.appendChild(phone);
+                link.appendChild(text);
                 dom.sosMenuContacts.appendChild(link);
             });
         }

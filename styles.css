@@ -3631,21 +3631,31 @@ input:checked+.toggle-slider:before {
   margin: 2px 4px;
 }
 
+.sos-contact-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
 .sos-contact-name {
   font-weight: 600;
+  overflow-wrap: break-word;
 }
 
 .sos-contact-phone {
   color: var(--md-on-surface-variant);
   font-size: 0.85rem;
-  margin-left: auto;
-  white-space: nowrap;
 }
 
 .sos-menu-empty {
   padding: 6px 12px;
   font-size: 0.85rem;
   color: var(--md-on-surface-variant);
+}
+
+.sos-menu-empty a {
+  color: var(--md-primary);
+  font-weight: 600;
 }
 
 /* ── Fase 5 · Cambio de PIN ────────────────────────────────────────────── */
@@ -3676,14 +3686,21 @@ input:checked+.toggle-slider:before {
   background: var(--md-surface-container-low);
 }
 
+.emergency-contact-row .contact-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
 .emergency-contact-row .contact-name {
   font-weight: 600;
+  overflow-wrap: break-word;
 }
 
 .emergency-contact-row .contact-phone {
   color: var(--md-on-surface-variant);
   font-size: 0.85rem;
-  margin-left: auto;
 }
 
 .btn-remove-contact {
