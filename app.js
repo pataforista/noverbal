@@ -293,6 +293,31 @@ function resolvePin(result) {
     return !!r;
 }
 
+// Micro-ayuda contextual (Fase 5): una línea descartable la primera vez que
+// se abre un modal, en vez de una guía que nadie relee. Se recuerda en
+// localStorage por `key` para no repetirla.
+function showCoachmarkOnce(container, key, text) {
+    if (!container || localStorage.getItem(`aac_coachmark_${key}`)) return;
+    if (container.querySelector(`.coachmark[data-key="${key}"]`)) return; // already showing
+    const mark = document.createElement('div');
+    mark.className = 'coachmark';
+    mark.dataset.key = key;
+    const span = document.createElement('span');
+    span.textContent = text;
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'coachmark-close';
+    close.setAttribute('aria-label', 'Entendido, no volver a mostrar');
+    close.appendChild(makeIcon('close', 'ui-icon'));
+    close.onclick = () => {
+        mark.remove();
+        localStorage.setItem(`aac_coachmark_${key}`, '1');
+    };
+    mark.appendChild(span);
+    mark.appendChild(close);
+    container.prepend(mark);
+}
+
 let confirmResolver = null;
 
 // MD3 replacement for the native confirm() (Fase 4, "confirmaciones sin
@@ -500,6 +525,7 @@ const dom = {
     btnBackspace: document.getElementById('btnBackspace'),
     btnClear: document.getElementById('btnClear'),
     btnEdit: document.getElementById('btnEdit'),
+    btnHelp: document.getElementById('btnHelp'),
     btnAdd: document.getElementById('btnAdd'),
     btnSettings: document.getElementById('btnSettings'),
     // Modals
@@ -1010,6 +1036,8 @@ function attachListeners() {
         const card = dom.settingsModal?.querySelector('.modal-card');
         if (card) card.scrollTop = 0;
         dom.settingsModal.showModal();
+        showCoachmarkOnce(dom.settingsModal.querySelector('.modal-body'), 'settings',
+            '¿Te abruman tantas opciones? Prueba «Modo Simple», en Accesibilidad.');
     };
     dom.btnThemeToggle.onclick = () => {
         state.settings.darkMode = !state.settings.darkMode;
@@ -1027,6 +1055,15 @@ function attachListeners() {
         }
         openEditModal('entry');
     };
+    // Reabre la guía de bienvenida a demanda (Fase 5): antes de esto solo se
+    // veía la primera vez y no había forma de volver a consultarla.
+    if (dom.btnHelp) {
+        dom.btnHelp.onclick = () => {
+            const card = dom.introModal.querySelector('.modal-card');
+            if (card) card.scrollTop = 0;
+            dom.introModal.showModal();
+        };
+    }
     // «Agregar» abre el mismo editor pero salta directo al asistente de
     // creación (paso 1), preparado y con el foco en el campo de la palabra,
     // para que el flujo «foto + palabra» sea inmediato.
@@ -1304,6 +1341,8 @@ function attachListeners() {
     dom.btnOpenHistory.onclick = () => {
         renderHistory();
         dom.historyModal.showModal();
+        showCoachmarkOnce(dom.historyModal.querySelector('.modal-body'), 'history',
+            'Este registro es local y privado: nunca sale de este dispositivo.');
     };
     if (dom.btnExportHistory) {
         dom.btnExportHistory.onclick = () => exportHistoryCSV();
@@ -1786,6 +1825,10 @@ function showEditorView(view) {
 
     const body = dom.editModal.querySelector('.modal-body');
     if (body) body.scrollTop = 0;
+    if (view === 'entry' && dom.editorViewEntry) {
+        showCoachmarkOnce(dom.editorViewEntry, 'editor-entry',
+            'Crea palabras nuevas o revisa las que ya tienes — la biblioteca y el respaldo quedan abajo, plegados.');
+    }
 }
 
 const WIZARD_STEP_LABELS = { 1: 'Escribe la palabra', 2: 'Elige una imagen', 3: 'Revisa y guarda' };

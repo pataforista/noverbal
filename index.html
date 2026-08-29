@@ -210,6 +210,12 @@
             stroke-linecap="round" stroke-linejoin="round">
       <circle cx="12" cy="12" r="8.6"/><path d="M8.4 12.3l2.6 2.6 4.6-5.4"/>
     </symbol>
+    <symbol id="i-help" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+            stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="8.6"/>
+      <path d="M9.6 9.4a2.4 2.4 0 1 1 3.4 2.2c-.9.5-1 .9-1 1.8"/>
+      <path d="M12 17h.01"/>
+    </symbol>
     <symbol id="i-health" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
             stroke-linecap="round" stroke-linejoin="round">
       <path d="M20.6 5.3a5.1 5.1 0 0 0-7.2 0L12 6.7l-1.4-1.4a5.1 5.1 0 1 0-7.2 7.2l8.6 8.6 8.6-8.6a5.1 5.1 0 0 0 0-7.2Z"/>
@@ -315,6 +321,12 @@
           </button>
           <button class="btn btn--labeled" id="btnEdit" aria-label="Editar el tablero de comunicación" title="Editar">
             <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-pencil"/></svg><span class="btn-label">Editar</span>
+          </button>
+          <!-- Reabre la guía de 3 pasos (Fase 5, "ayuda siempre disponible"):
+               antes de esto el onboarding solo se veía una vez y no había
+               forma de volver a consultarlo. -->
+          <button class="btn btn--labeled" id="btnHelp" aria-label="Ver la guía de uso" title="Ayuda">
+            <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-help"/></svg><span class="btn-label">Ayuda</span>
           </button>
         </div>
       </div>
@@ -888,6 +900,44 @@
         <div class="settings-section">
           <h3>Clínico</h3>
           <button type="button" class="btn glass warning full-width" id="btnOpenHistory"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-chart"/></svg> Ver historial de uso</button>
+        </div>
+
+        <!-- Página de ayuda (Fase 5): los 5 flujos principales en lenguaje
+             llano, cada uno con una captura real de la app, siempre a mano
+             dentro de Ajustes en vez de solo en el onboarding inicial. -->
+        <div class="settings-section">
+          <h3>Guía rápida</h3>
+          <p class="settings-hint">Los 5 pasos más buscados, explicados con una imagen de la app.</p>
+
+          <details class="help-flow">
+            <summary>Decir una frase</summary>
+            <p>Toca las palabras en el orden que quieras decirlas. Se van juntando arriba. Cuando termines, pulsa «Hablar Frase» para escucharlas todas seguidas.</p>
+            <img src="assets/help/frase.png" alt="Frase con «Hola» y «Por favor» junto al botón Hablar Frase" loading="lazy">
+          </details>
+
+          <details class="help-flow">
+            <summary>Agregar una palabra o foto nueva</summary>
+            <p>Pulsa «Agregar» en la barra de arriba. Elige «Crear palabra nueva» y sigue los 3 pasos: escribe la palabra, pon una foto y guarda.</p>
+            <img src="assets/help/agregar.png" alt="Pantalla de entrada del editor con las tarjetas Crear palabra nueva y Gestionar mis palabras" loading="lazy">
+          </details>
+
+          <details class="help-flow">
+            <summary>Buscar una palabra</summary>
+            <p>Escribe en el buscador de la barra de categorías. El tablero se filtra al instante mientras escribes.</p>
+            <img src="assets/help/buscar.png" alt="Buscador con la palabra «agua» escrita" loading="lazy">
+          </details>
+
+          <details class="help-flow">
+            <summary>Usar el botón SOS</summary>
+            <p>El botón rojo «SOS», siempre visible arriba, lleva directo al tablero de emergencias — útil en cualquier momento, sin buscar nada.</p>
+            <img src="assets/help/sos.png" alt="Botón rojo SOS en la barra superior" loading="lazy">
+          </details>
+
+          <details class="help-flow">
+            <summary>Cambiar de Lugar (Casa, Escuela, Emergencias…)</summary>
+            <p>El selector «Lugar» en la barra superior cambia todo el tablero al contexto elegido, sin entrar a Ajustes.</p>
+            <img src="assets/help/lugar.png" alt="Selector de Lugar mostrando la opción General" loading="lazy">
+          </details>
         </div>
       </div>
 

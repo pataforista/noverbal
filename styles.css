@@ -2540,6 +2540,86 @@ input:checked+.toggle-slider:before {
   display: none;
 }
 
+/* ── Micro-ayuda contextual (Fase 5): una línea descartable la primera vez
+   que se abre un modal, recordada en localStorage por showCoachmarkOnce. ── */
+.coachmark {
+  display: flex;
+  align-items: center;
+  gap: var(--md-spacing-sm);
+  padding: var(--md-spacing-sm) var(--md-spacing-md);
+  margin-bottom: var(--md-spacing-lg);
+  background: var(--md-primary-container);
+  color: var(--md-on-primary-container);
+  border-radius: var(--md-radius-md);
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.coachmark span {
+  flex: 1;
+}
+
+.coachmark-close {
+  display: inline-flex;
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  padding: 2px;
+  color: inherit;
+  cursor: pointer;
+}
+
+.coachmark-close .ui-icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* ── Guía rápida (Fase 5): 5 flujos plegables con captura real ── */
+.help-flow {
+  border: 1px solid var(--md-outline-variant);
+  border-radius: var(--md-radius-md);
+  padding: 0 var(--md-spacing-md);
+  margin-bottom: var(--md-spacing-sm);
+  background: var(--md-surface-container-low);
+}
+
+.help-flow summary {
+  cursor: pointer;
+  padding: var(--md-spacing-md) 0;
+  font-weight: 600;
+  list-style: none;
+}
+
+.help-flow summary::-webkit-details-marker { display: none; }
+
+.help-flow summary::before {
+  content: '▸';
+  display: inline-block;
+  margin-right: var(--md-spacing-sm);
+  transition: transform 0.15s var(--md-easing-standard);
+}
+
+.help-flow[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.help-flow p {
+  color: var(--md-on-surface-variant);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0 0 var(--md-spacing-md);
+}
+
+.help-flow img {
+  display: block;
+  max-width: 100%;
+  border: 1px solid var(--md-outline-variant);
+  border-radius: var(--md-radius-md);
+  margin-bottom: var(--md-spacing-md);
+  background: var(--md-surface);
+}
+
 .center {
   text-align: center;
 }
