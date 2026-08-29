@@ -448,6 +448,9 @@ async function clearHistoryDB() {
 // DOM Cache
 const dom = {
     statusText: document.getElementById('statusText'),
+    statusToast: document.getElementById('statusToast'),
+    statusToastText: document.getElementById('statusToastText'),
+    statusToastIcon: document.getElementById('statusToastIcon'),
     grid: document.getElementById('grid'),
     pageControls: document.getElementById('pageControls'),
     pagedMode: document.getElementById('pagedMode'),
@@ -882,9 +885,9 @@ function attachListeners() {
     };
     dom.btnSpeakWriting.onclick = () => {
         const text = dom.writingInput.value.trim();
-        if (!text) { flashStatus("Escribe algo primero"); return; }
+        if (!text) { flashStatus("Escribe algo primero", "warning"); return; }
         if (!window.speechSynthesis) {
-            flashStatus("⚠️ Síntesis de voz no disponible en este navegador");
+            flashStatus("Síntesis de voz no disponible en este navegador", "warning");
             return;
         }
         speakWithTTS(text);
@@ -941,7 +944,7 @@ function attachListeners() {
     };
     dom.btnEdit.onclick = () => {
         if (state.settings.lockEdit) {
-            flashStatus("🔒 Edición bloqueada");
+            flashStatus("Edición bloqueada", "warning");
             return;
         }
         openEditModal();
@@ -952,7 +955,7 @@ function attachListeners() {
     if (dom.btnAdd) {
         dom.btnAdd.onclick = () => {
             if (state.settings.lockEdit) {
-                flashStatus("🔒 Edición bloqueada");
+                flashStatus("Edición bloqueada", "warning");
                 return;
             }
             setAddItemMode('add');
@@ -1223,7 +1226,7 @@ function attachListeners() {
         e.preventDefault();
         const waitMs = pinLockRemainingMs();
         if (waitMs > 0) {
-            flashStatus(`Demasiados intentos. Espera ${Math.ceil(waitMs / 1000)}s`);
+            flashStatus(`Demasiados intentos. Espera ${Math.ceil(waitMs / 1000)}s`, "warning");
             dom.pinInput.value = "";
             return;
         }
@@ -1236,7 +1239,7 @@ function attachListeners() {
             if (!resolvePin(true)) activateTutorMode();
         } else {
             registerPinFailure();
-            flashStatus("PIN Incorrecto");
+            flashStatus("PIN Incorrecto", "warning");
             dom.pinInput.value = "";
         }
     };
@@ -1252,7 +1255,7 @@ function attachListeners() {
             e.preventDefault();
             const next = (dom.newPin.value || '').trim();
             if (!/^\d{4}$/.test(next)) {
-                flashStatus('El PIN debe tener 4 dígitos');
+                flashStatus('El PIN debe tener 4 dígitos', 'warning');
                 return;
             }
             if (!(await promptPin())) return; // confirm with current PIN
@@ -1447,7 +1450,7 @@ async function speakPhrase() {
         .filter(Boolean);
 
     if (items.length === 0) {
-        flashStatus("Selecciona palabras primero");
+        flashStatus("Selecciona palabras primero", "warning");
         return;
     }
 
@@ -1486,12 +1489,12 @@ function handleImageSelect(e) {
     if (!file) return;
 
     if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-        flashStatus('Formato de imagen no admitido');
+        flashStatus('Formato de imagen no admitido', 'warning');
         e.target.value = '';
         return;
     }
     if (file.size > MAX_IMAGE_BYTES) {
-        flashStatus('La imagen supera el límite de 3 MB');
+        flashStatus('La imagen supera el límite de 3 MB', 'warning');
         e.target.value = '';
         return;
     }
@@ -1500,7 +1503,7 @@ function handleImageSelect(e) {
     reader.onload = (ev) => {
         const dataUrl = sanitizeImage(ev.target.result);
         if (!dataUrl) {
-            flashStatus('Imagen no válida');
+            flashStatus('Imagen no válida', 'warning');
             e.target.value = '';
             return;
         }
@@ -1613,7 +1616,7 @@ async function loadInternalLibrary() {
         setTimeout(() => { dom.statusText.textContent = "Listo para usar"; }, 3000);
     } catch (err) {
         console.error("Error loading library:", err);
-        flashStatus("Error al cargar la biblioteca");
+        flashStatus("Error al cargar la biblioteca", "warning");
     }
 }
 
@@ -1688,12 +1691,12 @@ function collectOfflineAssetUrls() {
 function downloadAllForOffline() {
     const controller = navigator.serviceWorker && navigator.serviceWorker.controller;
     if (!controller) {
-        flashStatus('El modo sin conexión aún no está listo. Recarga e intenta de nuevo.');
+        flashStatus('El modo sin conexión aún no está listo. Recarga e intenta de nuevo.', 'warning');
         return;
     }
     const urls = collectOfflineAssetUrls();
     if (urls.length === 0) {
-        flashStatus('No hay recursos para descargar');
+        flashStatus('No hay recursos para descargar', 'warning');
         return;
     }
     if (dom.downloadProgress) dom.downloadProgress.classList.remove('hidden');
@@ -1737,7 +1740,7 @@ async function importData(e) {
     if (!file) return;
 
     if (file.size > 5 * 1024 * 1024) {
-        flashStatus('El archivo supera el límite de 5 MB');
+        flashStatus('El archivo supera el límite de 5 MB', 'warning');
         dom.importFile.value = '';
         return;
     }
@@ -1784,7 +1787,7 @@ async function importData(e) {
         flashStatus('Importación completada');
     } catch (error) {
         console.error('Import error', error);
-        flashStatus('Error al importar JSON');
+        flashStatus('Error al importar JSON', 'warning');
     } finally {
         dom.importFile.value = '';
     }
@@ -1939,7 +1942,7 @@ async function selectArasaacPictogram(id, label) {
         // Hide results after selection
         dom.arasaacResults.classList.add('hidden');
     } catch (err) {
-        flashStatus("Error al cargar imagen de ARASAAC");
+        flashStatus("Error al cargar imagen de ARASAAC", "warning");
         dom.preview.textContent = "Error";
     }
 }
@@ -1963,13 +1966,34 @@ function hideUpdateToast() {
     if (dom.updateToast) dom.updateToast.classList.add('hidden');
 }
 
-function flashStatus(msg) {
+let statusToastTimer = null;
+
+// Aviso breve tipo toast (abajo-centro, con icono), en vez del texto pequeño
+// del header que era fácil de no ver. `type` decide el icono: 'success' (✓,
+// por defecto) o 'warning' (⚠️, para bloqueos/errores).
+function flashStatus(msg, type = 'success') {
+    if (dom.statusToast && dom.statusToastText) {
+        clearTimeout(statusToastTimer);
+        dom.statusToastText.textContent = msg;
+        dom.statusToast.classList.toggle('status-toast--warning', type === 'warning');
+        if (dom.statusToastIcon) {
+            dom.statusToastIcon.querySelector('use')?.setAttribute('href', type === 'warning' ? '#i-warning' : '#i-check');
+        }
+        dom.statusToast.classList.remove('hidden');
+        // Restart the entrance animation even if a toast is already showing.
+        dom.statusToast.classList.remove('is-showing');
+        void dom.statusToast.offsetWidth;
+        dom.statusToast.classList.add('is-showing');
+        statusToastTimer = setTimeout(() => {
+            dom.statusToast.classList.add('hidden');
+        }, 3000);
+    }
+    // El header conserva un anuncio silencioso para lectores de pantalla que
+    // no sigan el toast (aria-live ya está en #statusText).
     const prev = dom.statusText.textContent;
     dom.statusText.textContent = msg;
-    dom.statusText.style.color = "var(--accent)";
     setTimeout(() => {
         dom.statusText.textContent = prev;
-        dom.statusText.style.color = "";
     }, 2000);
 }
 
@@ -2083,7 +2107,7 @@ async function renderHistory() {
 async function exportHistoryCSV() {
     const history = await getAllHistory();
     if (!history || history.length === 0) {
-        flashStatus("No hay registros para exportar");
+        flashStatus("No hay registros para exportar", "warning");
         return;
     }
     const headers = ["Fecha y Hora", "Timestamp", "Frase / Actividad"];

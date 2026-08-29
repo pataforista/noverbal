@@ -637,6 +637,35 @@ h3 {
   justify-content: flex-end;
 }
 
+/* Dos niveles en el header: controles de la persona comunicadora (SOS,
+   perfil, hablar al tocar, escribir) frente a herramientas de cuidador
+   (agregar, tema, ajustes, editar). Un separador sutil los distingue sin
+   ocultar ninguno. */
+.header-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.header-group--caregiver {
+  padding-left: 10px;
+  margin-left: 2px;
+  border-left: 1px solid var(--hairline);
+}
+
+@media (max-width: 600px) {
+  .header-group {
+    justify-content: center;
+  }
+
+  .header-group--caregiver {
+    border-left: none;
+    padding-left: 0;
+    margin-left: 0;
+  }
+}
+
 .layout {
   max-width: 1280px;
   margin: 0 auto;
@@ -934,6 +963,22 @@ h3 {
 
 .btn.secondary {
   background: var(--md-surface-container);
+}
+
+/* «Limpiar» ya no compite con SOS: mismo tono neutro que «Borrar» en reposo
+   (ambos viven en .utility-actions), y el rojo de advertencia aparece solo
+   al enfocar o pasar el cursor, como último aviso antes de un borrado que
+   no se puede deshacer. */
+.composer-actions #btnClear.btn.danger {
+  background: var(--md-surface-container);
+  color: var(--md-on-surface-variant);
+  border: 1px solid var(--hairline);
+}
+
+.composer-actions #btnClear.btn.danger:hover,
+.composer-actions #btnClear.btn.danger:focus-visible {
+  background: #fadcda;
+  color: #7a1c1c;
 }
 
 .btn-close {
@@ -2906,6 +2951,55 @@ input:checked+.toggle-slider:before {
 @keyframes update-toast-in {
   from { opacity: 0; transform: translate(-50%, 12px); }
   to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* ── Toast de estado (flashStatus): reemplaza el texto pequeño del header,
+   fácil de perder, por un aviso abajo-centro con icono ✓/⚠️ que se
+   autodesvanece. Mismo lenguaje visual que .update-toast. ── */
+.status-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  z-index: 1300;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(92vw, 420px);
+  padding: 12px 20px;
+  background: var(--md-surface-container-highest);
+  color: var(--text-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--md-shadow-4);
+  font-weight: 600;
+  font-size: 0.95rem;
+  line-height: 1.35;
+  pointer-events: none;
+}
+
+.status-toast.hidden { display: none; }
+
+.status-toast.is-showing {
+  animation: update-toast-in 0.2s var(--md-easing-decelerated);
+}
+
+.status-toast-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  color: var(--accent);
+}
+
+.status-toast.status-toast--warning .status-toast-icon {
+  color: var(--md-error, #ba1a1a);
+}
+
+@media (max-width: 720px), (max-height: 560px) {
+  .status-toast {
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    padding: 10px 16px;
+    font-size: 0.9rem;
+  }
 }
 
 /* ── Fase 4 · Núcleo fijo, breadcrumb, perfil/SOS, contraste ───────────── */

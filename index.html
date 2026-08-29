@@ -201,6 +201,10 @@
             stroke-linecap="round" stroke-linejoin="round">
       <circle cx="12" cy="12" r="8.6"/><path d="M12 7.6v5"/><path d="M12 16.1h.01"/>
     </symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+            stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="8.6"/><path d="M8.4 12.3l2.6 2.6 4.6-5.4"/>
+    </symbol>
     <symbol id="i-health" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
             stroke-linecap="round" stroke-linejoin="round">
       <path d="M20.6 5.3a5.1 5.1 0 0 0-7.2 0L12 6.7l-1.4-1.4a5.1 5.1 0 1 0-7.2 7.2l8.6 8.6 8.6-8.6a5.1 5.1 0 0 0 0-7.2Z"/>
@@ -234,64 +238,72 @@
     </div>
 
     <nav class="actions" role="toolbar" aria-label="Controles principales">
-      <button class="btn btn--labeled sos-btn" id="btnSOS" aria-label="Ir al tablero de emergencias (SOS)" title="Emergencias">
-        <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-sos"/></svg><span class="btn-label">SOS</span>
-      </button>
-      <label class="header-profile" title="Perfil de tablero">
-        <span class="sr-only">Perfil de tablero</span>
-        <select id="headerProfile" aria-label="Perfil de tablero">
-          <!-- No emoji: a native <select> renders its options with the OS
-               popup, where the glyphs came out at a different size and style
-               from every other icon in the header and could not be styled.
-               The same four profiles are also listed, without emoji, in
-               Ajustes. -->
-          <option value="default">General</option>
-          <option value="home">Casa</option>
-          <option value="school">Escuela</option>
-          <option value="sos">Emergencias</option>
-        </select>
-      </label>
-      <div class="header-toggle-group" role="group" aria-label="Modo de habla inmediata">
-        <!-- Real icon rather than the 🗣 emoji this control fell back to once
-             its label was hidden on a phone. -->
-        <svg class="btn-icon toggle-icon" aria-hidden="true" focusable="false"><use href="#i-speech"/></svg>
-        <span class="toggle-label">Hablar al tocar</span>
-        <label class="switch mini">
-          <input type="checkbox" id="headerSpeakToggle" aria-label="Activar habla inmediata: cada palabra suena al tocarla">
-          <span class="slider round" aria-hidden="true"></span>
+      <!-- Nivel usuario: lo que usa la persona comunicadora para hablar y
+           pedir ayuda. Nada aquí abre un menú ni requiere PIN. -->
+      <div class="header-group header-group--communicator">
+        <button class="btn btn--labeled sos-btn" id="btnSOS" aria-label="Ir al tablero de emergencias (SOS)" title="Emergencias">
+          <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-sos"/></svg><span class="btn-label">SOS</span>
+        </button>
+        <label class="header-profile" title="Perfil de tablero">
+          <span class="sr-only">Perfil de tablero</span>
+          <select id="headerProfile" aria-label="Perfil de tablero">
+            <!-- No emoji: a native <select> renders its options with the OS
+                 popup, where the glyphs came out at a different size and style
+                 from every other icon in the header and could not be styled.
+                 The same four profiles are also listed, without emoji, in
+                 Ajustes. -->
+            <option value="default">General</option>
+            <option value="home">Casa</option>
+            <option value="school">Escuela</option>
+            <option value="sos">Emergencias</option>
+          </select>
         </label>
+        <div class="header-toggle-group" role="group" aria-label="Modo de habla inmediata">
+          <!-- Real icon rather than the 🗣 emoji this control fell back to once
+               its label was hidden on a phone. -->
+          <svg class="btn-icon toggle-icon" aria-hidden="true" focusable="false"><use href="#i-speech"/></svg>
+          <span class="toggle-label">Hablar al tocar</span>
+          <label class="switch mini">
+            <input type="checkbox" id="headerSpeakToggle" aria-label="Activar habla inmediata: cada palabra suena al tocarla">
+            <span class="slider round" aria-hidden="true"></span>
+          </label>
+        </div>
+        <button class="btn btn--labeled" id="btnWriting" aria-label="Abrir teclado para escribir libremente" title="Escribir">
+          <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-keyboard"/></svg><span class="btn-label">Escribir</span>
+        </button>
       </div>
-      <button class="btn btn--labeled" id="btnWriting" aria-label="Abrir teclado para escribir libremente" title="Escribir">
-        <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-keyboard"/></svg><span class="btn-label">Escribir</span>
-      </button>
 
-      <!-- «Agregar» es la acción que más buscan familias y terapeutas (añadir
-           fotos y palabras propias, p. ej. objetos de la casa). Antes vivía
-           escondida en el menú «Más», así que nadie la encontraba: ahora es
-           una acción principal visible en la barra, en todos los tamaños. -->
-      <button class="btn btn--labeled btn-add" id="btnAdd" aria-label="Agregar una palabra o foto nueva al tablero" title="Agregar palabra o foto">
-        <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-plus"/></svg><span class="btn-label">Agregar</span>
-      </button>
+      <!-- Nivel cuidador: agregar contenido, ajustar y editar el tablero.
+           Un separador (borde) y un tono más discreto en Tema/Ajustes/Editar
+           marcan que son herramientas ocasionales, no de la conversación.
+           «Agregar» conserva su color propio porque sigue siendo la acción
+           que más buscan familias y terapeutas: antes vivía escondida en
+           «Más» y nadie la encontraba, así que aquí sigue siendo visible en
+           todos los tamaños, solo que agrupada con el resto de herramientas
+           de cuidador. -->
+      <div class="header-group header-group--caregiver">
+        <button class="btn btn--labeled btn-add" id="btnAdd" aria-label="Agregar una palabra o foto nueva al tablero" title="Agregar palabra o foto">
+          <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-plus"/></svg><span class="btn-label">Agregar</span>
+        </button>
 
-      <!-- Caregiver tools. On a phone these collapse behind «Más» so the header
-           stays one row: the communicator needs SOS, the profile, «Hablar al
-           tocar» and «Escribir» at hand; theme, settings and board editing are
-           occasional. On wider screens `display: contents` lays them out inline
-           exactly as before and the toggle button is hidden. -->
-      <button class="btn btn--labeled header-more-btn" id="btnMore" aria-label="Más herramientas"
-        aria-expanded="false" aria-controls="headerOverflow" title="Más">
-        <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-more"/></svg><span class="btn-label">Más</span>
-      </button>
-      <div class="header-overflow" id="headerOverflow">
-        <button class="btn btn--labeled" id="btnThemeToggle" aria-label="Cambiar entre tema claro y oscuro" title="Cambiar tema">
-          <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-moon"/></svg><span class="btn-label">Tema</span>
+        <!-- On a phone, Tema/Ajustes/Editar collapse behind «Más» so the header
+             stays one row. On wider screens `display: contents` lays them out
+             inline exactly as before and the toggle button is hidden. -->
+        <button class="btn btn--labeled header-more-btn" id="btnMore" aria-label="Más herramientas"
+          aria-expanded="false" aria-controls="headerOverflow" title="Más">
+          <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-more"/></svg><span class="btn-label">Más</span>
         </button>
-        <button class="btn btn--labeled" id="btnSettings" aria-label="Abrir ajustes y configuración" title="Ajustes">
-          <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-settings"/></svg><span class="btn-label">Ajustes</span>
-        </button>
-        <button class="btn btn--labeled" id="btnEdit" aria-label="Editar el tablero de comunicación" title="Editar">
-          <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-pencil"/></svg><span class="btn-label">Editar</span>
-        </button>
+        <div class="header-overflow" id="headerOverflow">
+          <button class="btn btn--labeled" id="btnThemeToggle" aria-label="Cambiar entre tema claro y oscuro" title="Cambiar tema">
+            <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-moon"/></svg><span class="btn-label">Tema</span>
+          </button>
+          <button class="btn btn--labeled" id="btnSettings" aria-label="Abrir ajustes y configuración" title="Ajustes">
+            <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-settings"/></svg><span class="btn-label">Ajustes</span>
+          </button>
+          <button class="btn btn--labeled" id="btnEdit" aria-label="Editar el tablero de comunicación" title="Editar">
+            <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-pencil"/></svg><span class="btn-label">Editar</span>
+          </button>
+        </div>
       </div>
     </nav>
   </header>
@@ -863,6 +875,13 @@
       <button type="button" class="btn primary" id="btnUpdateNow">Actualizar</button>
       <button type="button" class="btn-close" id="btnDismissUpdate" aria-label="Ahora no"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-close"/></svg></button>
     </div>
+  </div>
+
+  <!-- Toast de estado: mensajes breves (flashStatus), abajo-centro, en vez del
+       texto pequeño en el header que nadie veía. -->
+  <div class="status-toast hidden" id="statusToast" role="status" aria-live="polite">
+    <svg class="status-toast-icon" id="statusToastIcon" aria-hidden="true" focusable="false"><use href="#i-check"/></svg>
+    <span class="status-toast-text" id="statusToastText"></span>
   </div>
 
   <script type="module" src="app.js"></script>
