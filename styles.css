@@ -1895,6 +1895,15 @@ select:focus {
   border-radius: var(--md-radius-md);
 }
 
+/* `.glass-card`'s own 1px solid border has the same specificity as `.preview`'s
+   and is declared later in the file, so it was silently winning and turning
+   the empty-state placeholder into a plain solid box. Two classes beats one
+   regardless of source order, so this keeps the dashed placeholder look. */
+.preview.glass-card {
+  border-style: dashed;
+  border-width: 2px;
+}
+
 /* ARASAAC Results */
 .arasaac-results {
   display: grid;
