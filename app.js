@@ -25,6 +25,7 @@ const LS_KEYS = {
     history: "aac_history_v1", // localStorage fallback when IndexedDB is unavailable
     pinHash: "aac_pin_hash_v1", // configurable tutor PIN (hashed)
     coreWords: "aac_core_words_v1", // ids pinned to the fixed core row (Fase 4)
+    emergencyContacts: "aac_emergency_contacts_v1", // named tel: shortcuts in the SOS menu
 };
 
 const DEFAULT_ITEMS = [
@@ -150,6 +151,7 @@ const state = {
     editorSearchQuery: "",
     pendingImage: null,
     coreWords: [], // ids pinned to the always-visible core row (N-2)
+    emergencyContacts: loadJSON(LS_KEYS.emergencyContacts, []), // [{id, name, phone}]
     routine: [],
     scanning: {
         active: false,
@@ -514,6 +516,13 @@ const dom = {
     boardBreadcrumb: document.getElementById('boardBreadcrumb'),
     headerProfile: document.getElementById('headerProfile'),
     btnSOS: document.getElementById('btnSOS'),
+    sosMenu: document.getElementById('sosMenu'),
+    sosGoBoard: document.getElementById('sosGoBoard'),
+    sosMenuContacts: document.getElementById('sosMenuContacts'),
+    emergencyContactsList: document.getElementById('emergencyContactsList'),
+    newContactName: document.getElementById('newContactName'),
+    newContactPhone: document.getElementById('newContactPhone'),
+    btnAddContact: document.getElementById('btnAddContact'),
     chips: document.getElementById('chips'),
     categoryBar: document.getElementById('categoryBar'),
     categoryPrev: document.getElementById('categoryPrev'),
@@ -857,6 +866,7 @@ async function init() {
 
     ensureActiveCategories();
     initCoreWords();
+    renderEmergencyContacts();
     applySettings();
     await repairCoreImages(); // Force update core items with images
     attachListeners();
@@ -954,6 +964,16 @@ async function init() {
     });
 }
 
+// Shared by the header «Ajustes» button and the SOS menu's empty-contacts
+// hint, so both open the exact same modal state (scrolled to top, coachmark).
+function openSettingsModal() {
+    const card = dom.settingsModal?.querySelector('.modal-card');
+    if (card) card.scrollTop = 0;
+    dom.settingsModal.showModal();
+    showCoachmarkOnce(dom.settingsModal.querySelector('.modal-body'), 'settings',
+        '¿Te abruman tantas opciones? Prueba «Modo Simple», en Accesibilidad.');
+}
+
 function attachListeners() {
     // Writing Module
     dom.btnWriting.onclick = () => {
@@ -991,7 +1011,13 @@ function attachListeners() {
         const setMenu = (open) => {
             dom.headerOverflow.classList.toggle('open', open);
             dom.btnMore.setAttribute('aria-expanded', String(open));
-            if (open) dom.headerOverflow.querySelector('.btn')?.focus();
+            if (open) {
+                dom.headerOverflow.querySelector('.btn')?.focus();
+                // Only one header popover open at a time — two stacked menus
+                // reads as broken, not as two features.
+                dom.sosMenu?.classList.remove('open');
+                dom.btnSOS?.setAttribute('aria-expanded', 'false');
+            }
         };
         dom.btnMore.onclick = (e) => {
             e.stopPropagation();
@@ -1032,13 +1058,7 @@ function attachListeners() {
     }
 
     // Top bar
-    dom.btnSettings.onclick = () => {
-        const card = dom.settingsModal?.querySelector('.modal-card');
-        if (card) card.scrollTop = 0;
-        dom.settingsModal.showModal();
-        showCoachmarkOnce(dom.settingsModal.querySelector('.modal-body'), 'settings',
-            '¿Te abruman tantas opciones? Prueba «Modo Simple», en Accesibilidad.');
-    };
+    dom.btnSettings.onclick = openSettingsModal;
     dom.btnThemeToggle.onclick = () => {
         state.settings.darkMode = !state.settings.darkMode;
         document.body.classList.toggle('dark-theme', state.settings.darkMode);
@@ -1317,11 +1337,85 @@ function attachListeners() {
             render();
         };
     }
-    if (dom.btnSOS) {
+    // SOS now opens a menu instead of navigating immediately: the emergency
+    // board is still the first, one-tap item, right above tel: shortcuts to
+    // whoever the family configured in Ajustes → Contactos de emergencia.
+    // Mirrors the «Más» overflow menu's open/close/focus-trap behaviour above.
+    if (dom.btnSOS && dom.sosMenu) {
+        const setSosMenu = (open) => {
+            dom.sosMenu.classList.toggle('open', open);
+            dom.btnSOS.setAttribute('aria-expanded', String(open));
+            if (open) {
+                dom.sosMenu.querySelector('.sos-menu-item, .sos-contact, .sos-menu-empty a')?.focus();
+                dom.headerOverflow?.classList.remove('open');
+                dom.btnMore?.setAttribute('aria-expanded', 'false');
+            }
+        };
         dom.btnSOS.onclick = (e) => {
             e.preventDefault();
-            goToSOS();
+            e.stopPropagation();
+            setSosMenu(dom.btnSOS.getAttribute('aria-expanded') !== 'true');
         };
+        if (dom.sosGoBoard) {
+            dom.sosGoBoard.onclick = () => goToSOS();
+        }
+        // Any choice inside the menu closes it — the board shortcut, a
+        // contact's tel: link, or (when the list is empty) the Ajustes hint —
+        // same rule as the «Más» overflow menu above.
+        dom.sosMenu.addEventListener('click', (e) => {
+            if (e.target.closest('.sos-menu-item, .sos-contact, .sos-menu-empty a')) setSosMenu(false);
+        });
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#sosMenu, #btnSOS')) setSosMenu(false);
+        });
+        document.addEventListener('keydown', (e) => {
+            if (dom.btnSOS.getAttribute('aria-expanded') !== 'true') return;
+            if (e.key === 'Escape') {
+                setSosMenu(false);
+                dom.btnSOS.focus();
+                return;
+            }
+            if (e.key === 'Tab') {
+                const items = [...dom.sosMenu.querySelectorAll('.sos-menu-item, .sos-contact, .sos-menu-empty a')];
+                if (!items.length) return;
+                const first = items[0];
+                const last = items[items.length - 1];
+                if (e.shiftKey && document.activeElement === first) {
+                    e.preventDefault();
+                    last.focus();
+                } else if (!e.shiftKey && document.activeElement === last) {
+                    e.preventDefault();
+                    first.focus();
+                }
+            }
+        });
+    }
+
+    if (dom.btnAddContact) {
+        dom.btnAddContact.onclick = () => {
+            const added = addEmergencyContact(dom.newContactName.value, dom.newContactPhone.value);
+            if (added) {
+                dom.newContactName.value = '';
+                dom.newContactPhone.value = '';
+                dom.newContactName.focus();
+            }
+        };
+    }
+    if (dom.newContactName) {
+        dom.newContactName.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                dom.newContactPhone?.focus();
+            }
+        });
+    }
+    if (dom.newContactPhone) {
+        dom.newContactPhone.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                dom.btnAddContact?.click();
+            }
+        });
     }
     dom.showGrammarTags.onchange = (e) => {
         state.settings.showGrammarTags = e.target.checked;
@@ -2454,6 +2548,135 @@ function goToSOS() {
     const sosCat = getAllCategories().find(c => sameWord(c, 'S.O.S') || c === 'S.O.S');
     goToCategory(sosCat || 'Todas');
     haptic(20);
+}
+
+/* ── Contactos de emergencia (SOS) ─────────────────────────────────────────
+   Named tel: shortcuts a family configures once in Ajustes and then reaches
+   with one tap from the SOS menu — for whoever can actually make the call,
+   next to the board a nonverbal user relies on to show what's wrong. */
+
+function saveEmergencyContacts() {
+    localStorage.setItem(LS_KEYS.emergencyContacts, JSON.stringify(state.emergencyContacts));
+}
+
+// A `tel:` href only tolerates digits and a leading '+'; anything else the
+// user typed for readability (spaces, dashes, parentheses) has to go, while
+// the original text keeps showing in the list.
+function phoneToTelHref(phone) {
+    const digits = String(phone).trim().replace(/[^\d+]/g, '');
+    const sign = digits.startsWith('+') ? '+' : '';
+    return `tel:${sign}${digits.replace(/\+/g, '')}`;
+}
+
+function addEmergencyContact(name, phone) {
+    const cleanName = String(name).trim().slice(0, 40);
+    const cleanPhone = String(phone).trim().slice(0, 20);
+    if (!cleanName || !/\d/.test(cleanPhone)) {
+        flashStatus('Escribe un nombre y un teléfono válido', 'warning');
+        return false;
+    }
+    state.emergencyContacts.push({
+        id: `contact-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        name: cleanName,
+        phone: cleanPhone,
+    });
+    saveEmergencyContacts();
+    renderEmergencyContacts();
+    haptic();
+    return true;
+}
+
+function removeEmergencyContact(id) {
+    state.emergencyContacts = state.emergencyContacts.filter(c => c.id !== id);
+    saveEmergencyContacts();
+    renderEmergencyContacts();
+    haptic();
+}
+
+// Renders both views from the same list: the management list in Ajustes
+// (name + number + remove) and the compact call list inside the SOS menu
+// (tel: links). Built with DOM methods, not innerHTML, so a contact name
+// can never inject markup (same rule as item text elsewhere, P0-10).
+function renderEmergencyContacts() {
+    const contacts = state.emergencyContacts;
+
+    if (dom.emergencyContactsList) {
+        dom.emergencyContactsList.innerHTML = '';
+        if (contacts.length === 0) {
+            const empty = document.createElement('p');
+            empty.className = 'settings-hint';
+            empty.textContent = 'Todavía no agregas ningún contacto.';
+            dom.emergencyContactsList.appendChild(empty);
+        }
+        contacts.forEach(contact => {
+            const row = document.createElement('div');
+            row.className = 'emergency-contact-row';
+
+            // Name and number stack vertically (not side by side) so a long
+            // name wrapping to several lines doesn't strand the number
+            // floating mid-block, centered against the wrong line.
+            const text = document.createElement('span');
+            text.className = 'contact-text';
+            const name = document.createElement('span');
+            name.className = 'contact-name';
+            name.textContent = contact.name;
+            const phone = document.createElement('span');
+            phone.className = 'contact-phone';
+            phone.textContent = contact.phone;
+            text.appendChild(name);
+            text.appendChild(phone);
+
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'btn-remove-contact';
+            removeBtn.setAttribute('aria-label', `Quitar a ${contact.name} de los contactos de emergencia`);
+            removeBtn.appendChild(makeIcon('trash'));
+            removeBtn.addEventListener('click', () => removeEmergencyContact(contact.id));
+
+            row.appendChild(text);
+            row.appendChild(removeBtn);
+            dom.emergencyContactsList.appendChild(row);
+        });
+    }
+
+    if (dom.sosMenuContacts) {
+        dom.sosMenuContacts.innerHTML = '';
+        if (contacts.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'sos-menu-empty';
+            empty.append('Todavía no hay contactos. ');
+            const link = document.createElement('a');
+            link.href = '#';
+            link.textContent = 'Agregar en Ajustes';
+            link.setAttribute('role', 'menuitem');
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                openSettingsModal();
+            });
+            empty.appendChild(link);
+            dom.sosMenuContacts.appendChild(empty);
+        } else {
+            contacts.forEach(contact => {
+                const link = document.createElement('a');
+                link.className = 'sos-contact';
+                link.href = phoneToTelHref(contact.phone);
+                link.setAttribute('role', 'menuitem');
+                link.appendChild(makeIcon('phone', 'btn-icon'));
+                const text = document.createElement('span');
+                text.className = 'sos-contact-text';
+                const name = document.createElement('span');
+                name.className = 'sos-contact-name';
+                name.textContent = contact.name;
+                const phone = document.createElement('span');
+                phone.className = 'sos-contact-phone';
+                phone.textContent = contact.phone;
+                text.appendChild(name);
+                text.appendChild(phone);
+                link.appendChild(text);
+                dom.sosMenuContacts.appendChild(link);
+            });
+        }
+    }
 }
 
 // Single source of truth for changing the board profile, keeping the header
