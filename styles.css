@@ -419,8 +419,15 @@
 
 .routine-items {
   display: flex;
+  align-items: center;
   gap: 12px;
   padding: 5px;
+}
+
+.routine-hint {
+  color: var(--md-on-surface-variant);
+  font-size: 0.9rem;
+  font-weight: 600;
 }
 
 .routine-item {

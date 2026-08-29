@@ -2338,8 +2338,11 @@ function renderBreadcrumb() {
     dom.boardBreadcrumb.appendChild(icon);
     dom.boardBreadcrumb.appendChild(label);
 
-    // Count of words currently shown, for orientation.
-    const count = dom.grid ? dom.grid.querySelectorAll('.tile:not([data-id="nav-anchor"])').length : 0;
+    // Count of words in this view, for orientation. Reads the actual filtered
+    // set rather than the rendered tiles: in modo páginas the grid only ever
+    // holds one page's worth, which made this badge quietly report the page
+    // size instead of the category's real word count.
+    const count = getVisibleItems().length;
     if (count > 0) {
         const badge = document.createElement('span');
         badge.className = 'breadcrumb-count';
@@ -2843,6 +2846,17 @@ function addToRoutine(item) {
 function renderRoutine() {
     dom.routineItems.innerHTML = "";
     dom.routineBar.classList.toggle('hidden', !state.settings.showRoutine);
+
+    if (state.routine.length === 0) {
+        // Nothing in the bar told a caregiver what to do next — an empty grey
+        // strip with only a reset button. While este panel está activo, tocar
+        // una palabra del tablero la agrega aquí en vez de a la frase.
+        const hint = document.createElement('p');
+        hint.className = 'routine-hint';
+        hint.textContent = 'Toca palabras del tablero para agregarlas a la rutina.';
+        dom.routineItems.appendChild(hint);
+        return;
+    }
 
     state.routine.forEach(item => {
         const div = document.createElement('div');
