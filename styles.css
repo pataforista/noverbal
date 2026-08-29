@@ -2717,13 +2717,17 @@ input:checked+.toggle-slider:before {
     padding: var(--md-spacing-sm) var(--md-spacing-md);
   }
 
+  /* No `width: 100%` here: this block predates the "pinned cockpit" compact
+     row header (below, `max-width: 720px`), which forces `.topbar` back to a
+     row on every phone width this block also matches. Two flex children each
+     asking for 100% width in a row get shrunk to a 50/50 split instead of
+     sizing to content, squeezing every header control onto its own line —
+     the exact stacked-header bug reported on a 393px phone. */
   .brand {
-    width: 100%;
     justify-content: center;
   }
 
   .actions {
-    width: 100%;
     justify-content: center;
   }
 
