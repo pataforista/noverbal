@@ -265,6 +265,14 @@
         <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-keyboard"/></svg><span class="btn-label">Escribir</span>
       </button>
 
+      <!-- «Agregar» es la acción que más buscan familias y terapeutas (añadir
+           fotos y palabras propias, p. ej. objetos de la casa). Antes vivía
+           escondida en el menú «Más», así que nadie la encontraba: ahora es
+           una acción principal visible en la barra, en todos los tamaños. -->
+      <button class="btn btn--labeled btn-add" id="btnAdd" aria-label="Agregar una palabra o foto nueva al tablero" title="Agregar palabra o foto">
+        <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-plus"/></svg><span class="btn-label">Agregar</span>
+      </button>
+
       <!-- Caregiver tools. On a phone these collapse behind «Más» so the header
            stays one row: the communicator needs SOS, the profile, «Hablar al
            tocar» and «Escribir» at hand; theme, settings and board editing are
@@ -432,6 +440,9 @@
               para escucharla.</span></li>
           </ol>
           <p class="intro-tip"><strong>Consejo:</strong> activa <strong>«Hablar al tocar»</strong> arriba si prefieres que cada palabra suene apenas la tocas.</p>
+          <p class="intro-tip"><strong>¿Quieres tus propias fotos y palabras</strong> (objetos de la casa, personas, juguetes…)? Pulsa el botón <strong>«Agregar»</strong>
+            <svg class="intro-inline-icon" aria-hidden="true" focusable="false"><use href="#i-plus"/></svg>
+            que está siempre arriba: escribes la palabra, subes la foto y listo.</p>
         </div>
         <p class="intro-copy">Abajo eliges qué temas verás. Podrás cambiarlos cuando quieras desde <strong>Ajustes</strong>
           <svg class="intro-inline-icon" aria-hidden="true" focusable="false"><use href="#i-settings"/></svg>.</p>
@@ -450,8 +461,8 @@
     <form method="dialog" class="modal-card">
       <div class="modal-head">
         <div>
-          <h1 class="modal-title">Configurar Tablero</h1>
-          <p class="modal-sub">Gestiona tus elementos de comunicación</p>
+          <h1 class="modal-title">Agregar palabras y fotos</h1>
+          <p class="modal-sub">Escribe la palabra, elige o sube su foto y pulsa «Añadir al tablero». También puedes editar o borrar los elementos existentes.</p>
         </div>
         <button type="button" class="btn-close" data-close-dialog="editModal" aria-label="Cerrar editor de tablero"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-close"/></svg></button>
       </div>
@@ -462,12 +473,12 @@
             <div class="row">
               <label class="field">
                 <span>Palabra / Frase</span>
-                <input id="itemText" maxlength="40" placeholder="Ej. Agua" required />
+                <input id="itemText" maxlength="40" placeholder="Ej. Silla, Taza, Control…" required />
               </label>
 
               <label class="field">
                 <span>Categoría</span>
-                <input id="itemCategory" maxlength="24" placeholder="Ej. Necesidades" />
+                <input id="itemCategory" maxlength="24" placeholder="Ej. Casa, Cocina, Juguetes…" />
               </label>
             </div>
 
@@ -477,7 +488,7 @@
                 <div class="image-options">
                   <div class="file-input-wrapper">
                     <input id="itemImage" type="file" accept="image/*" />
-                    <label for="itemImage" class="btn glass">Subir Archivo</label>
+                    <label for="itemImage" class="btn glass">Subir foto desde este dispositivo</label>
                   </div>
                   <div class="arasaac-search-trigger">
                     <input id="arasaacQuery" class="glass-input" placeholder="Buscar en ARASAAC..." />
@@ -504,7 +515,7 @@
             <!-- Icon and wording both swap between «add» and «save» modes, so
                  the label needs its own element for setAddItemMode to write to
                  without clobbering the <svg>. -->
-            <button class="btn primary full-width" id="btnAddItem"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-plus"/></svg><span class="btn-label">Añadir al Catálogo</span></button>
+            <button class="btn primary full-width" id="btnAddItem"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-plus"/></svg><span class="btn-label">Añadir al tablero</span></button>
           </div>
 
           <div class="data-mgmt">

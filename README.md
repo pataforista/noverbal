@@ -39,6 +39,10 @@ Es una aplicación web estática: no requiere compilación ni backend.
 1. Abre `index.html` servido desde cualquier servidor web estático.
 2. En la primera visita elige qué categorías estarán activas.
 3. Toca palabras para formar frases y pulsa **«Hablar Frase»**.
+4. Para añadir tus propias palabras y fotos (objetos de la casa, personas,
+   juguetes…), pulsa el botón **«Agregar»** de la barra superior: escribe la
+   palabra, sube la foto desde el dispositivo o búscala en ARASAAC, y pulsa
+   **«Añadir al tablero»**.
 
 ### Ejecutar en local
 
