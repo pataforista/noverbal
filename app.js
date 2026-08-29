@@ -2023,7 +2023,12 @@ async function searchArasaac() {
         clearTimeout(timeoutId);
         const isTimeout = err.name === 'AbortError';
         const msg = isTimeout ? 'Tiempo de espera agotado (8s)' : err.message;
-        dom.arasaacResults.innerHTML = `<div class="loading-spinner">❌ ${msg}</div>`;
+        dom.arasaacResults.innerHTML = '';
+        const wrap = document.createElement('div');
+        wrap.className = 'loading-spinner';
+        wrap.appendChild(makeIcon('warning', 'ui-icon'));
+        wrap.appendChild(document.createTextNode(` ${msg}`));
+        dom.arasaacResults.appendChild(wrap);
     }
 }
 
@@ -2500,7 +2505,7 @@ function createTile(item, onClick, opts = {}) {
         const fav = document.createElement('button');
         fav.type = 'button';
         fav.className = `tile-fav ${item.isFavorite ? 'active' : 'inactive'}`;
-        fav.textContent = item.isFavorite ? '⭐' : '☆';
+        fav.appendChild(makeIcon('star', 'tile-fav-icon'));
         fav.setAttribute('aria-pressed', item.isFavorite ? 'true' : 'false');
         fav.setAttribute('aria-label', item.isFavorite ? `Quitar ${item.text} de favoritos` : `Añadir ${item.text} a favoritos`);
         fav.onclick = (e) => {
@@ -2517,7 +2522,7 @@ function createTile(item, onClick, opts = {}) {
         pin.type = 'button';
         const pinned = isCore(item.id);
         pin.className = `tile-core-pin ${pinned ? 'active' : ''}`;
-        pin.textContent = pinned ? '📌' : '📍';
+        pin.appendChild(makeIcon('pin', 'tile-core-pin-icon'));
         pin.setAttribute('aria-pressed', pinned ? 'true' : 'false');
         pin.setAttribute('aria-label', pinned ? `Quitar ${item.text} del núcleo` : `Fijar ${item.text} en el núcleo`);
         pin.onclick = (e) => {
@@ -3068,8 +3073,8 @@ function renderItemList() {
         const h4 = document.createElement('h4');
         h4.textContent = item.text;
         const favToggle = document.createElement('span');
-        favToggle.style.cssText = 'cursor:pointer; font-size:1.1rem';
-        favToggle.textContent = item.isFavorite ? '⭐' : '☆';
+        favToggle.className = `item-fav-toggle ${item.isFavorite ? 'active' : ''}`;
+        favToggle.appendChild(makeIcon('star', 'item-fav-icon'));
         favToggle.setAttribute('role', 'button');
         favToggle.setAttribute('aria-label', item.isFavorite ? `Quitar ${item.text} de favoritos` : `Añadir ${item.text} a favoritos`);
         favToggle.addEventListener('click', () => toggleFavorite(item.id));
