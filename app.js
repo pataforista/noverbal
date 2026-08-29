@@ -129,6 +129,7 @@ const DEFAULT_SETTINGS = {
     hapticFeedback: true, // short vibration confirming each tap (where supported)
     pagedMode: false, // fixed-position pages instead of a long scroll (N-1)
     calmMode: false, // strips colour, shadow and secondary labels for sensory load
+    simpleMode: false, // hides search/routines/grammar tags/pagination for overwhelmed families
 };
 
 // State Management
@@ -290,6 +291,36 @@ function resolvePin(result) {
     pinResolver = null;
     if (r) r(result);
     return !!r;
+}
+
+let confirmResolver = null;
+
+// MD3 replacement for the native confirm() (Fase 4, "confirmaciones sin
+// sobresalto"): a modal that states the consequence in plain language
+// before anything destructive happens, instead of the browser's generic
+// blocking prompt. Resolves true/false like confirm() did.
+function confirmDialog({ title = '¿Confirmar?', message = '', consequence = '', confirmLabel = 'Confirmar', danger = false } = {}) {
+    return new Promise((resolve) => {
+        confirmResolver = resolve;
+        dom.confirmTitle.textContent = title;
+        dom.confirmMessage.textContent = message;
+        if (consequence) {
+            dom.confirmConsequence.textContent = consequence;
+            dom.confirmConsequence.classList.remove('hidden');
+        } else {
+            dom.confirmConsequence.classList.add('hidden');
+        }
+        dom.btnConfirmOk.textContent = confirmLabel;
+        dom.btnConfirmOk.classList.toggle('danger', danger);
+        dom.confirmModal.showModal();
+    });
+}
+
+function resolveConfirmDialog(result) {
+    const r = confirmResolver;
+    confirmResolver = null;
+    if (dom.confirmModal.open) dom.confirmModal.close();
+    if (r) r(result);
 }
 
 function activateTutorMode() {
@@ -538,6 +569,12 @@ const dom = {
     pinModal: document.getElementById('pinModal'),
     pinInput: document.getElementById('pinInput'),
     btnVerifyPin: document.getElementById('btnVerifyPin'),
+    confirmModal: document.getElementById('confirmModal'),
+    confirmTitle: document.getElementById('confirmTitle'),
+    confirmMessage: document.getElementById('confirmMessage'),
+    confirmConsequence: document.getElementById('confirmConsequence'),
+    btnConfirmCancel: document.getElementById('btnConfirmCancel'),
+    btnConfirmOk: document.getElementById('btnConfirmOk'),
     newPin: document.getElementById('newPin'),
     btnChangePin: document.getElementById('btnChangePin'),
     // Phase 7: Motor & Speech
@@ -548,6 +585,7 @@ const dom = {
     darkMode: document.getElementById('darkMode'),
     hapticFeedback: document.getElementById('hapticFeedback'),
     calmMode: document.getElementById('calmMode'),
+    simpleMode: document.getElementById('simpleMode'),
     // Offline precache
     btnDownloadAll: document.getElementById('btnDownloadAll'),
     downloadProgress: document.getElementById('downloadProgress'),
@@ -927,6 +965,7 @@ function attachListeners() {
         const setMenu = (open) => {
             dom.headerOverflow.classList.toggle('open', open);
             dom.btnMore.setAttribute('aria-expanded', String(open));
+            if (open) dom.headerOverflow.querySelector('.btn')?.focus();
         };
         dom.btnMore.onclick = (e) => {
             e.stopPropagation();
@@ -940,9 +979,28 @@ function attachListeners() {
             if (!e.target.closest('#headerOverflow, #btnMore')) setMenu(false);
         });
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && dom.btnMore.getAttribute('aria-expanded') === 'true') {
+            if (dom.btnMore.getAttribute('aria-expanded') !== 'true') return;
+            if (e.key === 'Escape') {
                 setMenu(false);
                 dom.btnMore.focus();
+                return;
+            }
+            // «Más» is a plain <div>, not a <dialog>, so the browser doesn't
+            // trap Tab inside it for free the way the modals do (Fase 4,
+            // auditoría de foco) — without this, Tab leaks into the board
+            // behind an open menu.
+            if (e.key === 'Tab') {
+                const items = [...dom.headerOverflow.querySelectorAll('.btn')];
+                if (!items.length) return;
+                const first = items[0];
+                const last = items[items.length - 1];
+                if (e.shiftKey && document.activeElement === first) {
+                    e.preventDefault();
+                    last.focus();
+                } else if (!e.shiftKey && document.activeElement === last) {
+                    e.preventDefault();
+                    first.focus();
+                }
             }
         });
     }
@@ -1183,6 +1241,15 @@ function attachListeners() {
         };
     }
 
+    if (dom.simpleMode) {
+        dom.simpleMode.onchange = (e) => {
+            state.settings.simpleMode = e.target.checked;
+            applySimpleMode();
+            save();
+            renderGrid(); // pagination/grammar tags read the effective (overridden) value
+        };
+    }
+
     dom.btnIntroSelectAll.onclick = () => {
         const categories = getAllCategories();
         state.settings.activeCategories = [...categories];
@@ -1242,7 +1309,14 @@ function attachListeners() {
         dom.btnExportHistory.onclick = () => exportHistoryCSV();
     }
     dom.btnClearHistory.onclick = async () => {
-        if (!confirm("¿Borrar historial clínico?")) return;
+        const ok = await confirmDialog({
+            title: 'Borrar historial',
+            message: '¿Borrar todo el historial de uso?',
+            consequence: 'Esto elimina permanentemente todos los registros guardados. No se puede deshacer.',
+            confirmLabel: 'Borrar historial',
+            danger: true,
+        });
+        if (!ok) return;
         if (!(await promptPin())) return; // clinical log is PIN-protected (P1-11)
         await clearHistoryDB();
         renderHistory();
@@ -1297,6 +1371,13 @@ function attachListeners() {
     // Cancelling / dismissing the dialog resolves the pending action as false.
     dom.pinModal.addEventListener('close', () => {
         if (pinResolver) resolvePin(false);
+    });
+
+    dom.btnConfirmOk.onclick = () => resolveConfirmDialog(true);
+    dom.btnConfirmCancel.onclick = () => resolveConfirmDialog(false);
+    // Esc, backdrop click, etc. — same "did nothing happen" outcome as Cancelar.
+    dom.confirmModal.addEventListener('close', () => {
+        if (confirmResolver) resolveConfirmDialog(false);
     });
 
     // Change the Tutor PIN (asks for the current one first).
@@ -1724,17 +1805,36 @@ function showWizardStep(step, { focus = true } = {}) {
 }
 
 async function loadInternalLibrary() {
-    if (!confirm("¿Cargar biblioteca ilustrada? Esto añadirá elementos base a tu tablero.")) return;
-
     dom.statusText.textContent = "Cargando biblioteca...";
+    let libraryItems;
     try {
-        const libraryItems = await fetchLibraryItems();
-        for (const item of libraryItems) {
-            const exists = state.items.some(i => i.id === item.id);
-            if (!exists) {
-                await saveItemDB(item);
-                state.items.push(item);
-            }
+        libraryItems = await fetchLibraryItems();
+    } catch (err) {
+        console.error("Error loading library:", err);
+        flashStatus("Error al cargar la biblioteca", "warning");
+        return;
+    }
+
+    const newItems = libraryItems.filter(item => !state.items.some(i => i.id === item.id));
+    dom.statusText.textContent = "Listo para usar";
+    if (newItems.length === 0) {
+        flashStatus("La biblioteca ya está en tu tablero");
+        return;
+    }
+
+    const ok = await confirmDialog({
+        title: 'Cargar biblioteca ilustrada',
+        message: '¿Quieres cargar la biblioteca ilustrada en tu tablero?',
+        consequence: `Esto añadirá ${newItems.length} palabra${newItems.length === 1 ? '' : 's'} nueva${newItems.length === 1 ? '' : 's'} a tu tablero. No borra las que ya tienes.`,
+        confirmLabel: 'Cargar biblioteca',
+    });
+    if (!ok) return;
+
+    try {
+        dom.statusText.textContent = "Cargando biblioteca...";
+        for (const item of newItems) {
+            await saveItemDB(item);
+            state.items.push(item);
         }
 
         render();
@@ -1880,7 +1980,14 @@ async function importData(e) {
             throw new Error('Formato inválido: items no encontrados');
         }
 
-        if (!confirm('Importar reemplazará los elementos actuales del tablero. ¿Continuar?')) {
+        const ok = await confirmDialog({
+            title: 'Cargar copia de respaldo',
+            message: `¿Reemplazar tu tablero actual con esta copia de respaldo (${parsed.items.length} elementos)?`,
+            consequence: 'Esto sustituye todas tus palabras y ajustes actuales por los del archivo. No se puede deshacer.',
+            confirmLabel: 'Reemplazar tablero',
+            danger: true,
+        });
+        if (!ok) {
             dom.importFile.value = '';
             return;
         }
@@ -2356,9 +2463,46 @@ function makeNavAnchor() {
     });
 }
 
+// True only when the category itself has no words at all — as opposed to
+// having words that the current search or active-categories filter hides.
+// That distinction decides which empty-state message is useful (Fase 4,
+// "estados vacíos útiles"): one is a dead end to fix by searching less
+// narrowly, the other has a direct fix — add the first word.
+function categoryHasNoWords() {
+    if (state.searchQuery) return false;
+    const isFav = state.currentCategory === "⭐ Favoritos";
+    return !state.items.some(item => isFav
+        ? item.isFavorite
+        : (state.currentCategory === "Todas" || item.category === state.currentCategory));
+}
+
 function renderEmptyState() {
     const empty = document.createElement('div');
     empty.className = 'grid-empty glass-card';
+
+    if (categoryHasNoWords()) {
+        const p = document.createElement('p');
+        p.textContent = 'Aún no hay palabras aquí.';
+        const small = document.createElement('small');
+        small.textContent = 'Pulsa «Agregar» para crear la primera.';
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn primary';
+        btn.appendChild(makeIcon('plus', 'btn-icon'));
+        btn.appendChild(document.createTextNode(' Agregar palabra'));
+        btn.addEventListener('click', () => {
+            if (state.settings.lockEdit) {
+                flashStatus("Edición bloqueada", "warning");
+                return;
+            }
+            startCreateWord();
+        });
+        empty.appendChild(p);
+        empty.appendChild(small);
+        empty.appendChild(btn);
+        return empty;
+    }
+
     const p = document.createElement('p');
     // textContent so a crafted search string can't inject markup (P0-10).
     p.textContent = `No encontramos resultados para "${state.searchQuery || state.currentCategory}".`;
@@ -2379,14 +2523,14 @@ function appendItemTile(item) {
 function renderGrid() {
     dom.grid.innerHTML = "";
     updateSearchClearButton();
-    document.body.classList.toggle('paged-mode', !!state.settings.pagedMode);
+    document.body.classList.toggle('paged-mode', isPagedModeActive());
     // Search results mix categories, so the per-tile category caption is worth
     // its clutter there; on a single-category board it is not (see .tile-cat).
     document.body.classList.toggle('is-searching', !!state.searchQuery);
 
     const items = getVisibleItems();
 
-    if (state.settings.pagedMode) {
+    if (isPagedModeActive()) {
         renderPagedGrid(items);
     } else {
         // Classic scrolling board.
@@ -3127,7 +3271,15 @@ window.toggleFavorite = async (id) => {
 };
 
 window.removeItem = async (id) => {
-    if (!confirm("¿Seguro que quieres eliminar este elemento?")) return;
+    const item = state.items.find(i => i.id === id);
+    const ok = await confirmDialog({
+        title: 'Eliminar palabra',
+        message: item ? `¿Eliminar «${item.text}» del tablero?` : '¿Eliminar este elemento del tablero?',
+        consequence: 'Esto la borra también de cualquier frase guardada. No se puede deshacer.',
+        confirmLabel: 'Eliminar',
+        danger: true,
+    });
+    if (!ok) return;
     state.items = state.items.filter(i => i.id !== id);
     state.phrase = state.phrase.filter(pid => pid !== id);
     await deleteItemDB(id); // Eliminar de IndexedDB
@@ -3311,7 +3463,7 @@ function startItemScanning() {
     const stepMs = scanStepMs();
     // Row-column only pays off on the paged board; the composer and the core
     // row are single rows where it would just add a pointless extra press.
-    const useRowColumn = group.id === 'grid' && state.settings.pagedMode;
+    const useRowColumn = group.id === 'grid' && isPagedModeActive();
 
     if (useRowColumn) {
         const cols = computeGridColumns();
@@ -3430,17 +3582,36 @@ function applySettings() {
     dom.darkMode.checked = state.settings.darkMode || false;
     if (dom.hapticFeedback) dom.hapticFeedback.checked = state.settings.hapticFeedback !== false;
     if (dom.calmMode) dom.calmMode.checked = state.settings.calmMode || false;
+    if (dom.simpleMode) dom.simpleMode.checked = state.settings.simpleMode || false;
     dom.headerSpeakToggle.checked = (state.settings.tapMode === 'speak');
     ensureActiveCategories();
     document.body.classList.toggle('show-grammar', state.settings.showGrammarTags);
     document.body.classList.toggle('dark-theme', state.settings.darkMode);
     document.body.classList.toggle('calm-mode', state.settings.calmMode);
+    applySimpleMode();
     updateThemeToggleIcon();
     updateThemeColorMeta();
 
     if (!localStorage.getItem(LS_KEYS.introSeen)) {
         dom.introModal.showModal();
     }
+}
+
+// Modo Simple (Fase 4, neuro-accesibilidad): oculta búsqueda, rutinas,
+// etiquetas gramaticales y paginación sin tocar esas preferencias guardadas
+// — solo las deshabilita mientras el interruptor está activo, para que
+// apagarlo devuelva a la familia exactamente lo que tenía configurado.
+// Sin PIN: pensado para que cualquier cuidador lo prenda y apague al vuelo.
+function isPagedModeActive() {
+    return !!state.settings.pagedMode && !state.settings.simpleMode;
+}
+
+function applySimpleMode() {
+    const on = !!state.settings.simpleMode;
+    document.body.classList.toggle('simple-mode', on);
+    [dom.pagedMode, dom.showGrammarTags, dom.showRoutine].forEach((el) => {
+        if (el) el.disabled = on;
+    });
 }
 
 // Last-ditch guard: if anything in init() throws before we render, surface a

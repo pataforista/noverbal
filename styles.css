@@ -622,6 +622,28 @@ h3 {
   font-weight: 800;
 }
 
+.tutor-indicator {
+  display: none;
+  align-items: center;
+  gap: var(--md-spacing-xs);
+  padding: 4px var(--md-spacing-sm);
+  border-radius: var(--radius-full);
+  background: var(--md-primary-container);
+  color: var(--md-on-primary-container);
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.tutor-indicator .ui-icon {
+  width: 14px;
+  height: 14px;
+}
+
+body.tutor-active .tutor-indicator {
+  display: inline-flex;
+}
+
 /* Status text: muy sutil, no compite */
 .subtitle {
   font-size: 0.75rem;
@@ -1332,8 +1354,14 @@ h3 {
   padding: var(--md-spacing-xl);
   display: grid;
   gap: var(--md-spacing-sm);
+  justify-items: center;
   align-content: center;
+  text-align: center;
   background: transparent; /* Sin fondo gris */
+}
+
+.grid-empty .btn {
+  margin-top: var(--md-spacing-xs);
 }
 
 .grid-empty p {
@@ -1540,6 +1568,28 @@ h3 {
 }
 .show-grammar .grammar-tag {
   display: block;
+}
+
+/* ── Modo Simple (Fase 4): oculta búsqueda, rutinas, etiquetas gramaticales
+   y paginación sin tocar esas preferencias guardadas — solo las gana en la
+   cascada mientras el interruptor está activo (ver applySimpleMode en
+   app.js), para que apagarlo devuelva exactamente lo que había antes. */
+body.simple-mode .toolbar .search-wrapper,
+body.simple-mode .routine-bar,
+body.simple-mode .page-controls,
+body.simple-mode .grammar-tag {
+  display: none !important;
+}
+
+/* The three settings Modo Simple overrides stay visibly locked (not hidden):
+   the family can still see what they had chosen, just not change it while
+   Modo Simple decides for them. */
+.field-row:has(> .toggle-wrapper input:disabled) {
+  opacity: 0.55;
+}
+
+.field-row:has(> .toggle-wrapper input:disabled) .toggle-wrapper {
+  cursor: not-allowed;
 }
 
 .category-toggle-list {
@@ -2474,6 +2524,20 @@ input:checked+.toggle-slider:before {
 /* PIN Modal */
 .modal-card.mini {
   max-width: 300px;
+}
+
+.confirm-consequence {
+  margin-top: var(--md-spacing-sm);
+  padding: var(--md-spacing-sm) var(--md-spacing-md);
+  border-radius: var(--md-radius-md);
+  background: var(--md-surface-container);
+  color: var(--md-on-surface-variant);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.confirm-consequence.hidden {
+  display: none;
 }
 
 .center {

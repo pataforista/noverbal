@@ -240,6 +240,14 @@
     <div class="brand">
       <img src="icons/icon-192.png" alt="HolAAC! - Comunicación Aumentativa" class="header-logo">
       <div class="subtitle" id="statusText" aria-live="polite" aria-atomic="true">Cargando...</div>
+      <!-- Persistente y silencioso mientras el Modo Tutor está activo (Fase 4):
+           el toast de activación se desvanece a los 3s, pero el cuidador
+           necesita recordar en todo momento que sigue en modo guía. Visible
+           solo vía CSS (body.tutor-active), sin JS que lo abra o cierre. -->
+      <span class="tutor-indicator" role="status">
+        <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-lock"/></svg>
+        Modo guía activo
+      </span>
     </div>
 
     <nav class="actions" role="toolbar" aria-label="Controles principales">
@@ -605,7 +613,7 @@
       </div>
 
       <div class="modal-foot">
-        <button class="btn glass" value="cancel">Cerrar</button>
+        <button type="button" class="btn glass" data-close-dialog="editModal">Cerrar</button>
       </div>
     </form>
   </dialog>
@@ -691,6 +699,17 @@
 
         <div class="settings-section">
           <h3>Accesibilidad</h3>
+          <label class="field-row">
+            <div class="toggle-wrapper">
+              <input id="simpleMode" type="checkbox" />
+              <span class="toggle-slider"></span>
+            </div>
+            <div class="text-content">
+              <span class="main">Modo Simple</span>
+              <span class="sub">Oculta la búsqueda, las rutinas, las etiquetas gramaticales y la paginación. Deja solo el tablero, la frase y «Agregar» — para familias a las que les abruman las opciones. Sin PIN.</span>
+            </div>
+          </label>
+
           <label class="field-row">
             <div class="toggle-wrapper">
               <input id="calmMode" type="checkbox" />
@@ -915,6 +934,25 @@
       </div>
       <div class="modal-foot">
         <button class="btn primary full-width" id="btnVerifyPin">Entrar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- MODAL: Confirmación (Fase 4, "confirmaciones sin sobresalto") — sustituye
+       confirm() nativo por un diálogo MD3 con texto de consecuencia claro
+       antes de cualquier acción que borre o reemplace datos. -->
+  <dialog class="modal" id="confirmModal">
+    <form method="dialog" class="modal-card mini">
+      <div class="modal-head">
+        <h2 class="modal-title" id="confirmTitle">¿Confirmar?</h2>
+      </div>
+      <div class="modal-body">
+        <p id="confirmMessage"></p>
+        <p class="confirm-consequence hidden" id="confirmConsequence"></p>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn glass" id="btnConfirmCancel">Cancelar</button>
+        <button type="button" class="btn primary" id="btnConfirmOk">Confirmar</button>
       </div>
     </form>
   </dialog>
