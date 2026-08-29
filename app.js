@@ -891,10 +891,16 @@ async function init() {
 
     if ('serviceWorker' in navigator) {
         // Whether a SW was already controlling this page when it loaded. We only
-        // offer to reload on a *replacement* worker, never on the very first install.
-        const hadController = !!navigator.serviceWorker.controller;
+        // offer to reload on a *replacement* worker, never on the very first
+        // install — but once that first controller is in place, every later
+        // "controllerchange" in this same tab (the app can run for days on an
+        // AAC device that's never closed) is a real update and must prompt.
+        let hadController = !!navigator.serviceWorker.controller;
         navigator.serviceWorker.addEventListener('controllerchange', () => {
-            if (!hadController) return;
+            if (!hadController) {
+                hadController = true;
+                return;
+            }
             // The new worker is already in control; only the reload is deferred so
             // whatever the user is writing isn't lost mid-keystroke (P2-17).
             showUpdateToast();
