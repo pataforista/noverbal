@@ -83,11 +83,11 @@ La UI promete etiquetas "(V, S, A, N, O)" (index.html:387), pero el código mues
 El PIN del Modo Tutor está hardcodeado como `"0000"` (app.js:633) y el candado "Bloquear edición" se desactiva desde Ajustes sin PIN alguno. La barrera no protege de nada más que de toques accidentales.
 **Corrección:** PIN configurable (guardado con hash en `localStorage`) y exigirlo también para desbloquear edición y para borrar la bitácora.
 
-### P2-12 · Detalles de coherencia (🟡 parcial)
-- La velocidad de voz real es `ajuste × 0.9` (app.js:725): el control miente ligeramente. ⬜
+### P2-12 · Detalles de coherencia (✅ hecho)
+- ✅ ~~La velocidad de voz real es `ajuste × 0.9`: el control miente ligeramente.~~ `utterance.rate` ahora usa `state.settings.rate` directo (clamp 0.5–2), sin multiplicador oculto (app.js:1686).
 - ✅ ~~`<meta name="theme-color">` es estático: la barra del sistema queda clara en tema oscuro.~~ Ahora es dinámico según el tema (2026-07-23).
-- Al importar/exportar JSON no se incluye `hiddenTags` del Modo Tutor, así que un respaldo no restaura la configuración del terapeuta. ⬜
-- En `loadVoices`, el fallback de voz (app.js:1692-1695) no llama a `save()`. ⬜
+- ✅ ~~Al importar/exportar JSON no se incluye `hiddenTags` del Modo Tutor, así que un respaldo no restaura la configuración del terapeuta.~~ `exportData`/`importData` ahora incluyen y restauran `hiddenTags` (app.js:2090, 2147-2149).
+- ✅ ~~En `loadVoices`, el fallback de voz no llama a `save()`.~~ El fallback persiste `voiceURI` con `save()` (app.js:3617-3621).
 
 ---
 
@@ -114,7 +114,7 @@ La URL de Google Fonts está dentro de `cache.addAll` (service-worker.js:25): si
 ## 4. Accesibilidad
 
 - **P1-17 ✅ · `aria-live` sobre el tablero completo:** `#grid` tenía `aria-live="polite"` y se reconstruye entero en cada interacción; los lectores de pantalla anunciaban ruido masivo. Retirado del grid, conservando `role="region"`/`aria-label`; los anuncios útiles siguen en `#chips` y `#statusText`. (2026-07-23)
-- **P1-18 ⬜ · Contraste no garantizado:** el texto de cada casilla se pinta sobre `item.color` arbitrario (incluido el elegido por el usuario). Calcular luminancia y elegir texto claro/oscuro automáticamente.
+- **P1-18 ✅ · Contraste no garantizado:** el texto de cada casilla se pinta sobre `item.color` arbitrario. `applyReadableText` calcula la luminancia relativa (WCAG) del color de fondo y elige tinta clara u oscura automáticamente, expuesta como `--tile-ink` (app.js:2205-2213).
 - **P2-19 ✅ · `prefers-color-scheme` ignorado:** ahora se respeta la preferencia del sistema en el primer arranque (sin ajuste guardado). (`prefers-reduced-motion` ya estaba contemplado ✓, y ahora también desactiva el ripple). (2026-07-23)
 - **P2-20 ✅ · Foco tras cerrar modales dinámicos:** el selector de categorías devuelve el foco al control que lo abrió al cerrarse. (2026-07-23)
 
@@ -145,7 +145,7 @@ Un solo nivel: pestañas horizontales de categoría (+ modal selector), buscador
 - **N-5 (P1) · Cambiar de contexto exige 3+ toques dentro de Ajustes.** Los perfiles (Casa/Escuela/SOS) son una buena idea (tableros por escenario, como en TouchChat), pero están enterrados en Ajustes. En una conversación real nadie abre un modal de configuración; y el perfil **SOS**, por definición, debería estar a un toque de distancia siempre.
 - **N-6 (P1) · Barrido lineal inviable en listas grandes.** El barrido recorre casilla por casilla toda la lista filtrada: en "Todas", a 2 s por paso, un ciclo completo tarda más de 10 minutos. Las apps orientadas a conmutador (AsTeRICS Grid, TD Snap) usan barrido **fila-columna**: primero se resalta la fila, luego la casilla. Además el `scrollIntoView` continuo hace que la pantalla no pare de moverse.
 - **N-7 ✅ (P2) · Casilla de navegación desaprovechada.** El primer slot mostraba "🏠 Inicio" siendo un botón muerto estando ya en Inicio. Ahora, estando en Inicio, ese hueco sirve para volver arriba en tableros largos; en otra categoría sigue siendo "← Volver" a Todas. (2026-07-23) Pendiente aún: replantear el slot como parte del rediseño de navegación (ver Fase 4).
-- **N-8 🟡 (P2) · Sin indicador de ubicación.** Al cambiar de categoría el board ahora vuelve al inicio con scroll suave, reduciendo la desorientación. Sigue faltando un título/breadcrumb explícito sobre el tablero. (parcial 2026-07-23)
+- **N-8 ✅ (P2) · Sin indicador de ubicación.** Al cambiar de categoría el board vuelve al inicio con scroll suave, y ahora además `#boardBreadcrumb` muestra el título de la categoría activa con conteo. (2026-07-25)
 - **N-9 (P2) · Estrella de favorito en la vista de comunicación.** Cada casilla lleva un botón de 32 px (bajo el mínimo táctil de 44–48 px) que a la vez invita al toque accidental en usuarios con motricidad gruesa. Los referentes reservan ese tipo de acciones al modo edición.
 - **N-10 (P2) · Gesto oculto.** Mantener pulsada una casilla la pronuncia (`contextmenu`), pero nada lo anuncia y el gesto es poco fiable en iOS Safari.
 
@@ -171,7 +171,7 @@ Un solo nivel: pestañas horizontales de categoría (+ modal selector), buscador
 1. **Fila de núcleo fija** visible en toda vista: Sí, No, Ayuda, Querer, Más, Parar, Baño, Dolor (configurable desde el modo tutor). Impacto muy alto, esfuerzo bajo.
 2. **Integrar `history.pushState`**: Atrás del sistema = volver a "Todas"; segunda pulsación = comportamiento normal. Esfuerzo bajo.
 3. **Selector de perfil a 1 toque** en la barra superior + botón SOS siempre visible. Esfuerzo bajo.
-4. **Título de categoría sobre el tablero** (breadcrumb) 🟡 —el board ya vuelve arriba al navegar, falta el breadcrumb explícito— y ~~eliminar la casilla "Inicio" cuando ya se está en Inicio~~ ✅ (ahora reutilizada como «volver arriba»). Esfuerzo bajo.
+4. ✅ **Título de categoría sobre el tablero** (breadcrumb) —implementado como `#boardBreadcrumb`— y ~~eliminar la casilla "Inicio" cuando ya se está en Inicio~~ ✅ (ahora reutilizada como «volver arriba»). Esfuerzo bajo.
 5. **Estrella de favorito solo en modo tutor/edición.** Esfuerzo bajo.
 6. **Paginación con posiciones fijas** (rejilla N×M según `--tile-size`, flechas/gesto para pasar página) en lugar de scroll. Impacto alto en motor planning, esfuerzo medio.
 7. **Barrido fila-columna** limitado a la página visible. Esfuerzo medio; convierte el barrido de decorativo a usable.
