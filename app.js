@@ -2671,19 +2671,22 @@ function compareItems(a, b) {
 }
 
 function createTile(item, onClick, opts = {}) {
+    const isNav = item.id === "nav-anchor";
+
     const tile = document.createElement('button');
     tile.type = 'button';
-    tile.className = 'tile glass-card' + (opts.core ? ' tile-core' : '');
+    tile.className = 'tile glass-card' + (opts.core ? ' tile-core' : '') + (isNav ? ' tile-nav' : '');
     tile.setAttribute('data-id', item.id);
     tile.setAttribute('data-cat', item.category);
     tile.setAttribute('aria-label', `${item.text}. Categoría ${item.category}`);
 
-    if (item.color) {
+    // Es un control de interfaz (volver/inicio), no una palabra: sin el color
+    // de fondo de categoría se distingue de un PEC real en vez de sumarse a
+    // la fila de vocabulario como uno más.
+    if (item.color && !isNav) {
         tile.style.backgroundColor = item.color;
         applyReadableText(tile, item.color); // auto contrast (P1-18)
     }
-
-    const isNav = item.id === "nav-anchor";
 
     // Favorite star lives only in Tutor/edit mode now: it was a 32px accidental
     // touch target in the communication view and the referents reserve favoriting

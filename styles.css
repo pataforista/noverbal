@@ -1717,6 +1717,27 @@ body.simple-mode .grammar-tag {
   color: var(--md-on-surface-variant);
 }
 
+/* La casilla de Inicio/Volver es un control de navegación, no una palabra:
+   el borde punteado y el fondo neutro (sin el color de categoría de las
+   fichas reales) la marcan como parte de la interfaz — se queda en la
+   primera posición del tablero por planificación motora y barrido, pero
+   deja de leerse como un PEC más entre el vocabulario. */
+.tile-nav {
+  background: var(--md-surface-container-low);
+  /* `--md-outline` (not `-variant`): the variant token is nearly the same
+     tone as the surface behind it in the dark theme, which made the whole
+     control disappear instead of reading as "not a word". */
+  border: 1px dashed var(--md-outline);
+}
+
+.tile-nav .tile-label {
+  border-top-color: transparent;
+}
+
+.tile-nav .tile-text {
+  color: var(--md-on-surface-variant);
+}
+
 /* The word sits in a band flush with the bottom edge of the card, not on a
    rounded plate floating over the pictogram. The old chip covered the middle
    of the symbol — the part that carries the meaning — and its inset corners
