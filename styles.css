@@ -2680,8 +2680,13 @@ input:checked+.toggle-slider:before {
     padding: var(--md-spacing-lg);
   }
 
+  /* No grid-template-columns here: the app's own rule for `.grid` (below)
+     is explicit that columns must stay a fixed count, never auto-fill —
+     "el usuario siempre sabe que la columna 3 es la tercera" — and this
+     leftover auto-fill from an earlier mobile-first pass was silently
+     winning the cascade for every width up to 768px, undoing that on any
+     tablet or large phone. */
   .grid {
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
     padding: var(--md-spacing-sm);
   }
 
@@ -2696,16 +2701,14 @@ input:checked+.toggle-slider:before {
 }
 
 @media (max-width: 600px) {
-  :root {
-    --tile-size: clamp(100px, 18vw, 160px);
-  }
-
+  /* No `--tile-size` override here: `document.documentElement.style` always
+     carries an inline value from the tile-size setting (app.js), which beats
+     any stylesheet rule regardless of specificity, so this never applied.
+     No grid-template-columns override either — see the fixed 3-column rule
+     below ("nunca 2, nunca 4: predecible"), which this was silently beating
+     in the cascade. */
   .layout {
     padding: var(--md-spacing-md);
-  }
-
-  .grid {
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
   }
 
   .topbar {
@@ -2838,10 +2841,8 @@ input:checked+.toggle-slider:before {
 }
 
 @media (max-width: 480px) {
-  :root {
-    --tile-size: clamp(90px, 22vw, 140px);
-  }
-
+  /* Same as the 600px block above: an inline style from app.js always wins
+     over this, so it never actually applied. */
   .subtitle {
     font-size: 0.7rem;
   }
