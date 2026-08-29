@@ -1,10 +1,69 @@
 # Plan de mejora UX: app realmente intuitiva, limpia y neuro-amigable
 
-**Fecha:** 2026-08-28 · **Estado:** propuesta priorizada
+**Fecha:** 2026-08-28 · **Estado:** entregado (2026-08-29, rama `claude/plan-de-mejora-k1kr0a`)
 **Principio rector:** cada mejora debe pasar dos filtros a la vez —
 (1) ¿la interfaz se ve más limpia y moderna? y (2) ¿reduce la carga cognitiva
 de una persona con autismo, afasia o discapacidad motora? Si solo cumple uno,
 se replantea.
+
+---
+
+## Estado del trabajo (2026-08-29)
+
+**Las cinco fases están entregadas y verificadas** con los 26 tests de
+Playwright existentes (más un ajuste a `tests/accessibility.spec.js` por el
+nuevo flujo del editor) y con capturas manuales en Chromium, escritorio y
+móvil, tema claro y oscuro.
+
+- **Fase 1 ✅** — Header en dos niveles (comunicador vs. cuidador, separados
+  por un borde), toast de estado abajo-centro con icono ✓/⚠️ reemplazando el
+  texto pequeño del header, y «Limpiar» en tono neutro salvo al enfocar/pasar
+  el cursor. **Diferido:** unificar los ~14 breakpoints del CSS a solo
+  ≤720/>720 — el archivo (4300+ líneas) tiene varias secciones de parches
+  añadidas al final que ya sobrescriben reglas tempranas para breakpoints
+  específicos; colapsarlos a ciegas, sin poder verificar cada tamaño de forma
+  interactiva, arriesgaba una regresión visual real a cambio de una limpieza
+  cosmética. Los espaciados sí quedaron expresados con los tokens existentes
+  (`--md-spacing-*`) en todo lo nuevo de esta fase.
+- **Fase 2 ✅** — El editor abre en una pantalla de entrada (Crear palabra /
+  Gestionar mis palabras / Biblioteca y respaldo plegada) y la creación es un
+  asistente de 3 pasos con barra de progreso y sugerencia automática de
+  categoría. De paso se corrigió un bug real y pre-existente: el botón
+  «Cerrar» del editor nunca cerraba el diálogo (era un botón submit dentro de
+  un `<form method="dialog">` con el campo «Palabra» aún `required`, aunque
+  estuviera oculto en la pantalla de entrada).
+- **Fase 3 ✅** — Los emoji visibles que quedaban (⭐/☆, 📌/📍, ❌) pasaron a
+  iconos SVG del set existente; el espaciado de lo añadido en fases 1-2 usa
+  los tokens de espaciado; dos textos por debajo de 12px (etiqueta «Rutina» y
+  las palabras de la rutina visual) subieron a 0.75rem. **Se dejaron sin
+  tocar**, por ser ya intencionales y estar documentados en el propio CSS: el
+  distintivo de categoría bajo cada palabra («muy sutil» por diseño), los
+  encabezados de sección en Ajustes (mayúsculas solo en marcadores, no en
+  texto para leer) y el texto del núcleo fijo en el breakpoint más angosto
+  (riesgo de desbordar la tarjeta sin poder probarlo interactivamente). El
+  resto de `.glass`/`.glass-card` ya estaba mapeado a superficies sólidas MD3
+  desde una revisión anterior, así que no había nada que limpiar ahí salvo un
+  borde punteado de «Vista previa» que `.glass-card` pisaba en la cascada.
+- **Fase 4 ✅** — Modo Simple (sin PIN) que deshabilita búsqueda/rutinas/
+  etiquetas gramaticales/paginación sin tocar esas preferencias guardadas;
+  `confirm()` nativo sustituido por un diálogo MD3 con texto de consecuencia
+  en las cuatro acciones irreversibles; estado vacío accionable cuando una
+  categoría no tiene palabras (antes solo cubría "sin resultados de
+  búsqueda"); indicador persistente «Modo guía activo»; foco atrapado en el
+  menú «Más». La auditoría de tabulación header → composer → categorías →
+  tablero se verificó por construcción (ningún elemento usa `tabindex`, el
+  orden ya sigue el DOM) más una comprobación manual con Tab/Mayús+Tab.
+- **Fase 5 ✅** — Botón «Ayuda» que reabre la guía de bienvenida; micro-ayudas
+  descartables la primera vez que se abre el editor, Ajustes o el historial
+  (recordadas en localStorage); sección «Guía rápida» en Ajustes con los 5
+  flujos más buscados, cada uno con una captura real de la app.
+
+**Métricas de éxito:** los 26 tests siguen en verde tras cada fase; no quedó
+ningún control «filled» compitiendo con Hablar/SOS/Agregar; los textos
+técnicos señalados en el diagnóstico («Perfil de tablero», «Bitácora») pasaron
+a lenguaje llano («Lugar», «Historial»). No se corrió Lighthouse en esta
+sesión (sin navegador con DevTools remotos disponible); se recomienda
+verificarlo en un entorno interactivo antes de dar el punto por cerrado.
 
 ---
 

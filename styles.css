@@ -409,7 +409,7 @@
 .routine-label {
   font-weight: 800;
   text-transform: uppercase;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   color: var(--text-secondary);
   writing-mode: vertical-lr;
   transform: rotate(180deg);
@@ -419,8 +419,15 @@
 
 .routine-items {
   display: flex;
+  align-items: center;
   gap: 12px;
   padding: 5px;
+}
+
+.routine-hint {
+  color: var(--md-on-surface-variant);
+  font-size: 0.9rem;
+  font-weight: 600;
 }
 
 .routine-item {
@@ -454,7 +461,7 @@
 }
 
 .routine-item span {
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   font-weight: 700;
   text-align: center;
   overflow: hidden;
@@ -622,6 +629,28 @@ h3 {
   font-weight: 800;
 }
 
+.tutor-indicator {
+  display: none;
+  align-items: center;
+  gap: var(--md-spacing-xs);
+  padding: 4px var(--md-spacing-sm);
+  border-radius: var(--radius-full);
+  background: var(--md-primary-container);
+  color: var(--md-on-primary-container);
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.tutor-indicator .ui-icon {
+  width: 14px;
+  height: 14px;
+}
+
+body.tutor-active .tutor-indicator {
+  display: inline-flex;
+}
+
 /* Status text: muy sutil, no compite */
 .subtitle {
   font-size: 0.75rem;
@@ -635,6 +664,33 @@ h3 {
   gap: 8px;
   flex-wrap: wrap;
   justify-content: flex-end;
+}
+
+/* Dos niveles en el header: controles de la persona comunicadora (SOS,
+   perfil, hablar al tocar, escribir) frente a herramientas de cuidador
+   (agregar, tema, ajustes, editar). Un separador sutil los distingue sin
+   ocultar ninguno. */
+.header-group {
+  display: flex;
+  align-items: center;
+  gap: var(--md-spacing-sm);
+  flex-wrap: wrap;
+}
+
+.header-group--caregiver {
+  padding-left: var(--md-spacing-md);
+  border-left: 1px solid var(--hairline);
+}
+
+@media (max-width: 600px) {
+  .header-group {
+    justify-content: center;
+  }
+
+  .header-group--caregiver {
+    border-left: none;
+    padding-left: 0;
+  }
 }
 
 .layout {
@@ -934,6 +990,22 @@ h3 {
 
 .btn.secondary {
   background: var(--md-surface-container);
+}
+
+/* «Limpiar» ya no compite con SOS: mismo tono neutro que «Borrar» en reposo
+   (ambos viven en .utility-actions), y el rojo de advertencia aparece solo
+   al enfocar o pasar el cursor, como último aviso antes de un borrado que
+   no se puede deshacer. */
+.composer-actions #btnClear.btn.danger {
+  background: var(--md-surface-container);
+  color: var(--md-on-surface-variant);
+  border: 1px solid var(--hairline);
+}
+
+.composer-actions #btnClear.btn.danger:hover,
+.composer-actions #btnClear.btn.danger:focus-visible {
+  background: #fadcda;
+  color: #7a1c1c;
 }
 
 .btn-close {
@@ -1289,8 +1361,14 @@ h3 {
   padding: var(--md-spacing-xl);
   display: grid;
   gap: var(--md-spacing-sm);
+  justify-items: center;
   align-content: center;
+  text-align: center;
   background: transparent; /* Sin fondo gris */
+}
+
+.grid-empty .btn {
+  margin-top: var(--md-spacing-xs);
 }
 
 .grid-empty p {
@@ -1460,6 +1538,15 @@ h3 {
   outline-offset: 2px;
 }
 
+.tile-fav-icon {
+  width: 15px;
+  height: 15px;
+}
+
+.tile-fav.active .tile-fav-icon {
+  fill: currentColor;
+}
+
 .tile-fav.inactive {
   opacity: 0.8;
 }
@@ -1488,6 +1575,28 @@ h3 {
 }
 .show-grammar .grammar-tag {
   display: block;
+}
+
+/* ── Modo Simple (Fase 4): oculta búsqueda, rutinas, etiquetas gramaticales
+   y paginación sin tocar esas preferencias guardadas — solo las gana en la
+   cascada mientras el interruptor está activo (ver applySimpleMode en
+   app.js), para que apagarlo devuelva exactamente lo que había antes. */
+body.simple-mode .toolbar .search-wrapper,
+body.simple-mode .routine-bar,
+body.simple-mode .page-controls,
+body.simple-mode .grammar-tag {
+  display: none !important;
+}
+
+/* The three settings Modo Simple overrides stay visibly locked (not hidden):
+   the family can still see what they had chosen, just not change it while
+   Modo Simple decides for them. */
+.field-row:has(> .toggle-wrapper input:disabled) {
+  opacity: 0.55;
+}
+
+.field-row:has(> .toggle-wrapper input:disabled) .toggle-wrapper {
+  cursor: not-allowed;
 }
 
 .category-toggle-list {
@@ -1615,6 +1724,27 @@ h3 {
   color: var(--md-on-surface-variant);
 }
 
+/* La casilla de Inicio/Volver es un control de navegación, no una palabra:
+   el borde punteado y el fondo neutro (sin el color de categoría de las
+   fichas reales) la marcan como parte de la interfaz — se queda en la
+   primera posición del tablero por planificación motora y barrido, pero
+   deja de leerse como un PEC más entre el vocabulario. */
+.tile-nav {
+  background: var(--md-surface-container-low);
+  /* `--md-outline` (not `-variant`): the variant token is nearly the same
+     tone as the surface behind it in the dark theme, which made the whole
+     control disappear instead of reading as "not a word". */
+  border: 1px dashed var(--md-outline);
+}
+
+.tile-nav .tile-label {
+  border-top-color: transparent;
+}
+
+.tile-nav .tile-text {
+  color: var(--md-on-surface-variant);
+}
+
 /* The word sits in a band flush with the bottom edge of the card, not on a
    rounded plate floating over the pictogram. The old chip covered the middle
    of the symbol — the part that carries the meaning — and its inset corners
@@ -1735,6 +1865,24 @@ body.tutor-active .grid .tile-cat {
   object-position: center;
 }
 
+.item-fav-toggle {
+  display: inline-flex;
+  color: var(--md-on-surface-variant);
+}
+
+.item-fav-toggle.active {
+  color: var(--accent);
+}
+
+.item-fav-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.item-fav-toggle.active .item-fav-icon {
+  fill: currentColor;
+}
+
 .item-meta h4 {
   font-size: 0.95rem;
 }
@@ -1825,6 +1973,15 @@ select:focus {
   border-radius: var(--md-radius-md);
 }
 
+/* `.glass-card`'s own 1px solid border has the same specificity as `.preview`'s
+   and is declared later in the file, so it was silently winning and turning
+   the empty-state placeholder into a plain solid box. Two classes beats one
+   regardless of source order, so this keeps the dashed placeholder look. */
+.preview.glass-card {
+  border-style: dashed;
+  border-width: 2px;
+}
+
 /* ARASAAC Results */
 .arasaac-results {
   display: grid;
@@ -1837,6 +1994,159 @@ select:focus {
   border-radius: var(--md-radius-lg);
   background: var(--md-surface-container-highest);
 }
+
+/* ── Editor reimaginado (Fase 2 de plan-ux-intuitiva): pantalla de entrada,
+   asistente de 3 pasos y gestión de elementos, en vez de un único formulario
+   técnico que mezclaba crear, editar, importar y exportar. ── */
+
+.editor-view.hidden { display: none; }
+
+.editor-entry-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--md-spacing-lg);
+  margin-bottom: var(--md-spacing-lg);
+}
+
+.editor-entry-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--md-spacing-sm);
+  padding: var(--md-spacing-xl);
+  text-align: left;
+  background: var(--md-surface-container);
+  border: 1px solid var(--md-outline-variant);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: background 0.15s var(--md-easing-standard), border-color 0.15s var(--md-easing-standard), transform 0.15s var(--md-easing-standard);
+}
+
+.editor-entry-card:hover,
+.editor-entry-card:focus-visible {
+  background: var(--md-surface-container-high);
+  border-color: var(--md-primary);
+  transform: translateY(-1px);
+}
+
+.editor-entry-icon {
+  width: 32px;
+  height: 32px;
+  color: var(--accent);
+}
+
+.editor-entry-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--md-on-surface);
+}
+
+.editor-entry-desc {
+  font-size: 0.88rem;
+  color: var(--md-on-surface-variant);
+  line-height: 1.4;
+}
+
+.editor-entry-more {
+  border: 1px solid var(--md-outline-variant);
+  border-radius: var(--radius-lg);
+  padding: var(--md-spacing-xs) var(--md-spacing-lg);
+  background: var(--md-surface-container-low);
+}
+
+.editor-entry-more summary {
+  cursor: pointer;
+  padding: var(--md-spacing-md) 0;
+  font-weight: 600;
+  color: var(--md-on-surface-variant);
+  list-style: none;
+}
+
+.editor-entry-more summary::-webkit-details-marker { display: none; }
+
+.editor-entry-more summary::before {
+  content: '▸';
+  display: inline-block;
+  margin-right: 8px;
+  transition: transform 0.15s var(--md-easing-standard);
+}
+
+.editor-entry-more[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.editor-entry-more .data-mgmt {
+  padding-bottom: var(--md-spacing-lg);
+}
+
+.editor-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--md-spacing-xs);
+  background: none;
+  border: none;
+  padding: var(--md-spacing-sm) var(--md-spacing-xs);
+  margin-bottom: var(--md-spacing-sm);
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--md-on-surface-variant);
+  cursor: pointer;
+}
+
+.editor-back-link:hover { color: var(--md-on-surface); }
+.editor-back-link .ui-icon { width: 18px; height: 18px; }
+
+.wizard-progress {
+  margin-bottom: var(--md-spacing-lg);
+}
+
+.wizard-progress-track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--md-surface-container-high);
+  overflow: hidden;
+}
+
+.wizard-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  transition: width 0.2s var(--md-easing-standard);
+}
+
+.wizard-progress-label {
+  display: block;
+  margin-top: var(--md-spacing-xs);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--md-on-surface-variant);
+}
+
+.wizard-step.hidden { display: none; }
+
+.wizard-step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--md-spacing-lg);
+}
+
+.wizard-actions {
+  display: flex;
+  gap: var(--md-spacing-sm);
+  align-items: center;
+}
+
+.wizard-actions .btn.full-width {
+  flex: 1;
+}
+
+.field-hint {
+  font-size: 0.82rem;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.field-hint.hidden { display: none; }
 
 .arasaac-thumb {
   aspect-ratio: 1;
@@ -2217,6 +2527,17 @@ input:checked+.toggle-slider:before {
   font-weight: 600;
 }
 
+.loading-spinner {
+  display: flex;
+  align-items: center;
+  gap: var(--md-spacing-xs);
+}
+
+.loading-spinner .ui-icon {
+  flex-shrink: 0;
+  color: var(--md-error, #ba1a1a);
+}
+
 .history-time {
   font-weight: 800;
   color: var(--accent);
@@ -2231,6 +2552,100 @@ input:checked+.toggle-slider:before {
 /* PIN Modal */
 .modal-card.mini {
   max-width: 300px;
+}
+
+.confirm-consequence {
+  margin-top: var(--md-spacing-sm);
+  padding: var(--md-spacing-sm) var(--md-spacing-md);
+  border-radius: var(--md-radius-md);
+  background: var(--md-surface-container);
+  color: var(--md-on-surface-variant);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.confirm-consequence.hidden {
+  display: none;
+}
+
+/* ── Micro-ayuda contextual (Fase 5): una línea descartable la primera vez
+   que se abre un modal, recordada en localStorage por showCoachmarkOnce. ── */
+.coachmark {
+  display: flex;
+  align-items: center;
+  gap: var(--md-spacing-sm);
+  padding: var(--md-spacing-sm) var(--md-spacing-md);
+  margin-bottom: var(--md-spacing-lg);
+  background: var(--md-primary-container);
+  color: var(--md-on-primary-container);
+  border-radius: var(--md-radius-md);
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.coachmark span {
+  flex: 1;
+}
+
+.coachmark-close {
+  display: inline-flex;
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  padding: 2px;
+  color: inherit;
+  cursor: pointer;
+}
+
+.coachmark-close .ui-icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* ── Guía rápida (Fase 5): 5 flujos plegables con captura real ── */
+.help-flow {
+  border: 1px solid var(--md-outline-variant);
+  border-radius: var(--md-radius-md);
+  padding: 0 var(--md-spacing-md);
+  margin-bottom: var(--md-spacing-sm);
+  background: var(--md-surface-container-low);
+}
+
+.help-flow summary {
+  cursor: pointer;
+  padding: var(--md-spacing-md) 0;
+  font-weight: 600;
+  list-style: none;
+}
+
+.help-flow summary::-webkit-details-marker { display: none; }
+
+.help-flow summary::before {
+  content: '▸';
+  display: inline-block;
+  margin-right: var(--md-spacing-sm);
+  transition: transform 0.15s var(--md-easing-standard);
+}
+
+.help-flow[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.help-flow p {
+  color: var(--md-on-surface-variant);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0 0 var(--md-spacing-md);
+}
+
+.help-flow img {
+  display: block;
+  max-width: 100%;
+  border: 1px solid var(--md-outline-variant);
+  border-radius: var(--md-radius-md);
+  margin-bottom: var(--md-spacing-md);
+  background: var(--md-surface);
 }
 
 .center {
@@ -2265,8 +2680,13 @@ input:checked+.toggle-slider:before {
     padding: var(--md-spacing-lg);
   }
 
+  /* No grid-template-columns here: the app's own rule for `.grid` (below)
+     is explicit that columns must stay a fixed count, never auto-fill —
+     "el usuario siempre sabe que la columna 3 es la tercera" — and this
+     leftover auto-fill from an earlier mobile-first pass was silently
+     winning the cascade for every width up to 768px, undoing that on any
+     tablet or large phone. */
   .grid {
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
     padding: var(--md-spacing-sm);
   }
 
@@ -2281,16 +2701,14 @@ input:checked+.toggle-slider:before {
 }
 
 @media (max-width: 600px) {
-  :root {
-    --tile-size: clamp(100px, 18vw, 160px);
-  }
-
+  /* No `--tile-size` override here: `document.documentElement.style` always
+     carries an inline value from the tile-size setting (app.js), which beats
+     any stylesheet rule regardless of specificity, so this never applied.
+     No grid-template-columns override either — see the fixed 3-column rule
+     below ("nunca 2, nunca 4: predecible"), which this was silently beating
+     in the cascade. */
   .layout {
     padding: var(--md-spacing-md);
-  }
-
-  .grid {
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
   }
 
   .topbar {
@@ -2423,10 +2841,8 @@ input:checked+.toggle-slider:before {
 }
 
 @media (max-width: 480px) {
-  :root {
-    --tile-size: clamp(90px, 22vw, 140px);
-  }
-
+  /* Same as the 600px block above: an inline style from app.js always wins
+     over this, so it never actually applied. */
   .subtitle {
     font-size: 0.7rem;
   }
@@ -2908,6 +3324,55 @@ input:checked+.toggle-slider:before {
   to { opacity: 1; transform: translate(-50%, 0); }
 }
 
+/* ── Toast de estado (flashStatus): reemplaza el texto pequeño del header,
+   fácil de perder, por un aviso abajo-centro con icono ✓/⚠️ que se
+   autodesvanece. Mismo lenguaje visual que .update-toast. ── */
+.status-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  z-index: 1300;
+  display: flex;
+  align-items: center;
+  gap: var(--md-spacing-sm);
+  max-width: min(92vw, 420px);
+  padding: var(--md-spacing-md) var(--md-spacing-xl);
+  background: var(--md-surface-container-highest);
+  color: var(--text-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--md-shadow-4);
+  font-weight: 600;
+  font-size: 0.95rem;
+  line-height: 1.35;
+  pointer-events: none;
+}
+
+.status-toast.hidden { display: none; }
+
+.status-toast.is-showing {
+  animation: update-toast-in 0.2s var(--md-easing-decelerated);
+}
+
+.status-toast-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  color: var(--accent);
+}
+
+.status-toast.status-toast--warning .status-toast-icon {
+  color: var(--md-error, #ba1a1a);
+}
+
+@media (max-width: 720px), (max-height: 560px) {
+  .status-toast {
+    bottom: calc(var(--md-spacing-lg) + env(safe-area-inset-bottom, 0px));
+    padding: var(--md-spacing-sm) var(--md-spacing-lg);
+    font-size: 0.9rem;
+  }
+}
+
 /* ── Fase 4 · Núcleo fijo, breadcrumb, perfil/SOS, contraste ───────────── */
 
 /* Automatic text contrast on tiles painted with an arbitrary colour (P1-18).
@@ -2984,13 +3449,24 @@ input:checked+.toggle-slider:before {
   border: none;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.85);
-  font-size: 1rem;
-  line-height: 1;
+  color: var(--md-on-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   z-index: 11;
   box-shadow: var(--md-shadow-1);
 }
-.tile-core-pin.active { background: var(--md-primary); }
+.tile-core-pin.active { background: var(--md-primary); color: var(--md-on-primary-strong, #fff); }
+
+.tile-core-pin-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.tile-core-pin.active .tile-core-pin-icon {
+  fill: currentColor;
+}
 
 /* Location breadcrumb above the board (N-8). */
 .board-breadcrumb {

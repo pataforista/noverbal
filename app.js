@@ -129,6 +129,7 @@ const DEFAULT_SETTINGS = {
     hapticFeedback: true, // short vibration confirming each tap (where supported)
     pagedMode: false, // fixed-position pages instead of a long scroll (N-1)
     calmMode: false, // strips colour, shadow and secondary labels for sensory load
+    simpleMode: false, // hides search/routines/grammar tags/pagination for overwhelmed families
 };
 
 // State Management
@@ -292,6 +293,61 @@ function resolvePin(result) {
     return !!r;
 }
 
+// Micro-ayuda contextual (Fase 5): una línea descartable la primera vez que
+// se abre un modal, en vez de una guía que nadie relee. Se recuerda en
+// localStorage por `key` para no repetirla.
+function showCoachmarkOnce(container, key, text) {
+    if (!container || localStorage.getItem(`aac_coachmark_${key}`)) return;
+    if (container.querySelector(`.coachmark[data-key="${key}"]`)) return; // already showing
+    const mark = document.createElement('div');
+    mark.className = 'coachmark';
+    mark.dataset.key = key;
+    const span = document.createElement('span');
+    span.textContent = text;
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'coachmark-close';
+    close.setAttribute('aria-label', 'Entendido, no volver a mostrar');
+    close.appendChild(makeIcon('close', 'ui-icon'));
+    close.onclick = () => {
+        mark.remove();
+        localStorage.setItem(`aac_coachmark_${key}`, '1');
+    };
+    mark.appendChild(span);
+    mark.appendChild(close);
+    container.prepend(mark);
+}
+
+let confirmResolver = null;
+
+// MD3 replacement for the native confirm() (Fase 4, "confirmaciones sin
+// sobresalto"): a modal that states the consequence in plain language
+// before anything destructive happens, instead of the browser's generic
+// blocking prompt. Resolves true/false like confirm() did.
+function confirmDialog({ title = '¿Confirmar?', message = '', consequence = '', confirmLabel = 'Confirmar', danger = false } = {}) {
+    return new Promise((resolve) => {
+        confirmResolver = resolve;
+        dom.confirmTitle.textContent = title;
+        dom.confirmMessage.textContent = message;
+        if (consequence) {
+            dom.confirmConsequence.textContent = consequence;
+            dom.confirmConsequence.classList.remove('hidden');
+        } else {
+            dom.confirmConsequence.classList.add('hidden');
+        }
+        dom.btnConfirmOk.textContent = confirmLabel;
+        dom.btnConfirmOk.classList.toggle('danger', danger);
+        dom.confirmModal.showModal();
+    });
+}
+
+function resolveConfirmDialog(result) {
+    const r = confirmResolver;
+    confirmResolver = null;
+    if (dom.confirmModal.open) dom.confirmModal.close();
+    if (r) r(result);
+}
+
 function activateTutorMode() {
     state.tutorMode.active = true;
     dom.tutorMode.checked = true;
@@ -448,6 +504,9 @@ async function clearHistoryDB() {
 // DOM Cache
 const dom = {
     statusText: document.getElementById('statusText'),
+    statusToast: document.getElementById('statusToast'),
+    statusToastText: document.getElementById('statusToastText'),
+    statusToastIcon: document.getElementById('statusToastIcon'),
     grid: document.getElementById('grid'),
     pageControls: document.getElementById('pageControls'),
     pagedMode: document.getElementById('pagedMode'),
@@ -466,6 +525,7 @@ const dom = {
     btnBackspace: document.getElementById('btnBackspace'),
     btnClear: document.getElementById('btnClear'),
     btnEdit: document.getElementById('btnEdit'),
+    btnHelp: document.getElementById('btnHelp'),
     btnAdd: document.getElementById('btnAdd'),
     btnSettings: document.getElementById('btnSettings'),
     // Modals
@@ -480,6 +540,26 @@ const dom = {
     btnAddItem: document.getElementById('btnAddItem'),
     itemList: document.getElementById('itemList'),
     editorSearchBox: document.getElementById('editorSearchBox'),
+    categorySuggestHint: document.getElementById('categorySuggestHint'),
+    // Editor: pantalla de entrada / asistente de 3 pasos / gestión (Fase 2)
+    editorTitle: document.getElementById('editorTitle'),
+    editorSubtitle: document.getElementById('editorSubtitle'),
+    editorViewEntry: document.getElementById('editorViewEntry'),
+    editorViewWizard: document.getElementById('editorViewWizard'),
+    editorViewManage: document.getElementById('editorViewManage'),
+    cardCreateWord: document.getElementById('cardCreateWord'),
+    cardManageWords: document.getElementById('cardManageWords'),
+    btnWizardToEntry: document.getElementById('btnWizardToEntry'),
+    btnManageToEntry: document.getElementById('btnManageToEntry'),
+    wizardProgressFill: document.getElementById('wizardProgressFill'),
+    wizardProgressLabel: document.getElementById('wizardProgressLabel'),
+    wizardStep1: document.getElementById('wizardStep1'),
+    wizardStep2: document.getElementById('wizardStep2'),
+    wizardStep3: document.getElementById('wizardStep3'),
+    btnWizardNext1: document.getElementById('btnWizardNext1'),
+    btnWizardBack2: document.getElementById('btnWizardBack2'),
+    btnWizardNext2: document.getElementById('btnWizardNext2'),
+    btnWizardBack3: document.getElementById('btnWizardBack3'),
     // ARASAAC elements
     arasaacQuery: document.getElementById('arasaacQuery'),
     btnSearchArasaac: document.getElementById('btnSearchArasaac'),
@@ -515,6 +595,12 @@ const dom = {
     pinModal: document.getElementById('pinModal'),
     pinInput: document.getElementById('pinInput'),
     btnVerifyPin: document.getElementById('btnVerifyPin'),
+    confirmModal: document.getElementById('confirmModal'),
+    confirmTitle: document.getElementById('confirmTitle'),
+    confirmMessage: document.getElementById('confirmMessage'),
+    confirmConsequence: document.getElementById('confirmConsequence'),
+    btnConfirmCancel: document.getElementById('btnConfirmCancel'),
+    btnConfirmOk: document.getElementById('btnConfirmOk'),
     newPin: document.getElementById('newPin'),
     btnChangePin: document.getElementById('btnChangePin'),
     // Phase 7: Motor & Speech
@@ -525,6 +611,7 @@ const dom = {
     darkMode: document.getElementById('darkMode'),
     hapticFeedback: document.getElementById('hapticFeedback'),
     calmMode: document.getElementById('calmMode'),
+    simpleMode: document.getElementById('simpleMode'),
     // Offline precache
     btnDownloadAll: document.getElementById('btnDownloadAll'),
     downloadProgress: document.getElementById('downloadProgress'),
@@ -882,9 +969,9 @@ function attachListeners() {
     };
     dom.btnSpeakWriting.onclick = () => {
         const text = dom.writingInput.value.trim();
-        if (!text) { flashStatus("Escribe algo primero"); return; }
+        if (!text) { flashStatus("Escribe algo primero", "warning"); return; }
         if (!window.speechSynthesis) {
-            flashStatus("⚠️ Síntesis de voz no disponible en este navegador");
+            flashStatus("Síntesis de voz no disponible en este navegador", "warning");
             return;
         }
         speakWithTTS(text);
@@ -904,6 +991,7 @@ function attachListeners() {
         const setMenu = (open) => {
             dom.headerOverflow.classList.toggle('open', open);
             dom.btnMore.setAttribute('aria-expanded', String(open));
+            if (open) dom.headerOverflow.querySelector('.btn')?.focus();
         };
         dom.btnMore.onclick = (e) => {
             e.stopPropagation();
@@ -917,9 +1005,28 @@ function attachListeners() {
             if (!e.target.closest('#headerOverflow, #btnMore')) setMenu(false);
         });
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && dom.btnMore.getAttribute('aria-expanded') === 'true') {
+            if (dom.btnMore.getAttribute('aria-expanded') !== 'true') return;
+            if (e.key === 'Escape') {
                 setMenu(false);
                 dom.btnMore.focus();
+                return;
+            }
+            // «Más» is a plain <div>, not a <dialog>, so the browser doesn't
+            // trap Tab inside it for free the way the modals do (Fase 4,
+            // auditoría de foco) — without this, Tab leaks into the board
+            // behind an open menu.
+            if (e.key === 'Tab') {
+                const items = [...dom.headerOverflow.querySelectorAll('.btn')];
+                if (!items.length) return;
+                const first = items[0];
+                const last = items[items.length - 1];
+                if (e.shiftKey && document.activeElement === first) {
+                    e.preventDefault();
+                    last.focus();
+                } else if (!e.shiftKey && document.activeElement === last) {
+                    e.preventDefault();
+                    first.focus();
+                }
             }
         });
     }
@@ -929,6 +1036,8 @@ function attachListeners() {
         const card = dom.settingsModal?.querySelector('.modal-card');
         if (card) card.scrollTop = 0;
         dom.settingsModal.showModal();
+        showCoachmarkOnce(dom.settingsModal.querySelector('.modal-body'), 'settings',
+            '¿Te abruman tantas opciones? Prueba «Modo Simple», en Accesibilidad.');
     };
     dom.btnThemeToggle.onclick = () => {
         state.settings.darkMode = !state.settings.darkMode;
@@ -941,30 +1050,69 @@ function attachListeners() {
     };
     dom.btnEdit.onclick = () => {
         if (state.settings.lockEdit) {
-            flashStatus("🔒 Edición bloqueada");
+            flashStatus("Edición bloqueada", "warning");
             return;
         }
-        openEditModal();
+        openEditModal('entry');
     };
-    // «Agregar» abre el mismo editor pero preparado para crear: limpia el
-    // formulario y pone el foco en el campo de la palabra, para que el flujo
-    // «foto + palabra» sea inmediato.
+    // Reabre la guía de bienvenida a demanda (Fase 5): antes de esto solo se
+    // veía la primera vez y no había forma de volver a consultarla.
+    if (dom.btnHelp) {
+        dom.btnHelp.onclick = () => {
+            const card = dom.introModal.querySelector('.modal-card');
+            if (card) card.scrollTop = 0;
+            dom.introModal.showModal();
+        };
+    }
+    // «Agregar» abre el mismo editor pero salta directo al asistente de
+    // creación (paso 1), preparado y con el foco en el campo de la palabra,
+    // para que el flujo «foto + palabra» sea inmediato.
     if (dom.btnAdd) {
         dom.btnAdd.onclick = () => {
             if (state.settings.lockEdit) {
-                flashStatus("🔒 Edición bloqueada");
+                flashStatus("Edición bloqueada", "warning");
                 return;
             }
-            setAddItemMode('add');
-            dom.btnAddItem.removeAttribute('data-edit-id');
-            dom.itemText.value = '';
-            dom.itemCategory.value = '';
-            dom.itemImage.value = '';
-            dom.preview.textContent = 'Esperando datos...';
-            state.pendingImage = null;
-            openEditModal();
-            dom.itemText.focus();
+            startCreateWord();
         };
+    }
+    if (dom.cardCreateWord) dom.cardCreateWord.onclick = startCreateWord;
+    if (dom.cardManageWords) dom.cardManageWords.onclick = () => showEditorView('manage');
+    if (dom.btnWizardToEntry) dom.btnWizardToEntry.onclick = () => showEditorView('entry');
+    if (dom.btnManageToEntry) dom.btnManageToEntry.onclick = () => showEditorView('entry');
+
+    if (dom.btnWizardNext1) {
+        dom.btnWizardNext1.onclick = () => {
+            if (!dom.itemText.value.trim()) {
+                flashStatus('Escribe una palabra primero', 'warning');
+                dom.itemText.focus();
+                return;
+            }
+            showWizardStep(2);
+        };
+    }
+    if (dom.btnWizardBack2) dom.btnWizardBack2.onclick = () => showWizardStep(1);
+    if (dom.btnWizardNext2) dom.btnWizardNext2.onclick = () => showWizardStep(3);
+    if (dom.btnWizardBack3) dom.btnWizardBack3.onclick = () => showWizardStep(2);
+
+    // Sugerencia de categoría automática (P2, Fase 2): si ya existe una
+    // palabra parecida en el tablero, se propone su misma categoría — el
+    // campo queda pre-rellenado y editable, nunca se impone.
+    if (dom.itemText) {
+        dom.itemText.addEventListener('input', () => {
+            if (dom.btnAddItem.hasAttribute('data-edit-id')) return;
+            if (dom.itemCategory.value.trim()) return;
+            const suggestion = suggestCategoryFor(dom.itemText.value);
+            if (suggestion) {
+                dom.itemCategory.value = suggestion;
+                if (dom.categorySuggestHint) {
+                    dom.categorySuggestHint.textContent = `Sugerido: ${suggestion} (puedes cambiarlo)`;
+                    dom.categorySuggestHint.classList.remove('hidden');
+                }
+            } else if (dom.categorySuggestHint) {
+                dom.categorySuggestHint.classList.add('hidden');
+            }
+        });
     }
 
     // Composer
@@ -1130,6 +1278,15 @@ function attachListeners() {
         };
     }
 
+    if (dom.simpleMode) {
+        dom.simpleMode.onchange = (e) => {
+            state.settings.simpleMode = e.target.checked;
+            applySimpleMode();
+            save();
+            renderGrid(); // pagination/grammar tags read the effective (overridden) value
+        };
+    }
+
     dom.btnIntroSelectAll.onclick = () => {
         const categories = getAllCategories();
         state.settings.activeCategories = [...categories];
@@ -1184,12 +1341,21 @@ function attachListeners() {
     dom.btnOpenHistory.onclick = () => {
         renderHistory();
         dom.historyModal.showModal();
+        showCoachmarkOnce(dom.historyModal.querySelector('.modal-body'), 'history',
+            'Este registro es local y privado: nunca sale de este dispositivo.');
     };
     if (dom.btnExportHistory) {
         dom.btnExportHistory.onclick = () => exportHistoryCSV();
     }
     dom.btnClearHistory.onclick = async () => {
-        if (!confirm("¿Borrar historial clínico?")) return;
+        const ok = await confirmDialog({
+            title: 'Borrar historial',
+            message: '¿Borrar todo el historial de uso?',
+            consequence: 'Esto elimina permanentemente todos los registros guardados. No se puede deshacer.',
+            confirmLabel: 'Borrar historial',
+            danger: true,
+        });
+        if (!ok) return;
         if (!(await promptPin())) return; // clinical log is PIN-protected (P1-11)
         await clearHistoryDB();
         renderHistory();
@@ -1223,7 +1389,7 @@ function attachListeners() {
         e.preventDefault();
         const waitMs = pinLockRemainingMs();
         if (waitMs > 0) {
-            flashStatus(`Demasiados intentos. Espera ${Math.ceil(waitMs / 1000)}s`);
+            flashStatus(`Demasiados intentos. Espera ${Math.ceil(waitMs / 1000)}s`, "warning");
             dom.pinInput.value = "";
             return;
         }
@@ -1236,7 +1402,7 @@ function attachListeners() {
             if (!resolvePin(true)) activateTutorMode();
         } else {
             registerPinFailure();
-            flashStatus("PIN Incorrecto");
+            flashStatus("PIN Incorrecto", "warning");
             dom.pinInput.value = "";
         }
     };
@@ -1246,13 +1412,20 @@ function attachListeners() {
         if (pinResolver) resolvePin(false);
     });
 
+    dom.btnConfirmOk.onclick = () => resolveConfirmDialog(true);
+    dom.btnConfirmCancel.onclick = () => resolveConfirmDialog(false);
+    // Esc, backdrop click, etc. — same "did nothing happen" outcome as Cancelar.
+    dom.confirmModal.addEventListener('close', () => {
+        if (confirmResolver) resolveConfirmDialog(false);
+    });
+
     // Change the Tutor PIN (asks for the current one first).
     if (dom.btnChangePin) {
         dom.btnChangePin.onclick = async (e) => {
             e.preventDefault();
             const next = (dom.newPin.value || '').trim();
             if (!/^\d{4}$/.test(next)) {
-                flashStatus('El PIN debe tener 4 dígitos');
+                flashStatus('El PIN debe tener 4 dígitos', 'warning');
                 return;
             }
             if (!(await promptPin())) return; // confirm with current PIN
@@ -1447,7 +1620,7 @@ async function speakPhrase() {
         .filter(Boolean);
 
     if (items.length === 0) {
-        flashStatus("Selecciona palabras primero");
+        flashStatus("Selecciona palabras primero", "warning");
         return;
     }
 
@@ -1486,12 +1659,12 @@ function handleImageSelect(e) {
     if (!file) return;
 
     if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-        flashStatus('Formato de imagen no admitido');
+        flashStatus('Formato de imagen no admitido', 'warning');
         e.target.value = '';
         return;
     }
     if (file.size > MAX_IMAGE_BYTES) {
-        flashStatus('La imagen supera el límite de 3 MB');
+        flashStatus('La imagen supera el límite de 3 MB', 'warning');
         e.target.value = '';
         return;
     }
@@ -1500,7 +1673,7 @@ function handleImageSelect(e) {
     reader.onload = (ev) => {
         const dataUrl = sanitizeImage(ev.target.result);
         if (!dataUrl) {
-            flashStatus('Imagen no válida');
+            flashStatus('Imagen no válida', 'warning');
             e.target.value = '';
             return;
         }
@@ -1531,15 +1704,18 @@ function addItem() {
     saveItemDB(item);
     save();
 
-    // Reset form
+    // Reset form and go back to step 1: ready to add the next word right away.
     dom.itemText.value = "";
     dom.itemCategory.value = "";
     dom.itemImage.value = "";
-    dom.preview.textContent = "¡Añadido!";
+    dom.preview.textContent = "Esperando datos...";
     state.pendingImage = null;
+    if (dom.categorySuggestHint) dom.categorySuggestHint.classList.add('hidden');
 
     render();
     renderItemList();
+    flashStatus(`«${item.text}» añadida al tablero`);
+    showWizardStep(1);
 }
 
 function updateItem() {
@@ -1555,17 +1731,19 @@ function updateItem() {
     saveItemDB(item);
     save();
 
-    // Reset form
+    // Reset form and return to the list the edit came from.
     dom.itemText.value = "";
     dom.itemCategory.value = "";
     dom.itemImage.value = "";
     setAddItemMode('add');
     dom.btnAddItem.removeAttribute('data-edit-id');
-    dom.preview.textContent = "¡Actualizado!";
+    dom.preview.textContent = "Esperando datos...";
     state.pendingImage = null;
+    if (dom.categorySuggestHint) dom.categorySuggestHint.classList.add('hidden');
 
     render();
-    renderItemList();
+    flashStatus(`«${item.text}» actualizada`);
+    showEditorView('manage');
 }
 
 window.editItem = (id) => {
@@ -1580,31 +1758,126 @@ window.editItem = (id) => {
     } else {
         dom.preview.textContent = "Sin imagen";
     }
+    if (dom.categorySuggestHint) dom.categorySuggestHint.classList.add('hidden');
 
     setAddItemMode('edit');
     dom.btnAddItem.setAttribute('data-edit-id', id);
 
-    // Scroll to top of editor
-    dom.editModal.querySelector('.modal-body').scrollTop = 0;
+    showEditorView('wizard');
+    dom.editorTitle.textContent = 'Modificar palabra';
+    dom.editorSubtitle.textContent = 'Cambia el texto, la imagen o la categoría y guarda los cambios.';
+    showWizardStep(1);
 };
 
-function openEditModal() {
-    renderItemList();
-    dom.editModal.showModal();
+// Busca una palabra parecida ya presente en el tablero y propone su misma
+// categoría (Fase 2, sugerencia automática): «taza» encuentra «Taza» en
+// Cocina y pre-rellena «Cocina», siempre editable por quien está creando.
+function suggestCategoryFor(text) {
+    const needle = normalizeWord(text);
+    if (!needle) return null;
+    const exact = state.items.find(i => normalizeWord(i.text) === needle);
+    if (exact) return exact.category;
+    const partial = state.items.find(i => {
+        const hay = normalizeWord(i.text);
+        return hay.length > 2 && (hay.includes(needle) || needle.includes(hay));
+    });
+    return partial ? partial.category : null;
+}
+
+function openEditModal(view = 'entry') {
+    if (!dom.editModal.open) dom.editModal.showModal();
+    showEditorView(view);
+}
+
+// «Agregar» y la tarjeta «Crear palabra nueva» comparten este arranque:
+// limpian el formulario y saltan directo al paso 1 del asistente.
+function startCreateWord() {
+    setAddItemMode('add');
+    dom.btnAddItem.removeAttribute('data-edit-id');
+    dom.itemText.value = '';
+    dom.itemCategory.value = '';
+    dom.itemImage.value = '';
+    dom.preview.textContent = 'Esperando datos...';
+    state.pendingImage = null;
+    if (dom.categorySuggestHint) dom.categorySuggestHint.classList.add('hidden');
+    openEditModal('wizard');
+    showWizardStep(1);
+    dom.itemText.focus();
+}
+
+// Las tres pantallas del editor (Fase 2): entrada con tarjetas, asistente de
+// creación/edición y gestión de elementos propios. Solo una es visible a la
+// vez; el título y subtítulo del modal cambian con ella.
+function showEditorView(view) {
+    if (dom.editorViewEntry) dom.editorViewEntry.classList.toggle('hidden', view !== 'entry');
+    if (dom.editorViewWizard) dom.editorViewWizard.classList.toggle('hidden', view !== 'wizard');
+    if (dom.editorViewManage) dom.editorViewManage.classList.toggle('hidden', view !== 'manage');
+
+    const copy = {
+        entry: ['Agregar palabras y fotos', '¿Qué quieres hacer?'],
+        wizard: ['Agregar palabras y fotos', 'Escribe la palabra, elige o sube su foto y pulsa «Añadir al tablero».'],
+        manage: ['Gestionar mis palabras', 'Edita, cambia la categoría o borra lo que ya agregaste.'],
+    }[view] || ['Agregar palabras y fotos', '¿Qué quieres hacer?'];
+    if (dom.editorTitle) dom.editorTitle.textContent = copy[0];
+    if (dom.editorSubtitle) dom.editorSubtitle.textContent = copy[1];
+
+    if (view === 'manage') renderItemList();
+
+    const body = dom.editModal.querySelector('.modal-body');
+    if (body) body.scrollTop = 0;
+    if (view === 'entry' && dom.editorViewEntry) {
+        showCoachmarkOnce(dom.editorViewEntry, 'editor-entry',
+            'Crea palabras nuevas o revisa las que ya tienes — la biblioteca y el respaldo quedan abajo, plegados.');
+    }
+}
+
+const WIZARD_STEP_LABELS = { 1: 'Escribe la palabra', 2: 'Elige una imagen', 3: 'Revisa y guarda' };
+
+function showWizardStep(step, { focus = true } = {}) {
+    [1, 2, 3].forEach((n) => {
+        const el = dom[`wizardStep${n}`];
+        if (el) el.classList.toggle('hidden', n !== step);
+    });
+    if (dom.wizardProgressFill) dom.wizardProgressFill.style.width = `${(step / 3) * 100}%`;
+    if (dom.wizardProgressLabel) {
+        dom.wizardProgressLabel.textContent = `Paso ${step} de 3 · ${WIZARD_STEP_LABELS[step]}`;
+    }
+    const body = dom.editModal.querySelector('.modal-body');
+    if (body) body.scrollTop = 0;
+    if (step === 1 && focus) dom.itemText.focus();
 }
 
 async function loadInternalLibrary() {
-    if (!confirm("¿Cargar biblioteca ilustrada? Esto añadirá elementos base a tu tablero.")) return;
-
     dom.statusText.textContent = "Cargando biblioteca...";
+    let libraryItems;
     try {
-        const libraryItems = await fetchLibraryItems();
-        for (const item of libraryItems) {
-            const exists = state.items.some(i => i.id === item.id);
-            if (!exists) {
-                await saveItemDB(item);
-                state.items.push(item);
-            }
+        libraryItems = await fetchLibraryItems();
+    } catch (err) {
+        console.error("Error loading library:", err);
+        flashStatus("Error al cargar la biblioteca", "warning");
+        return;
+    }
+
+    const newItems = libraryItems.filter(item => !state.items.some(i => i.id === item.id));
+    dom.statusText.textContent = "Listo para usar";
+    if (newItems.length === 0) {
+        flashStatus("La biblioteca ya está en tu tablero");
+        return;
+    }
+
+    const ok = await confirmDialog({
+        title: 'Cargar biblioteca ilustrada',
+        message: '¿Quieres cargar la biblioteca ilustrada en tu tablero?',
+        consequence: `Esto añadirá ${newItems.length} palabra${newItems.length === 1 ? '' : 's'} nueva${newItems.length === 1 ? '' : 's'} a tu tablero. No borra las que ya tienes.`,
+        confirmLabel: 'Cargar biblioteca',
+    });
+    if (!ok) return;
+
+    try {
+        dom.statusText.textContent = "Cargando biblioteca...";
+        for (const item of newItems) {
+            await saveItemDB(item);
+            state.items.push(item);
         }
 
         render();
@@ -1613,7 +1886,7 @@ async function loadInternalLibrary() {
         setTimeout(() => { dom.statusText.textContent = "Listo para usar"; }, 3000);
     } catch (err) {
         console.error("Error loading library:", err);
-        flashStatus("Error al cargar la biblioteca");
+        flashStatus("Error al cargar la biblioteca", "warning");
     }
 }
 
@@ -1688,12 +1961,12 @@ function collectOfflineAssetUrls() {
 function downloadAllForOffline() {
     const controller = navigator.serviceWorker && navigator.serviceWorker.controller;
     if (!controller) {
-        flashStatus('El modo sin conexión aún no está listo. Recarga e intenta de nuevo.');
+        flashStatus('El modo sin conexión aún no está listo. Recarga e intenta de nuevo.', 'warning');
         return;
     }
     const urls = collectOfflineAssetUrls();
     if (urls.length === 0) {
-        flashStatus('No hay recursos para descargar');
+        flashStatus('No hay recursos para descargar', 'warning');
         return;
     }
     if (dom.downloadProgress) dom.downloadProgress.classList.remove('hidden');
@@ -1737,7 +2010,7 @@ async function importData(e) {
     if (!file) return;
 
     if (file.size > 5 * 1024 * 1024) {
-        flashStatus('El archivo supera el límite de 5 MB');
+        flashStatus('El archivo supera el límite de 5 MB', 'warning');
         dom.importFile.value = '';
         return;
     }
@@ -1750,7 +2023,14 @@ async function importData(e) {
             throw new Error('Formato inválido: items no encontrados');
         }
 
-        if (!confirm('Importar reemplazará los elementos actuales del tablero. ¿Continuar?')) {
+        const ok = await confirmDialog({
+            title: 'Cargar copia de respaldo',
+            message: `¿Reemplazar tu tablero actual con esta copia de respaldo (${parsed.items.length} elementos)?`,
+            consequence: 'Esto sustituye todas tus palabras y ajustes actuales por los del archivo. No se puede deshacer.',
+            confirmLabel: 'Reemplazar tablero',
+            danger: true,
+        });
+        if (!ok) {
             dom.importFile.value = '';
             return;
         }
@@ -1784,7 +2064,7 @@ async function importData(e) {
         flashStatus('Importación completada');
     } catch (error) {
         console.error('Import error', error);
-        flashStatus('Error al importar JSON');
+        flashStatus('Error al importar JSON', 'warning');
     } finally {
         dom.importFile.value = '';
     }
@@ -1893,7 +2173,12 @@ async function searchArasaac() {
         clearTimeout(timeoutId);
         const isTimeout = err.name === 'AbortError';
         const msg = isTimeout ? 'Tiempo de espera agotado (8s)' : err.message;
-        dom.arasaacResults.innerHTML = `<div class="loading-spinner">❌ ${msg}</div>`;
+        dom.arasaacResults.innerHTML = '';
+        const wrap = document.createElement('div');
+        wrap.className = 'loading-spinner';
+        wrap.appendChild(makeIcon('warning', 'ui-icon'));
+        wrap.appendChild(document.createTextNode(` ${msg}`));
+        dom.arasaacResults.appendChild(wrap);
     }
 }
 
@@ -1939,7 +2224,7 @@ async function selectArasaacPictogram(id, label) {
         // Hide results after selection
         dom.arasaacResults.classList.add('hidden');
     } catch (err) {
-        flashStatus("Error al cargar imagen de ARASAAC");
+        flashStatus("Error al cargar imagen de ARASAAC", "warning");
         dom.preview.textContent = "Error";
     }
 }
@@ -1963,13 +2248,34 @@ function hideUpdateToast() {
     if (dom.updateToast) dom.updateToast.classList.add('hidden');
 }
 
-function flashStatus(msg) {
+let statusToastTimer = null;
+
+// Aviso breve tipo toast (abajo-centro, con icono), en vez del texto pequeño
+// del header que era fácil de no ver. `type` decide el icono: 'success' (✓,
+// por defecto) o 'warning' (⚠️, para bloqueos/errores).
+function flashStatus(msg, type = 'success') {
+    if (dom.statusToast && dom.statusToastText) {
+        clearTimeout(statusToastTimer);
+        dom.statusToastText.textContent = msg;
+        dom.statusToast.classList.toggle('status-toast--warning', type === 'warning');
+        if (dom.statusToastIcon) {
+            dom.statusToastIcon.querySelector('use')?.setAttribute('href', type === 'warning' ? '#i-warning' : '#i-check');
+        }
+        dom.statusToast.classList.remove('hidden');
+        // Restart the entrance animation even if a toast is already showing.
+        dom.statusToast.classList.remove('is-showing');
+        void dom.statusToast.offsetWidth;
+        dom.statusToast.classList.add('is-showing');
+        statusToastTimer = setTimeout(() => {
+            dom.statusToast.classList.add('hidden');
+        }, 3000);
+    }
+    // El header conserva un anuncio silencioso para lectores de pantalla que
+    // no sigan el toast (aria-live ya está en #statusText).
     const prev = dom.statusText.textContent;
     dom.statusText.textContent = msg;
-    dom.statusText.style.color = "var(--accent)";
     setTimeout(() => {
         dom.statusText.textContent = prev;
-        dom.statusText.style.color = "";
     }, 2000);
 }
 
@@ -2032,8 +2338,11 @@ function renderBreadcrumb() {
     dom.boardBreadcrumb.appendChild(icon);
     dom.boardBreadcrumb.appendChild(label);
 
-    // Count of words currently shown, for orientation.
-    const count = dom.grid ? dom.grid.querySelectorAll('.tile:not([data-id="nav-anchor"])').length : 0;
+    // Count of words in this view, for orientation. Reads the actual filtered
+    // set rather than the rendered tiles: in modo páginas the grid only ever
+    // holds one page's worth, which made this badge quietly report the page
+    // size instead of the category's real word count.
+    const count = getVisibleItems().length;
     if (count > 0) {
         const badge = document.createElement('span');
         badge.className = 'breadcrumb-count';
@@ -2083,7 +2392,7 @@ async function renderHistory() {
 async function exportHistoryCSV() {
     const history = await getAllHistory();
     if (!history || history.length === 0) {
-        flashStatus("No hay registros para exportar");
+        flashStatus("No hay registros para exportar", "warning");
         return;
     }
     const headers = ["Fecha y Hora", "Timestamp", "Frase / Actividad"];
@@ -2200,9 +2509,46 @@ function makeNavAnchor() {
     });
 }
 
+// True only when the category itself has no words at all — as opposed to
+// having words that the current search or active-categories filter hides.
+// That distinction decides which empty-state message is useful (Fase 4,
+// "estados vacíos útiles"): one is a dead end to fix by searching less
+// narrowly, the other has a direct fix — add the first word.
+function categoryHasNoWords() {
+    if (state.searchQuery) return false;
+    const isFav = state.currentCategory === "⭐ Favoritos";
+    return !state.items.some(item => isFav
+        ? item.isFavorite
+        : (state.currentCategory === "Todas" || item.category === state.currentCategory));
+}
+
 function renderEmptyState() {
     const empty = document.createElement('div');
     empty.className = 'grid-empty glass-card';
+
+    if (categoryHasNoWords()) {
+        const p = document.createElement('p');
+        p.textContent = 'Aún no hay palabras aquí.';
+        const small = document.createElement('small');
+        small.textContent = 'Pulsa «Agregar» para crear la primera.';
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn primary';
+        btn.appendChild(makeIcon('plus', 'btn-icon'));
+        btn.appendChild(document.createTextNode(' Agregar palabra'));
+        btn.addEventListener('click', () => {
+            if (state.settings.lockEdit) {
+                flashStatus("Edición bloqueada", "warning");
+                return;
+            }
+            startCreateWord();
+        });
+        empty.appendChild(p);
+        empty.appendChild(small);
+        empty.appendChild(btn);
+        return empty;
+    }
+
     const p = document.createElement('p');
     // textContent so a crafted search string can't inject markup (P0-10).
     p.textContent = `No encontramos resultados para "${state.searchQuery || state.currentCategory}".`;
@@ -2223,14 +2569,14 @@ function appendItemTile(item) {
 function renderGrid() {
     dom.grid.innerHTML = "";
     updateSearchClearButton();
-    document.body.classList.toggle('paged-mode', !!state.settings.pagedMode);
+    document.body.classList.toggle('paged-mode', isPagedModeActive());
     // Search results mix categories, so the per-tile category caption is worth
     // its clutter there; on a single-category board it is not (see .tile-cat).
     document.body.classList.toggle('is-searching', !!state.searchQuery);
 
     const items = getVisibleItems();
 
-    if (state.settings.pagedMode) {
+    if (isPagedModeActive()) {
         renderPagedGrid(items);
     } else {
         // Classic scrolling board.
@@ -2328,19 +2674,22 @@ function compareItems(a, b) {
 }
 
 function createTile(item, onClick, opts = {}) {
+    const isNav = item.id === "nav-anchor";
+
     const tile = document.createElement('button');
     tile.type = 'button';
-    tile.className = 'tile glass-card' + (opts.core ? ' tile-core' : '');
+    tile.className = 'tile glass-card' + (opts.core ? ' tile-core' : '') + (isNav ? ' tile-nav' : '');
     tile.setAttribute('data-id', item.id);
     tile.setAttribute('data-cat', item.category);
     tile.setAttribute('aria-label', `${item.text}. Categoría ${item.category}`);
 
-    if (item.color) {
+    // Es un control de interfaz (volver/inicio), no una palabra: sin el color
+    // de fondo de categoría se distingue de un PEC real en vez de sumarse a
+    // la fila de vocabulario como uno más.
+    if (item.color && !isNav) {
         tile.style.backgroundColor = item.color;
         applyReadableText(tile, item.color); // auto contrast (P1-18)
     }
-
-    const isNav = item.id === "nav-anchor";
 
     // Favorite star lives only in Tutor/edit mode now: it was a 32px accidental
     // touch target in the communication view and the referents reserve favoriting
@@ -2349,7 +2698,7 @@ function createTile(item, onClick, opts = {}) {
         const fav = document.createElement('button');
         fav.type = 'button';
         fav.className = `tile-fav ${item.isFavorite ? 'active' : 'inactive'}`;
-        fav.textContent = item.isFavorite ? '⭐' : '☆';
+        fav.appendChild(makeIcon('star', 'tile-fav-icon'));
         fav.setAttribute('aria-pressed', item.isFavorite ? 'true' : 'false');
         fav.setAttribute('aria-label', item.isFavorite ? `Quitar ${item.text} de favoritos` : `Añadir ${item.text} a favoritos`);
         fav.onclick = (e) => {
@@ -2366,7 +2715,7 @@ function createTile(item, onClick, opts = {}) {
         pin.type = 'button';
         const pinned = isCore(item.id);
         pin.className = `tile-core-pin ${pinned ? 'active' : ''}`;
-        pin.textContent = pinned ? '📌' : '📍';
+        pin.appendChild(makeIcon('pin', 'tile-core-pin-icon'));
         pin.setAttribute('aria-pressed', pinned ? 'true' : 'false');
         pin.setAttribute('aria-label', pinned ? `Quitar ${item.text} del núcleo` : `Fijar ${item.text} en el núcleo`);
         pin.onclick = (e) => {
@@ -2439,6 +2788,9 @@ dom.editModal.addEventListener('close', () => {
     dom.btnAddItem.removeAttribute('data-edit-id');
     dom.preview.textContent = "Esperando datos...";
     state.pendingImage = null;
+    if (dom.categorySuggestHint) dom.categorySuggestHint.classList.add('hidden');
+    showEditorView('entry');
+    showWizardStep(1, { focus: false });
 });
 
 function onTileClick(item) {
@@ -2494,6 +2846,17 @@ function addToRoutine(item) {
 function renderRoutine() {
     dom.routineItems.innerHTML = "";
     dom.routineBar.classList.toggle('hidden', !state.settings.showRoutine);
+
+    if (state.routine.length === 0) {
+        // Nothing in the bar told a caregiver what to do next — an empty grey
+        // strip with only a reset button. While este panel está activo, tocar
+        // una palabra del tablero la agrega aquí en vez de a la frase.
+        const hint = document.createElement('p');
+        hint.className = 'routine-hint';
+        hint.textContent = 'Toca palabras del tablero para agregarlas a la rutina.';
+        dom.routineItems.appendChild(hint);
+        return;
+    }
 
     state.routine.forEach(item => {
         const div = document.createElement('div');
@@ -2914,8 +3277,8 @@ function renderItemList() {
         const h4 = document.createElement('h4');
         h4.textContent = item.text;
         const favToggle = document.createElement('span');
-        favToggle.style.cssText = 'cursor:pointer; font-size:1.1rem';
-        favToggle.textContent = item.isFavorite ? '⭐' : '☆';
+        favToggle.className = `item-fav-toggle ${item.isFavorite ? 'active' : ''}`;
+        favToggle.appendChild(makeIcon('star', 'item-fav-icon'));
         favToggle.setAttribute('role', 'button');
         favToggle.setAttribute('aria-label', item.isFavorite ? `Quitar ${item.text} de favoritos` : `Añadir ${item.text} a favoritos`);
         favToggle.addEventListener('click', () => toggleFavorite(item.id));
@@ -2968,7 +3331,15 @@ window.toggleFavorite = async (id) => {
 };
 
 window.removeItem = async (id) => {
-    if (!confirm("¿Seguro que quieres eliminar este elemento?")) return;
+    const item = state.items.find(i => i.id === id);
+    const ok = await confirmDialog({
+        title: 'Eliminar palabra',
+        message: item ? `¿Eliminar «${item.text}» del tablero?` : '¿Eliminar este elemento del tablero?',
+        consequence: 'Esto la borra también de cualquier frase guardada. No se puede deshacer.',
+        confirmLabel: 'Eliminar',
+        danger: true,
+    });
+    if (!ok) return;
     state.items = state.items.filter(i => i.id !== id);
     state.phrase = state.phrase.filter(pid => pid !== id);
     await deleteItemDB(id); // Eliminar de IndexedDB
@@ -3152,7 +3523,7 @@ function startItemScanning() {
     const stepMs = scanStepMs();
     // Row-column only pays off on the paged board; the composer and the core
     // row are single rows where it would just add a pointless extra press.
-    const useRowColumn = group.id === 'grid' && state.settings.pagedMode;
+    const useRowColumn = group.id === 'grid' && isPagedModeActive();
 
     if (useRowColumn) {
         const cols = computeGridColumns();
@@ -3271,17 +3642,36 @@ function applySettings() {
     dom.darkMode.checked = state.settings.darkMode || false;
     if (dom.hapticFeedback) dom.hapticFeedback.checked = state.settings.hapticFeedback !== false;
     if (dom.calmMode) dom.calmMode.checked = state.settings.calmMode || false;
+    if (dom.simpleMode) dom.simpleMode.checked = state.settings.simpleMode || false;
     dom.headerSpeakToggle.checked = (state.settings.tapMode === 'speak');
     ensureActiveCategories();
     document.body.classList.toggle('show-grammar', state.settings.showGrammarTags);
     document.body.classList.toggle('dark-theme', state.settings.darkMode);
     document.body.classList.toggle('calm-mode', state.settings.calmMode);
+    applySimpleMode();
     updateThemeToggleIcon();
     updateThemeColorMeta();
 
     if (!localStorage.getItem(LS_KEYS.introSeen)) {
         dom.introModal.showModal();
     }
+}
+
+// Modo Simple (Fase 4, neuro-accesibilidad): oculta búsqueda, rutinas,
+// etiquetas gramaticales y paginación sin tocar esas preferencias guardadas
+// — solo las deshabilita mientras el interruptor está activo, para que
+// apagarlo devuelva a la familia exactamente lo que tenía configurado.
+// Sin PIN: pensado para que cualquier cuidador lo prenda y apague al vuelo.
+function isPagedModeActive() {
+    return !!state.settings.pagedMode && !state.settings.simpleMode;
+}
+
+function applySimpleMode() {
+    const on = !!state.settings.simpleMode;
+    document.body.classList.toggle('simple-mode', on);
+    [dom.pagedMode, dom.showGrammarTags, dom.showRoutine].forEach((el) => {
+        if (el) el.disabled = on;
+    });
 }
 
 // Last-ditch guard: if anything in init() throws before we render, surface a

@@ -150,6 +150,11 @@
             stroke-linecap="round" stroke-linejoin="round">
       <path d="M12 3.6l2.6 5.3 5.8.85-4.2 4.1 1 5.8-5.2-2.75L6.8 19.6l1-5.8-4.2-4.1 5.8-.85L12 3.6Z"/>
     </symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+            stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 21S5 14.5 5 9.5a7 7 0 0 1 14 0C19 14.5 12 21 12 21Z"/>
+      <circle cx="12" cy="9.5" r="2.4"/>
+    </symbol>
     <symbol id="i-speech" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
             stroke-linecap="round" stroke-linejoin="round">
       <path d="M20.5 12.2a7.7 7.7 0 0 1-8.3 7.7 8.6 8.6 0 0 1-2.6-.5L4 21l1.5-4.4a7.4 7.4 0 0 1-1-3.8 7.7 7.7 0 0 1 7.7-7.7h.5a7.7 7.7 0 0 1 7.8 7.1Z"/>
@@ -201,6 +206,16 @@
             stroke-linecap="round" stroke-linejoin="round">
       <circle cx="12" cy="12" r="8.6"/><path d="M12 7.6v5"/><path d="M12 16.1h.01"/>
     </symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+            stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="8.6"/><path d="M8.4 12.3l2.6 2.6 4.6-5.4"/>
+    </symbol>
+    <symbol id="i-help" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+            stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="8.6"/>
+      <path d="M9.6 9.4a2.4 2.4 0 1 1 3.4 2.2c-.9.5-1 .9-1 1.8"/>
+      <path d="M12 17h.01"/>
+    </symbol>
     <symbol id="i-health" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
             stroke-linecap="round" stroke-linejoin="round">
       <path d="M20.6 5.3a5.1 5.1 0 0 0-7.2 0L12 6.7l-1.4-1.4a5.1 5.1 0 1 0-7.2 7.2l8.6 8.6 8.6-8.6a5.1 5.1 0 0 0 0-7.2Z"/>
@@ -231,67 +246,89 @@
     <div class="brand">
       <img src="icons/icon-192.png" alt="HolAAC! - Comunicación Aumentativa" class="header-logo">
       <div class="subtitle" id="statusText" aria-live="polite" aria-atomic="true">Cargando...</div>
+      <!-- Persistente y silencioso mientras el Modo Tutor está activo (Fase 4):
+           el toast de activación se desvanece a los 3s, pero el cuidador
+           necesita recordar en todo momento que sigue en modo guía. Visible
+           solo vía CSS (body.tutor-active), sin JS que lo abra o cierre. -->
+      <span class="tutor-indicator" role="status">
+        <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-lock"/></svg>
+        Modo guía activo
+      </span>
     </div>
 
     <nav class="actions" role="toolbar" aria-label="Controles principales">
-      <button class="btn btn--labeled sos-btn" id="btnSOS" aria-label="Ir al tablero de emergencias (SOS)" title="Emergencias">
-        <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-sos"/></svg><span class="btn-label">SOS</span>
-      </button>
-      <label class="header-profile" title="Perfil de tablero">
-        <span class="sr-only">Perfil de tablero</span>
-        <select id="headerProfile" aria-label="Perfil de tablero">
-          <!-- No emoji: a native <select> renders its options with the OS
-               popup, where the glyphs came out at a different size and style
-               from every other icon in the header and could not be styled.
-               The same four profiles are also listed, without emoji, in
-               Ajustes. -->
-          <option value="default">General</option>
-          <option value="home">Casa</option>
-          <option value="school">Escuela</option>
-          <option value="sos">Emergencias</option>
-        </select>
-      </label>
-      <div class="header-toggle-group" role="group" aria-label="Modo de habla inmediata">
-        <!-- Real icon rather than the 🗣 emoji this control fell back to once
-             its label was hidden on a phone. -->
-        <svg class="btn-icon toggle-icon" aria-hidden="true" focusable="false"><use href="#i-speech"/></svg>
-        <span class="toggle-label">Hablar al tocar</span>
-        <label class="switch mini">
-          <input type="checkbox" id="headerSpeakToggle" aria-label="Activar habla inmediata: cada palabra suena al tocarla">
-          <span class="slider round" aria-hidden="true"></span>
+      <!-- Nivel usuario: lo que usa la persona comunicadora para hablar y
+           pedir ayuda. Nada aquí abre un menú ni requiere PIN. -->
+      <div class="header-group header-group--communicator">
+        <button class="btn btn--labeled sos-btn" id="btnSOS" aria-label="Ir al tablero de emergencias (SOS)" title="Emergencias">
+          <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-sos"/></svg><span class="btn-label">SOS</span>
+        </button>
+        <label class="header-profile" title="Lugar">
+          <span class="sr-only">Lugar</span>
+          <select id="headerProfile" aria-label="Lugar">
+            <!-- No emoji: a native <select> renders its options with the OS
+                 popup, where the glyphs came out at a different size and style
+                 from every other icon in the header and could not be styled.
+                 The same four profiles are also listed, without emoji, in
+                 Ajustes. -->
+            <option value="default">General</option>
+            <option value="home">Casa</option>
+            <option value="school">Escuela</option>
+            <option value="sos">Emergencias</option>
+          </select>
         </label>
+        <div class="header-toggle-group" role="group" aria-label="Modo de habla inmediata">
+          <!-- Real icon rather than the 🗣 emoji this control fell back to once
+               its label was hidden on a phone. -->
+          <svg class="btn-icon toggle-icon" aria-hidden="true" focusable="false"><use href="#i-speech"/></svg>
+          <span class="toggle-label">Hablar al tocar</span>
+          <label class="switch mini">
+            <input type="checkbox" id="headerSpeakToggle" aria-label="Activar habla inmediata: cada palabra suena al tocarla">
+            <span class="slider round" aria-hidden="true"></span>
+          </label>
+        </div>
+        <button class="btn btn--labeled" id="btnWriting" aria-label="Abrir teclado para escribir libremente" title="Escribir">
+          <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-keyboard"/></svg><span class="btn-label">Escribir</span>
+        </button>
       </div>
-      <button class="btn btn--labeled" id="btnWriting" aria-label="Abrir teclado para escribir libremente" title="Escribir">
-        <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-keyboard"/></svg><span class="btn-label">Escribir</span>
-      </button>
 
-      <!-- «Agregar» es la acción que más buscan familias y terapeutas (añadir
-           fotos y palabras propias, p. ej. objetos de la casa). Antes vivía
-           escondida en el menú «Más», así que nadie la encontraba: ahora es
-           una acción principal visible en la barra, en todos los tamaños. -->
-      <button class="btn btn--labeled btn-add" id="btnAdd" aria-label="Agregar una palabra o foto nueva al tablero" title="Agregar palabra o foto">
-        <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-plus"/></svg><span class="btn-label">Agregar</span>
-      </button>
+      <!-- Nivel cuidador: agregar contenido, ajustar y editar el tablero.
+           Un separador (borde) y un tono más discreto en Tema/Ajustes/Editar
+           marcan que son herramientas ocasionales, no de la conversación.
+           «Agregar» conserva su color propio porque sigue siendo la acción
+           que más buscan familias y terapeutas: antes vivía escondida en
+           «Más» y nadie la encontraba, así que aquí sigue siendo visible en
+           todos los tamaños, solo que agrupada con el resto de herramientas
+           de cuidador. -->
+      <div class="header-group header-group--caregiver">
+        <button class="btn btn--labeled btn-add" id="btnAdd" aria-label="Agregar una palabra o foto nueva al tablero" title="Agregar palabra o foto">
+          <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-plus"/></svg><span class="btn-label">Agregar</span>
+        </button>
 
-      <!-- Caregiver tools. On a phone these collapse behind «Más» so the header
-           stays one row: the communicator needs SOS, the profile, «Hablar al
-           tocar» and «Escribir» at hand; theme, settings and board editing are
-           occasional. On wider screens `display: contents` lays them out inline
-           exactly as before and the toggle button is hidden. -->
-      <button class="btn btn--labeled header-more-btn" id="btnMore" aria-label="Más herramientas"
-        aria-expanded="false" aria-controls="headerOverflow" title="Más">
-        <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-more"/></svg><span class="btn-label">Más</span>
-      </button>
-      <div class="header-overflow" id="headerOverflow">
-        <button class="btn btn--labeled" id="btnThemeToggle" aria-label="Cambiar entre tema claro y oscuro" title="Cambiar tema">
-          <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-moon"/></svg><span class="btn-label">Tema</span>
+        <!-- On a phone, Tema/Ajustes/Editar collapse behind «Más» so the header
+             stays one row. On wider screens `display: contents` lays them out
+             inline exactly as before and the toggle button is hidden. -->
+        <button class="btn btn--labeled header-more-btn" id="btnMore" aria-label="Más herramientas"
+          aria-expanded="false" aria-controls="headerOverflow" title="Más">
+          <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-more"/></svg><span class="btn-label">Más</span>
         </button>
-        <button class="btn btn--labeled" id="btnSettings" aria-label="Abrir ajustes y configuración" title="Ajustes">
-          <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-settings"/></svg><span class="btn-label">Ajustes</span>
-        </button>
-        <button class="btn btn--labeled" id="btnEdit" aria-label="Editar el tablero de comunicación" title="Editar">
-          <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-pencil"/></svg><span class="btn-label">Editar</span>
-        </button>
+        <div class="header-overflow" id="headerOverflow">
+          <button class="btn btn--labeled" id="btnThemeToggle" aria-label="Cambiar entre tema claro y oscuro" title="Cambiar tema">
+            <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-moon"/></svg><span class="btn-label">Tema</span>
+          </button>
+          <button class="btn btn--labeled" id="btnSettings" aria-label="Abrir ajustes y configuración" title="Ajustes">
+            <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-settings"/></svg><span class="btn-label">Ajustes</span>
+          </button>
+          <button class="btn btn--labeled" id="btnEdit" aria-label="Editar el tablero de comunicación" title="Editar">
+            <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-pencil"/></svg><span class="btn-label">Editar</span>
+          </button>
+          <!-- Reabre la guía de 3 pasos (Fase 5, "ayuda siempre disponible"):
+               antes de esto el onboarding solo se veía una vez y no había
+               forma de volver a consultarlo. -->
+          <button class="btn btn--labeled" id="btnHelp" aria-label="Ver la guía de uso" title="Ayuda">
+            <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-help"/></svg><span class="btn-label">Ayuda</span>
+          </button>
+        </div>
       </div>
     </nav>
   </header>
@@ -457,92 +494,138 @@
   </dialog>
 
   <!-- MODAL: Editor -->
-  <dialog class="modal" id="editModal">
+  <dialog class="modal editor-modal" id="editModal">
     <form method="dialog" class="modal-card">
       <div class="modal-head">
         <div>
-          <h1 class="modal-title">Agregar palabras y fotos</h1>
-          <p class="modal-sub">Escribe la palabra, elige o sube su foto y pulsa «Añadir al tablero». También puedes editar o borrar los elementos existentes.</p>
+          <h1 class="modal-title" id="editorTitle">Agregar palabras y fotos</h1>
+          <p class="modal-sub" id="editorSubtitle">¿Qué quieres hacer?</p>
         </div>
         <button type="button" class="btn-close" data-close-dialog="editModal" aria-label="Cerrar editor de tablero"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-close"/></svg></button>
       </div>
 
       <div class="modal-body">
-        <div class="editor-grid">
-          <div class="editor-form">
-            <div class="row">
-              <label class="field">
-                <span>Palabra / Frase</span>
-                <input id="itemText" maxlength="40" placeholder="Ej. Silla, Taza, Control…" required />
-              </label>
 
-              <label class="field">
-                <span>Categoría</span>
-                <input id="itemCategory" maxlength="24" placeholder="Ej. Casa, Cocina, Juguetes…" />
-              </label>
+        <!-- Pantalla de entrada: elegir qué hacer, en vez de un formulario
+             técnico único que mezclaba crear, editar, importar y exportar. -->
+        <div class="editor-view" id="editorViewEntry">
+          <div class="editor-entry-cards">
+            <button type="button" class="editor-entry-card" id="cardCreateWord">
+              <svg class="editor-entry-icon" aria-hidden="true" focusable="false"><use href="#i-plus"/></svg>
+              <span class="editor-entry-title">Crear palabra nueva</span>
+              <span class="editor-entry-desc">Escribe una palabra, ponle una foto y añádela al tablero.</span>
+            </button>
+            <button type="button" class="editor-entry-card" id="cardManageWords">
+              <svg class="editor-entry-icon" aria-hidden="true" focusable="false"><use href="#i-grid"/></svg>
+              <span class="editor-entry-title">Gestionar mis palabras</span>
+              <span class="editor-entry-desc">Edita, cambia la categoría o borra lo que ya agregaste.</span>
+            </button>
+          </div>
+
+          <details class="editor-entry-more" id="editorLibraryDetails">
+            <summary>Biblioteca y respaldo</summary>
+            <div class="data-mgmt">
+              <div class="row compact">
+                <button class="btn secondary flex-grow" id="btnLoadLibrary"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-book"/></svg> Cargar biblioteca ilustrada</button>
+              </div>
+              <div class="row compact" style="margin-top: 10px;">
+                <button class="btn glass secondary flex-grow" id="btnExport"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-download"/></svg> Guardar copia de respaldo</button>
+                <button class="btn glass secondary flex-grow" id="btnImport"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-upload"/></svg> Cargar copia de respaldo</button>
+                <input id="importFile" type="file" accept="application/json" hidden />
+              </div>
             </div>
+          </details>
+        </div>
 
-            <div class="row">
-              <div class="field">
-                <span>Imagen (Local o ARASAAC)</span>
-                <div class="image-options">
-                  <div class="file-input-wrapper">
-                    <input id="itemImage" type="file" accept="image/*" />
-                    <label for="itemImage" class="btn glass">Subir foto desde este dispositivo</label>
-                  </div>
-                  <div class="arasaac-search-trigger">
-                    <input id="arasaacQuery" class="glass-input" placeholder="Buscar en ARASAAC..." />
-                    <button type="button" class="btn glass" id="btnSearchArasaac"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-search"/></svg></button>
-                  </div>
+        <!-- Crear/editar una palabra en 3 pasos, con barra de progreso, en vez
+             de un formulario técnico completo de una sola vez. -->
+        <div class="editor-view hidden" id="editorViewWizard">
+          <button type="button" class="editor-back-link" id="btnWizardToEntry">
+            <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-chevron-left"/></svg> Volver
+          </button>
+
+          <div class="wizard-progress" role="group" aria-label="Progreso">
+            <div class="wizard-progress-track"><div class="wizard-progress-fill" id="wizardProgressFill"></div></div>
+            <span class="wizard-progress-label" id="wizardProgressLabel">Paso 1 de 3 · Escribe la palabra</span>
+          </div>
+
+          <div class="wizard-step" id="wizardStep1" data-step="1">
+            <label class="field">
+              <span>Palabra / Frase</span>
+              <input id="itemText" maxlength="40" placeholder="Ej. Silla, Taza, Control…" required />
+            </label>
+            <label class="field">
+              <span>Categoría</span>
+              <input id="itemCategory" maxlength="24" placeholder="Ej. Casa, Cocina, Juguetes…" />
+              <small class="field-hint hidden" id="categorySuggestHint"></small>
+            </label>
+            <div class="wizard-actions">
+              <button type="button" class="btn primary full-width" id="btnWizardNext1">Siguiente</button>
+            </div>
+          </div>
+
+          <div class="wizard-step hidden" id="wizardStep2" data-step="2">
+            <div class="field">
+              <span>Imagen (Local o ARASAAC)</span>
+              <div class="image-options">
+                <div class="file-input-wrapper">
+                  <input id="itemImage" type="file" accept="image/*" />
+                  <label for="itemImage" class="btn glass">Tomar o subir foto</label>
+                </div>
+                <div class="arasaac-search-trigger">
+                  <input id="arasaacQuery" class="glass-input" placeholder="Buscar pictograma..." />
+                  <button type="button" class="btn glass" id="btnSearchArasaac"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-search"/></svg></button>
                 </div>
               </div>
-
-              <label class="field">
-                <span>Color de Borde</span>
-                <input id="itemColor" type="color" value="#c6e6c8" />
-              </label>
             </div>
 
             <div id="arasaacResults" class="arasaac-results glass-card hidden">
               <!-- Results will be injected here -->
             </div>
 
+            <label class="field">
+              <span>Color de borde</span>
+              <input id="itemColor" type="color" value="#c6e6c8" />
+            </label>
+
+            <div class="wizard-actions">
+              <button type="button" class="btn" id="btnWizardBack2">Atrás</button>
+              <button type="button" class="btn primary full-width" id="btnWizardNext2">Siguiente</button>
+            </div>
+          </div>
+
+          <div class="wizard-step hidden" id="wizardStep3" data-step="3">
             <div class="preview-container">
               <span>Vista previa</span>
               <div class="preview glass-card" id="preview">Esperando datos...</div>
             </div>
 
-            <!-- Icon and wording both swap between «add» and «save» modes, so
-                 the label needs its own element for setAddItemMode to write to
-                 without clobbering the <svg>. -->
-            <button class="btn primary full-width" id="btnAddItem"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-plus"/></svg><span class="btn-label">Añadir al tablero</span></button>
-          </div>
-
-          <div class="data-mgmt">
-            <div class="divider text">Respaldo y Datos</div>
-            <div class="row compact">
-              <button class="btn secondary flex-grow" id="btnLoadLibrary"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-book"/></svg> Cargar Biblioteca Ilustrada</button>
-            </div>
-            <div class="row compact" style="margin-top: 10px;">
-              <button class="btn glass secondary flex-grow" id="btnExport"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-download"/></svg> Exportar JSON</button>
-              <button class="btn glass secondary flex-grow" id="btnImport"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-upload"/></svg> Importar JSON</button>
-              <input id="importFile" type="file" accept="application/json" hidden />
+            <div class="wizard-actions">
+              <button type="button" class="btn" id="btnWizardBack3">Atrás</button>
+              <!-- Icon and wording both swap between «add» and «save» modes, so
+                   the label needs its own element for setAddItemMode to write to
+                   without clobbering the <svg>. -->
+              <button class="btn primary full-width" id="btnAddItem"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-plus"/></svg><span class="btn-label">Añadir al tablero</span></button>
             </div>
           </div>
         </div>
 
-        <div class="divider text">Tus Elementos</div>
-        <div class="row">
+        <!-- Lista de elementos propios: editar, borrar, marcar favorito. -->
+        <div class="editor-view hidden" id="editorViewManage">
+          <button type="button" class="editor-back-link" id="btnManageToEntry">
+            <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-chevron-left"/></svg> Volver
+          </button>
+
           <div class="search-wrapper full-width" style="margin-bottom: 10px;">
             <svg class="search-icon" aria-hidden="true" focusable="false"><use href="#i-search"/></svg>
             <input class="search-input glass" id="editorSearchBox" placeholder="Filtrar tus elementos..." />
           </div>
+          <div class="list" id="itemList"></div>
         </div>
-        <div class="list" id="itemList"></div>
       </div>
 
       <div class="modal-foot">
-        <button class="btn glass" value="cancel">Cerrar</button>
+        <button type="button" class="btn glass" data-close-dialog="editModal">Cerrar</button>
       </div>
     </form>
   </dialog>
@@ -599,7 +682,7 @@
             </label>
 
             <label class="field">
-              <span>Perfil de Tablero</span>
+              <span>Lugar</span>
               <select id="boardProfile" class="glass-input">
                 <option value="default">General</option>
                 <option value="home">Casa</option>
@@ -628,6 +711,17 @@
 
         <div class="settings-section">
           <h3>Accesibilidad</h3>
+          <label class="field-row">
+            <div class="toggle-wrapper">
+              <input id="simpleMode" type="checkbox" />
+              <span class="toggle-slider"></span>
+            </div>
+            <div class="text-content">
+              <span class="main">Modo Simple</span>
+              <span class="sub">Oculta la búsqueda, las rutinas, las etiquetas gramaticales y la paginación. Deja solo el tablero, la frase y «Agregar» — para familias a las que les abruman las opciones. Sin PIN.</span>
+            </div>
+          </label>
+
           <label class="field-row">
             <div class="toggle-wrapper">
               <input id="calmMode" type="checkbox" />
@@ -741,7 +835,7 @@
               <input id="newPin" type="password" inputmode="numeric" maxlength="4" placeholder="Nuevo PIN (4 dígitos)" aria-label="Nuevo PIN de 4 dígitos" />
               <button type="button" class="btn glass" id="btnChangePin">Cambiar</button>
             </div>
-            <small class="settings-hint">Protege el Modo Tutor, el desbloqueo de edición y el borrado de la bitácora. Se pedirá el PIN actual para confirmar. PIN por defecto: <strong>0000</strong>.</small>
+            <small class="settings-hint">Protege el Modo Tutor, el desbloqueo de edición y el borrado del historial. Se pedirá el PIN actual para confirmar. PIN por defecto: <strong>0000</strong>.</small>
           </div>
         </div>
 
@@ -805,7 +899,45 @@
 
         <div class="settings-section">
           <h3>Clínico</h3>
-          <button type="button" class="btn glass warning full-width" id="btnOpenHistory"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-chart"/></svg> Ver Bitácora de Uso</button>
+          <button type="button" class="btn glass warning full-width" id="btnOpenHistory"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-chart"/></svg> Ver historial de uso</button>
+        </div>
+
+        <!-- Página de ayuda (Fase 5): los 5 flujos principales en lenguaje
+             llano, cada uno con una captura real de la app, siempre a mano
+             dentro de Ajustes en vez de solo en el onboarding inicial. -->
+        <div class="settings-section">
+          <h3>Guía rápida</h3>
+          <p class="settings-hint">Los 5 pasos más buscados, explicados con una imagen de la app.</p>
+
+          <details class="help-flow">
+            <summary>Decir una frase</summary>
+            <p>Toca las palabras en el orden que quieras decirlas. Se van juntando arriba. Cuando termines, pulsa «Hablar Frase» para escucharlas todas seguidas.</p>
+            <img src="assets/help/frase.png" alt="Frase con «Hola» y «Por favor» junto al botón Hablar Frase" loading="lazy">
+          </details>
+
+          <details class="help-flow">
+            <summary>Agregar una palabra o foto nueva</summary>
+            <p>Pulsa «Agregar» en la barra de arriba. Elige «Crear palabra nueva» y sigue los 3 pasos: escribe la palabra, pon una foto y guarda.</p>
+            <img src="assets/help/agregar.png" alt="Pantalla de entrada del editor con las tarjetas Crear palabra nueva y Gestionar mis palabras" loading="lazy">
+          </details>
+
+          <details class="help-flow">
+            <summary>Buscar una palabra</summary>
+            <p>Escribe en el buscador de la barra de categorías. El tablero se filtra al instante mientras escribes.</p>
+            <img src="assets/help/buscar.png" alt="Buscador con la palabra «agua» escrita" loading="lazy">
+          </details>
+
+          <details class="help-flow">
+            <summary>Usar el botón SOS</summary>
+            <p>El botón rojo «SOS», siempre visible arriba, lleva directo al tablero de emergencias — útil en cualquier momento, sin buscar nada.</p>
+            <img src="assets/help/sos.png" alt="Botón rojo SOS en la barra superior" loading="lazy">
+          </details>
+
+          <details class="help-flow">
+            <summary>Cambiar de Lugar (Casa, Escuela, Emergencias…)</summary>
+            <p>El selector «Lugar» en la barra superior cambia todo el tablero al contexto elegido, sin entrar a Ajustes.</p>
+            <img src="assets/help/lugar.png" alt="Selector de Lugar mostrando la opción General" loading="lazy">
+          </details>
         </div>
       </div>
 
@@ -820,10 +952,10 @@
     <form method="dialog" class="modal-card">
       <div class="modal-head">
         <div>
-          <h1 class="modal-title">Bitácora Clínica</h1>
+          <h1 class="modal-title">Historial de uso</h1>
           <p class="modal-sub">Registro local y privado de actividad</p>
         </div>
-        <button type="button" class="btn-close" data-close-dialog="historyModal" aria-label="Cerrar bitácora"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-close"/></svg></button>
+        <button type="button" class="btn-close" data-close-dialog="historyModal" aria-label="Cerrar historial"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-close"/></svg></button>
       </div>
       <div class="modal-body">
         <div id="historyList" class="history-list">
@@ -856,6 +988,25 @@
     </form>
   </dialog>
 
+  <!-- MODAL: Confirmación (Fase 4, "confirmaciones sin sobresalto") — sustituye
+       confirm() nativo por un diálogo MD3 con texto de consecuencia claro
+       antes de cualquier acción que borre o reemplace datos. -->
+  <dialog class="modal" id="confirmModal">
+    <form method="dialog" class="modal-card mini">
+      <div class="modal-head">
+        <h2 class="modal-title" id="confirmTitle">¿Confirmar?</h2>
+      </div>
+      <div class="modal-body">
+        <p id="confirmMessage"></p>
+        <p class="confirm-consequence hidden" id="confirmConsequence"></p>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn glass" id="btnConfirmCancel">Cancelar</button>
+        <button type="button" class="btn primary" id="btnConfirmOk">Confirmar</button>
+      </div>
+    </form>
+  </dialog>
+
   <!-- Toast: nueva versión de la app lista, espera confirmación para recargar -->
   <div class="update-toast hidden" id="updateToast" role="status" aria-live="polite">
     <span class="update-toast-text">Hay una nueva versión disponible</span>
@@ -863,6 +1014,13 @@
       <button type="button" class="btn primary" id="btnUpdateNow">Actualizar</button>
       <button type="button" class="btn-close" id="btnDismissUpdate" aria-label="Ahora no"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-close"/></svg></button>
     </div>
+  </div>
+
+  <!-- Toast de estado: mensajes breves (flashStatus), abajo-centro, en vez del
+       texto pequeño en el header que nadie veía. -->
+  <div class="status-toast hidden" id="statusToast" role="status" aria-live="polite">
+    <svg class="status-toast-icon" id="statusToastIcon" aria-hidden="true" focusable="false"><use href="#i-check"/></svg>
+    <span class="status-toast-text" id="statusToastText"></span>
   </div>
 
   <script type="module" src="app.js"></script>
