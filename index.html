@@ -244,9 +244,9 @@
         <button class="btn btn--labeled sos-btn" id="btnSOS" aria-label="Ir al tablero de emergencias (SOS)" title="Emergencias">
           <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-sos"/></svg><span class="btn-label">SOS</span>
         </button>
-        <label class="header-profile" title="Perfil de tablero">
-          <span class="sr-only">Perfil de tablero</span>
-          <select id="headerProfile" aria-label="Perfil de tablero">
+        <label class="header-profile" title="Lugar">
+          <span class="sr-only">Lugar</span>
+          <select id="headerProfile" aria-label="Lugar">
             <!-- No emoji: a native <select> renders its options with the OS
                  popup, where the glyphs came out at a different size and style
                  from every other icon in the header and could not be styled.
@@ -469,88 +469,134 @@
   </dialog>
 
   <!-- MODAL: Editor -->
-  <dialog class="modal" id="editModal">
+  <dialog class="modal editor-modal" id="editModal">
     <form method="dialog" class="modal-card">
       <div class="modal-head">
         <div>
-          <h1 class="modal-title">Agregar palabras y fotos</h1>
-          <p class="modal-sub">Escribe la palabra, elige o sube su foto y pulsa «Añadir al tablero». También puedes editar o borrar los elementos existentes.</p>
+          <h1 class="modal-title" id="editorTitle">Agregar palabras y fotos</h1>
+          <p class="modal-sub" id="editorSubtitle">¿Qué quieres hacer?</p>
         </div>
         <button type="button" class="btn-close" data-close-dialog="editModal" aria-label="Cerrar editor de tablero"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-close"/></svg></button>
       </div>
 
       <div class="modal-body">
-        <div class="editor-grid">
-          <div class="editor-form">
-            <div class="row">
-              <label class="field">
-                <span>Palabra / Frase</span>
-                <input id="itemText" maxlength="40" placeholder="Ej. Silla, Taza, Control…" required />
-              </label>
 
-              <label class="field">
-                <span>Categoría</span>
-                <input id="itemCategory" maxlength="24" placeholder="Ej. Casa, Cocina, Juguetes…" />
-              </label>
+        <!-- Pantalla de entrada: elegir qué hacer, en vez de un formulario
+             técnico único que mezclaba crear, editar, importar y exportar. -->
+        <div class="editor-view" id="editorViewEntry">
+          <div class="editor-entry-cards">
+            <button type="button" class="editor-entry-card" id="cardCreateWord">
+              <svg class="editor-entry-icon" aria-hidden="true" focusable="false"><use href="#i-plus"/></svg>
+              <span class="editor-entry-title">Crear palabra nueva</span>
+              <span class="editor-entry-desc">Escribe una palabra, ponle una foto y añádela al tablero.</span>
+            </button>
+            <button type="button" class="editor-entry-card" id="cardManageWords">
+              <svg class="editor-entry-icon" aria-hidden="true" focusable="false"><use href="#i-grid"/></svg>
+              <span class="editor-entry-title">Gestionar mis palabras</span>
+              <span class="editor-entry-desc">Edita, cambia la categoría o borra lo que ya agregaste.</span>
+            </button>
+          </div>
+
+          <details class="editor-entry-more" id="editorLibraryDetails">
+            <summary>Biblioteca y respaldo</summary>
+            <div class="data-mgmt">
+              <div class="row compact">
+                <button class="btn secondary flex-grow" id="btnLoadLibrary"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-book"/></svg> Cargar biblioteca ilustrada</button>
+              </div>
+              <div class="row compact" style="margin-top: 10px;">
+                <button class="btn glass secondary flex-grow" id="btnExport"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-download"/></svg> Guardar copia de respaldo</button>
+                <button class="btn glass secondary flex-grow" id="btnImport"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-upload"/></svg> Cargar copia de respaldo</button>
+                <input id="importFile" type="file" accept="application/json" hidden />
+              </div>
             </div>
+          </details>
+        </div>
 
-            <div class="row">
-              <div class="field">
-                <span>Imagen (Local o ARASAAC)</span>
-                <div class="image-options">
-                  <div class="file-input-wrapper">
-                    <input id="itemImage" type="file" accept="image/*" />
-                    <label for="itemImage" class="btn glass">Subir foto desde este dispositivo</label>
-                  </div>
-                  <div class="arasaac-search-trigger">
-                    <input id="arasaacQuery" class="glass-input" placeholder="Buscar en ARASAAC..." />
-                    <button type="button" class="btn glass" id="btnSearchArasaac"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-search"/></svg></button>
-                  </div>
+        <!-- Crear/editar una palabra en 3 pasos, con barra de progreso, en vez
+             de un formulario técnico completo de una sola vez. -->
+        <div class="editor-view hidden" id="editorViewWizard">
+          <button type="button" class="editor-back-link" id="btnWizardToEntry">
+            <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-chevron-left"/></svg> Volver
+          </button>
+
+          <div class="wizard-progress" role="group" aria-label="Progreso">
+            <div class="wizard-progress-track"><div class="wizard-progress-fill" id="wizardProgressFill"></div></div>
+            <span class="wizard-progress-label" id="wizardProgressLabel">Paso 1 de 3 · Escribe la palabra</span>
+          </div>
+
+          <div class="wizard-step" id="wizardStep1" data-step="1">
+            <label class="field">
+              <span>Palabra / Frase</span>
+              <input id="itemText" maxlength="40" placeholder="Ej. Silla, Taza, Control…" required />
+            </label>
+            <label class="field">
+              <span>Categoría</span>
+              <input id="itemCategory" maxlength="24" placeholder="Ej. Casa, Cocina, Juguetes…" />
+              <small class="field-hint hidden" id="categorySuggestHint"></small>
+            </label>
+            <div class="wizard-actions">
+              <button type="button" class="btn primary full-width" id="btnWizardNext1">Siguiente</button>
+            </div>
+          </div>
+
+          <div class="wizard-step hidden" id="wizardStep2" data-step="2">
+            <div class="field">
+              <span>Imagen (Local o ARASAAC)</span>
+              <div class="image-options">
+                <div class="file-input-wrapper">
+                  <input id="itemImage" type="file" accept="image/*" />
+                  <label for="itemImage" class="btn glass">Tomar o subir foto</label>
+                </div>
+                <div class="arasaac-search-trigger">
+                  <input id="arasaacQuery" class="glass-input" placeholder="Buscar pictograma..." />
+                  <button type="button" class="btn glass" id="btnSearchArasaac"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-search"/></svg></button>
                 </div>
               </div>
-
-              <label class="field">
-                <span>Color de Borde</span>
-                <input id="itemColor" type="color" value="#c6e6c8" />
-              </label>
             </div>
 
             <div id="arasaacResults" class="arasaac-results glass-card hidden">
               <!-- Results will be injected here -->
             </div>
 
+            <label class="field">
+              <span>Color de borde</span>
+              <input id="itemColor" type="color" value="#c6e6c8" />
+            </label>
+
+            <div class="wizard-actions">
+              <button type="button" class="btn" id="btnWizardBack2">Atrás</button>
+              <button type="button" class="btn primary full-width" id="btnWizardNext2">Siguiente</button>
+            </div>
+          </div>
+
+          <div class="wizard-step hidden" id="wizardStep3" data-step="3">
             <div class="preview-container">
               <span>Vista previa</span>
               <div class="preview glass-card" id="preview">Esperando datos...</div>
             </div>
 
-            <!-- Icon and wording both swap between «add» and «save» modes, so
-                 the label needs its own element for setAddItemMode to write to
-                 without clobbering the <svg>. -->
-            <button class="btn primary full-width" id="btnAddItem"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-plus"/></svg><span class="btn-label">Añadir al tablero</span></button>
-          </div>
-
-          <div class="data-mgmt">
-            <div class="divider text">Respaldo y Datos</div>
-            <div class="row compact">
-              <button class="btn secondary flex-grow" id="btnLoadLibrary"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-book"/></svg> Cargar Biblioteca Ilustrada</button>
-            </div>
-            <div class="row compact" style="margin-top: 10px;">
-              <button class="btn glass secondary flex-grow" id="btnExport"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-download"/></svg> Exportar JSON</button>
-              <button class="btn glass secondary flex-grow" id="btnImport"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-upload"/></svg> Importar JSON</button>
-              <input id="importFile" type="file" accept="application/json" hidden />
+            <div class="wizard-actions">
+              <button type="button" class="btn" id="btnWizardBack3">Atrás</button>
+              <!-- Icon and wording both swap between «add» and «save» modes, so
+                   the label needs its own element for setAddItemMode to write to
+                   without clobbering the <svg>. -->
+              <button class="btn primary full-width" id="btnAddItem"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-plus"/></svg><span class="btn-label">Añadir al tablero</span></button>
             </div>
           </div>
         </div>
 
-        <div class="divider text">Tus Elementos</div>
-        <div class="row">
+        <!-- Lista de elementos propios: editar, borrar, marcar favorito. -->
+        <div class="editor-view hidden" id="editorViewManage">
+          <button type="button" class="editor-back-link" id="btnManageToEntry">
+            <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-chevron-left"/></svg> Volver
+          </button>
+
           <div class="search-wrapper full-width" style="margin-bottom: 10px;">
             <svg class="search-icon" aria-hidden="true" focusable="false"><use href="#i-search"/></svg>
             <input class="search-input glass" id="editorSearchBox" placeholder="Filtrar tus elementos..." />
           </div>
+          <div class="list" id="itemList"></div>
         </div>
-        <div class="list" id="itemList"></div>
       </div>
 
       <div class="modal-foot">
@@ -611,7 +657,7 @@
             </label>
 
             <label class="field">
-              <span>Perfil de Tablero</span>
+              <span>Lugar</span>
               <select id="boardProfile" class="glass-input">
                 <option value="default">General</option>
                 <option value="home">Casa</option>
@@ -753,7 +799,7 @@
               <input id="newPin" type="password" inputmode="numeric" maxlength="4" placeholder="Nuevo PIN (4 dígitos)" aria-label="Nuevo PIN de 4 dígitos" />
               <button type="button" class="btn glass" id="btnChangePin">Cambiar</button>
             </div>
-            <small class="settings-hint">Protege el Modo Tutor, el desbloqueo de edición y el borrado de la bitácora. Se pedirá el PIN actual para confirmar. PIN por defecto: <strong>0000</strong>.</small>
+            <small class="settings-hint">Protege el Modo Tutor, el desbloqueo de edición y el borrado del historial. Se pedirá el PIN actual para confirmar. PIN por defecto: <strong>0000</strong>.</small>
           </div>
         </div>
 
@@ -817,7 +863,7 @@
 
         <div class="settings-section">
           <h3>Clínico</h3>
-          <button type="button" class="btn glass warning full-width" id="btnOpenHistory"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-chart"/></svg> Ver Bitácora de Uso</button>
+          <button type="button" class="btn glass warning full-width" id="btnOpenHistory"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-chart"/></svg> Ver historial de uso</button>
         </div>
       </div>
 
@@ -832,10 +878,10 @@
     <form method="dialog" class="modal-card">
       <div class="modal-head">
         <div>
-          <h1 class="modal-title">Bitácora Clínica</h1>
+          <h1 class="modal-title">Historial de uso</h1>
           <p class="modal-sub">Registro local y privado de actividad</p>
         </div>
-        <button type="button" class="btn-close" data-close-dialog="historyModal" aria-label="Cerrar bitácora"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-close"/></svg></button>
+        <button type="button" class="btn-close" data-close-dialog="historyModal" aria-label="Cerrar historial"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-close"/></svg></button>
       </div>
       <div class="modal-body">
         <div id="historyList" class="history-list">

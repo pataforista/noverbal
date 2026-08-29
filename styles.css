@@ -1883,6 +1883,159 @@ select:focus {
   background: var(--md-surface-container-highest);
 }
 
+/* ── Editor reimaginado (Fase 2 de plan-ux-intuitiva): pantalla de entrada,
+   asistente de 3 pasos y gestión de elementos, en vez de un único formulario
+   técnico que mezclaba crear, editar, importar y exportar. ── */
+
+.editor-view.hidden { display: none; }
+
+.editor-entry-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--md-spacing-lg);
+  margin-bottom: var(--md-spacing-lg);
+}
+
+.editor-entry-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 22px;
+  text-align: left;
+  background: var(--md-surface-container);
+  border: 1px solid var(--md-outline-variant);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: background 0.15s var(--md-easing-standard), border-color 0.15s var(--md-easing-standard), transform 0.15s var(--md-easing-standard);
+}
+
+.editor-entry-card:hover,
+.editor-entry-card:focus-visible {
+  background: var(--md-surface-container-high);
+  border-color: var(--md-primary);
+  transform: translateY(-1px);
+}
+
+.editor-entry-icon {
+  width: 32px;
+  height: 32px;
+  color: var(--accent);
+}
+
+.editor-entry-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--md-on-surface);
+}
+
+.editor-entry-desc {
+  font-size: 0.88rem;
+  color: var(--md-on-surface-variant);
+  line-height: 1.4;
+}
+
+.editor-entry-more {
+  border: 1px solid var(--md-outline-variant);
+  border-radius: var(--radius-lg);
+  padding: 4px var(--md-spacing-lg);
+  background: var(--md-surface-container-low);
+}
+
+.editor-entry-more summary {
+  cursor: pointer;
+  padding: 12px 0;
+  font-weight: 600;
+  color: var(--md-on-surface-variant);
+  list-style: none;
+}
+
+.editor-entry-more summary::-webkit-details-marker { display: none; }
+
+.editor-entry-more summary::before {
+  content: '▸';
+  display: inline-block;
+  margin-right: 8px;
+  transition: transform 0.15s var(--md-easing-standard);
+}
+
+.editor-entry-more[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.editor-entry-more .data-mgmt {
+  padding-bottom: var(--md-spacing-lg);
+}
+
+.editor-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  padding: 8px 4px;
+  margin-bottom: 8px;
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--md-on-surface-variant);
+  cursor: pointer;
+}
+
+.editor-back-link:hover { color: var(--md-on-surface); }
+.editor-back-link .ui-icon { width: 18px; height: 18px; }
+
+.wizard-progress {
+  margin-bottom: var(--md-spacing-lg);
+}
+
+.wizard-progress-track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--md-surface-container-high);
+  overflow: hidden;
+}
+
+.wizard-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  transition: width 0.2s var(--md-easing-standard);
+}
+
+.wizard-progress-label {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--md-on-surface-variant);
+}
+
+.wizard-step.hidden { display: none; }
+
+.wizard-step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--md-spacing-lg);
+}
+
+.wizard-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.wizard-actions .btn.full-width {
+  flex: 1;
+}
+
+.field-hint {
+  font-size: 0.82rem;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.field-hint.hidden { display: none; }
+
 .arasaac-thumb {
   aspect-ratio: 1;
   border: 2px solid transparent;

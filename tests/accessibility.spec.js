@@ -287,6 +287,9 @@ test.describe('editor', () => {
   test('el input de archivo nativo no se muestra junto al botón', async ({ page }) => {
     await boot(page);
     await page.locator('#btnEdit').click();
+    await page.locator('#cardCreateWord').click();
+    await page.locator('#itemText').fill('Prueba');
+    await page.locator('#btnWizardNext1').click();
     await expect(page.locator('.file-input-wrapper label')).toBeVisible();
     const native = await page.locator('#itemImage').evaluate((e) => {
       const b = e.getBoundingClientRect();

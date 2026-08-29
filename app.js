@@ -483,6 +483,26 @@ const dom = {
     btnAddItem: document.getElementById('btnAddItem'),
     itemList: document.getElementById('itemList'),
     editorSearchBox: document.getElementById('editorSearchBox'),
+    categorySuggestHint: document.getElementById('categorySuggestHint'),
+    // Editor: pantalla de entrada / asistente de 3 pasos / gestión (Fase 2)
+    editorTitle: document.getElementById('editorTitle'),
+    editorSubtitle: document.getElementById('editorSubtitle'),
+    editorViewEntry: document.getElementById('editorViewEntry'),
+    editorViewWizard: document.getElementById('editorViewWizard'),
+    editorViewManage: document.getElementById('editorViewManage'),
+    cardCreateWord: document.getElementById('cardCreateWord'),
+    cardManageWords: document.getElementById('cardManageWords'),
+    btnWizardToEntry: document.getElementById('btnWizardToEntry'),
+    btnManageToEntry: document.getElementById('btnManageToEntry'),
+    wizardProgressFill: document.getElementById('wizardProgressFill'),
+    wizardProgressLabel: document.getElementById('wizardProgressLabel'),
+    wizardStep1: document.getElementById('wizardStep1'),
+    wizardStep2: document.getElementById('wizardStep2'),
+    wizardStep3: document.getElementById('wizardStep3'),
+    btnWizardNext1: document.getElementById('btnWizardNext1'),
+    btnWizardBack2: document.getElementById('btnWizardBack2'),
+    btnWizardNext2: document.getElementById('btnWizardNext2'),
+    btnWizardBack3: document.getElementById('btnWizardBack3'),
     // ARASAAC elements
     arasaacQuery: document.getElementById('arasaacQuery'),
     btnSearchArasaac: document.getElementById('btnSearchArasaac'),
@@ -947,27 +967,57 @@ function attachListeners() {
             flashStatus("Edición bloqueada", "warning");
             return;
         }
-        openEditModal();
+        openEditModal('entry');
     };
-    // «Agregar» abre el mismo editor pero preparado para crear: limpia el
-    // formulario y pone el foco en el campo de la palabra, para que el flujo
-    // «foto + palabra» sea inmediato.
+    // «Agregar» abre el mismo editor pero salta directo al asistente de
+    // creación (paso 1), preparado y con el foco en el campo de la palabra,
+    // para que el flujo «foto + palabra» sea inmediato.
     if (dom.btnAdd) {
         dom.btnAdd.onclick = () => {
             if (state.settings.lockEdit) {
                 flashStatus("Edición bloqueada", "warning");
                 return;
             }
-            setAddItemMode('add');
-            dom.btnAddItem.removeAttribute('data-edit-id');
-            dom.itemText.value = '';
-            dom.itemCategory.value = '';
-            dom.itemImage.value = '';
-            dom.preview.textContent = 'Esperando datos...';
-            state.pendingImage = null;
-            openEditModal();
-            dom.itemText.focus();
+            startCreateWord();
         };
+    }
+    if (dom.cardCreateWord) dom.cardCreateWord.onclick = startCreateWord;
+    if (dom.cardManageWords) dom.cardManageWords.onclick = () => showEditorView('manage');
+    if (dom.btnWizardToEntry) dom.btnWizardToEntry.onclick = () => showEditorView('entry');
+    if (dom.btnManageToEntry) dom.btnManageToEntry.onclick = () => showEditorView('entry');
+
+    if (dom.btnWizardNext1) {
+        dom.btnWizardNext1.onclick = () => {
+            if (!dom.itemText.value.trim()) {
+                flashStatus('Escribe una palabra primero', 'warning');
+                dom.itemText.focus();
+                return;
+            }
+            showWizardStep(2);
+        };
+    }
+    if (dom.btnWizardBack2) dom.btnWizardBack2.onclick = () => showWizardStep(1);
+    if (dom.btnWizardNext2) dom.btnWizardNext2.onclick = () => showWizardStep(3);
+    if (dom.btnWizardBack3) dom.btnWizardBack3.onclick = () => showWizardStep(2);
+
+    // Sugerencia de categoría automática (P2, Fase 2): si ya existe una
+    // palabra parecida en el tablero, se propone su misma categoría — el
+    // campo queda pre-rellenado y editable, nunca se impone.
+    if (dom.itemText) {
+        dom.itemText.addEventListener('input', () => {
+            if (dom.btnAddItem.hasAttribute('data-edit-id')) return;
+            if (dom.itemCategory.value.trim()) return;
+            const suggestion = suggestCategoryFor(dom.itemText.value);
+            if (suggestion) {
+                dom.itemCategory.value = suggestion;
+                if (dom.categorySuggestHint) {
+                    dom.categorySuggestHint.textContent = `Sugerido: ${suggestion} (puedes cambiarlo)`;
+                    dom.categorySuggestHint.classList.remove('hidden');
+                }
+            } else if (dom.categorySuggestHint) {
+                dom.categorySuggestHint.classList.add('hidden');
+            }
+        });
     }
 
     // Composer
@@ -1534,15 +1584,18 @@ function addItem() {
     saveItemDB(item);
     save();
 
-    // Reset form
+    // Reset form and go back to step 1: ready to add the next word right away.
     dom.itemText.value = "";
     dom.itemCategory.value = "";
     dom.itemImage.value = "";
-    dom.preview.textContent = "¡Añadido!";
+    dom.preview.textContent = "Esperando datos...";
     state.pendingImage = null;
+    if (dom.categorySuggestHint) dom.categorySuggestHint.classList.add('hidden');
 
     render();
     renderItemList();
+    flashStatus(`«${item.text}» añadida al tablero`);
+    showWizardStep(1);
 }
 
 function updateItem() {
@@ -1558,17 +1611,19 @@ function updateItem() {
     saveItemDB(item);
     save();
 
-    // Reset form
+    // Reset form and return to the list the edit came from.
     dom.itemText.value = "";
     dom.itemCategory.value = "";
     dom.itemImage.value = "";
     setAddItemMode('add');
     dom.btnAddItem.removeAttribute('data-edit-id');
-    dom.preview.textContent = "¡Actualizado!";
+    dom.preview.textContent = "Esperando datos...";
     state.pendingImage = null;
+    if (dom.categorySuggestHint) dom.categorySuggestHint.classList.add('hidden');
 
     render();
-    renderItemList();
+    flashStatus(`«${item.text}» actualizada`);
+    showEditorView('manage');
 }
 
 window.editItem = (id) => {
@@ -1583,17 +1638,89 @@ window.editItem = (id) => {
     } else {
         dom.preview.textContent = "Sin imagen";
     }
+    if (dom.categorySuggestHint) dom.categorySuggestHint.classList.add('hidden');
 
     setAddItemMode('edit');
     dom.btnAddItem.setAttribute('data-edit-id', id);
 
-    // Scroll to top of editor
-    dom.editModal.querySelector('.modal-body').scrollTop = 0;
+    showEditorView('wizard');
+    dom.editorTitle.textContent = 'Modificar palabra';
+    dom.editorSubtitle.textContent = 'Cambia el texto, la imagen o la categoría y guarda los cambios.';
+    showWizardStep(1);
 };
 
-function openEditModal() {
-    renderItemList();
-    dom.editModal.showModal();
+// Busca una palabra parecida ya presente en el tablero y propone su misma
+// categoría (Fase 2, sugerencia automática): «taza» encuentra «Taza» en
+// Cocina y pre-rellena «Cocina», siempre editable por quien está creando.
+function suggestCategoryFor(text) {
+    const needle = normalizeWord(text);
+    if (!needle) return null;
+    const exact = state.items.find(i => normalizeWord(i.text) === needle);
+    if (exact) return exact.category;
+    const partial = state.items.find(i => {
+        const hay = normalizeWord(i.text);
+        return hay.length > 2 && (hay.includes(needle) || needle.includes(hay));
+    });
+    return partial ? partial.category : null;
+}
+
+function openEditModal(view = 'entry') {
+    if (!dom.editModal.open) dom.editModal.showModal();
+    showEditorView(view);
+}
+
+// «Agregar» y la tarjeta «Crear palabra nueva» comparten este arranque:
+// limpian el formulario y saltan directo al paso 1 del asistente.
+function startCreateWord() {
+    setAddItemMode('add');
+    dom.btnAddItem.removeAttribute('data-edit-id');
+    dom.itemText.value = '';
+    dom.itemCategory.value = '';
+    dom.itemImage.value = '';
+    dom.preview.textContent = 'Esperando datos...';
+    state.pendingImage = null;
+    if (dom.categorySuggestHint) dom.categorySuggestHint.classList.add('hidden');
+    openEditModal('wizard');
+    showWizardStep(1);
+    dom.itemText.focus();
+}
+
+// Las tres pantallas del editor (Fase 2): entrada con tarjetas, asistente de
+// creación/edición y gestión de elementos propios. Solo una es visible a la
+// vez; el título y subtítulo del modal cambian con ella.
+function showEditorView(view) {
+    if (dom.editorViewEntry) dom.editorViewEntry.classList.toggle('hidden', view !== 'entry');
+    if (dom.editorViewWizard) dom.editorViewWizard.classList.toggle('hidden', view !== 'wizard');
+    if (dom.editorViewManage) dom.editorViewManage.classList.toggle('hidden', view !== 'manage');
+
+    const copy = {
+        entry: ['Agregar palabras y fotos', '¿Qué quieres hacer?'],
+        wizard: ['Agregar palabras y fotos', 'Escribe la palabra, elige o sube su foto y pulsa «Añadir al tablero».'],
+        manage: ['Gestionar mis palabras', 'Edita, cambia la categoría o borra lo que ya agregaste.'],
+    }[view] || ['Agregar palabras y fotos', '¿Qué quieres hacer?'];
+    if (dom.editorTitle) dom.editorTitle.textContent = copy[0];
+    if (dom.editorSubtitle) dom.editorSubtitle.textContent = copy[1];
+
+    if (view === 'manage') renderItemList();
+
+    const body = dom.editModal.querySelector('.modal-body');
+    if (body) body.scrollTop = 0;
+}
+
+const WIZARD_STEP_LABELS = { 1: 'Escribe la palabra', 2: 'Elige una imagen', 3: 'Revisa y guarda' };
+
+function showWizardStep(step, { focus = true } = {}) {
+    [1, 2, 3].forEach((n) => {
+        const el = dom[`wizardStep${n}`];
+        if (el) el.classList.toggle('hidden', n !== step);
+    });
+    if (dom.wizardProgressFill) dom.wizardProgressFill.style.width = `${(step / 3) * 100}%`;
+    if (dom.wizardProgressLabel) {
+        dom.wizardProgressLabel.textContent = `Paso ${step} de 3 · ${WIZARD_STEP_LABELS[step]}`;
+    }
+    const body = dom.editModal.querySelector('.modal-body');
+    if (body) body.scrollTop = 0;
+    if (step === 1 && focus) dom.itemText.focus();
 }
 
 async function loadInternalLibrary() {
@@ -2463,6 +2590,9 @@ dom.editModal.addEventListener('close', () => {
     dom.btnAddItem.removeAttribute('data-edit-id');
     dom.preview.textContent = "Esperando datos...";
     state.pendingImage = null;
+    if (dom.categorySuggestHint) dom.categorySuggestHint.classList.add('hidden');
+    showEditorView('entry');
+    showWizardStep(1, { focus: false });
 });
 
 function onTileClick(item) {
