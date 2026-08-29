@@ -239,6 +239,10 @@
       <path d="M10.3 13.7a4 4 0 0 0 5.7 0l3-3a4 4 0 1 0-5.7-5.7l-1.5 1.5"/>
       <path d="M13.7 10.3a4 4 0 0 0-5.7 0l-3 3a4 4 0 1 0 5.7 5.7l1.5-1.5"/>
     </symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+            stroke-linecap="round" stroke-linejoin="round">
+      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92Z"/>
+    </symbol>
   </svg>
 
   <a class="skip-link" href="#mainContent">Saltar al contenido principal</a>
@@ -260,9 +264,24 @@
       <!-- Nivel usuario: lo que usa la persona comunicadora para hablar y
            pedir ayuda. Nada aquí abre un menú ni requiere PIN. -->
       <div class="header-group header-group--communicator">
-        <button class="btn btn--labeled sos-btn" id="btnSOS" aria-label="Ir al tablero de emergencias (SOS)" title="Emergencias">
-          <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-sos"/></svg><span class="btn-label">SOS</span>
-        </button>
+        <div class="sos-wrap" id="sosWrap">
+          <button class="btn btn--labeled sos-btn" id="btnSOS" aria-label="SOS: abrir menú de emergencia" title="Emergencias"
+            aria-haspopup="menu" aria-expanded="false" aria-controls="sosMenu">
+            <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-sos"/></svg><span class="btn-label">SOS</span>
+          </button>
+          <!-- Same tap that used to jump straight to the emergency board now opens
+               a menu: the board is still the first, one-tap item, with configured
+               emergency contacts (Ajustes → Contactos de emergencia) as tel: links
+               right below it — one place for both "show a picto" and "call someone". -->
+          <div class="sos-menu" id="sosMenu" role="menu" aria-label="Menú de emergencia">
+            <button type="button" class="sos-menu-item" id="sosGoBoard" role="menuitem">
+              <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-sos"/></svg>
+              Ir al tablero de emergencia
+            </button>
+            <div class="sos-menu-divider" role="separator"></div>
+            <div class="sos-menu-contacts" id="sosMenuContacts"></div>
+          </div>
+        </div>
         <label class="header-profile" title="Lugar">
           <span class="sr-only">Lugar</span>
           <select id="headerProfile" aria-label="Lugar">
@@ -710,6 +729,17 @@
         </div>
 
         <div class="settings-section">
+          <h3>Contactos de emergencia (SOS)</h3>
+          <p class="settings-hint">Aparecen dentro del menú del botón SOS para llamar con un toque. Solo funciona en un dispositivo que pueda hacer llamadas telefónicas.</p>
+          <div id="emergencyContactsList" class="emergency-contacts-list"></div>
+          <div class="add-contact-row">
+            <input type="text" id="newContactName" class="glass-input" placeholder="Nombre (ej. Mamá)" maxlength="40" aria-label="Nombre del contacto de emergencia">
+            <input type="tel" id="newContactPhone" class="glass-input" placeholder="Teléfono" maxlength="20" aria-label="Número de teléfono del contacto de emergencia">
+            <button type="button" class="btn glass" id="btnAddContact"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-plus"/></svg> Agregar</button>
+          </div>
+        </div>
+
+        <div class="settings-section">
           <h3>Accesibilidad</h3>
           <label class="field-row">
             <div class="toggle-wrapper">
@@ -929,7 +959,7 @@
 
           <details class="help-flow">
             <summary>Usar el botón SOS</summary>
-            <p>El botón rojo «SOS», siempre visible arriba, lleva directo al tablero de emergencias — útil en cualquier momento, sin buscar nada.</p>
+            <p>El botón rojo «SOS», siempre visible arriba, abre un menú: ir directo al tablero de emergencias, o llamar a un contacto de emergencia (se configuran en Ajustes) — útil en cualquier momento, sin buscar nada.</p>
             <img src="assets/help/sos.png" alt="Botón rojo SOS en la barra superior" loading="lazy">
           </details>
 
