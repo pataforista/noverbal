@@ -2701,6 +2701,25 @@ input:checked+.toggle-slider:before {
   white-space: nowrap;
 }
 
+/* «Agregar» is a primary creation action (families look for it constantly),
+   so it gets a filled container look instead of the quiet default button. */
+.btn-add {
+  background: var(--md-primary-container);
+  color: var(--md-on-primary-container);
+  border-color: transparent;
+}
+
+.btn-add:hover {
+  background: var(--md-primary);
+  color: var(--md-on-primary);
+}
+
+@media (max-width: 720px), (max-height: 560px) {
+  .actions .btn-add {
+    padding: 10px 14px;
+  }
+}
+
 .toggle-label {
   white-space: nowrap;
 }
@@ -4217,4 +4236,13 @@ body.calm-mode.dark-theme .btn.primary-action {
 body.calm-mode.dark-theme .tile-img {
   background: #e9e7e3;
   border-radius: 8px;
+}
+
+/* Late-cascade override: the phone header hides button words (icon-only), but
+   «Agregar» must keep its label — an unlabeled «+» is exactly the
+   discoverability problem this button exists to fix. Same treatment as SOS. */
+@media (max-width: 720px), (max-height: 560px) {
+  .actions .btn-add .btn-label {
+    display: inline;
+  }
 }

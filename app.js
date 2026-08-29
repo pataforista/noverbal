@@ -466,6 +466,7 @@ const dom = {
     btnBackspace: document.getElementById('btnBackspace'),
     btnClear: document.getElementById('btnClear'),
     btnEdit: document.getElementById('btnEdit'),
+    btnAdd: document.getElementById('btnAdd'),
     btnSettings: document.getElementById('btnSettings'),
     // Modals
     editModal: document.getElementById('editModal'),
@@ -593,7 +594,7 @@ function setAddItemMode(mode) {
     const editing = mode === 'edit';
     setIcon(dom.btnAddItem.querySelector('.btn-icon'), editing ? 'save' : 'plus');
     const label = dom.btnAddItem.querySelector('.btn-label');
-    const text = editing ? 'Guardar Cambios' : 'Añadir al Catálogo';
+    const text = editing ? 'Guardar Cambios' : 'Añadir al tablero';
     if (label) label.textContent = text;
 }
 
@@ -945,6 +946,26 @@ function attachListeners() {
         }
         openEditModal();
     };
+    // «Agregar» abre el mismo editor pero preparado para crear: limpia el
+    // formulario y pone el foco en el campo de la palabra, para que el flujo
+    // «foto + palabra» sea inmediato.
+    if (dom.btnAdd) {
+        dom.btnAdd.onclick = () => {
+            if (state.settings.lockEdit) {
+                flashStatus("🔒 Edición bloqueada");
+                return;
+            }
+            setAddItemMode('add');
+            dom.btnAddItem.removeAttribute('data-edit-id');
+            dom.itemText.value = '';
+            dom.itemCategory.value = '';
+            dom.itemImage.value = '';
+            dom.preview.textContent = 'Esperando datos...';
+            state.pendingImage = null;
+            openEditModal();
+            dom.itemText.focus();
+        };
+    }
 
     // Composer
     dom.btnSpeak.onclick = speakPhrase;
