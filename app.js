@@ -39,6 +39,57 @@ const DEFAULT_ITEMS = [
     { id: "8", text: "Dolor", category: "Salud", color: "#f5c5c1", image: "assets/pictos/dolor.png" },
 ];
 
+// Escala visual de intensidad de dolor (estilo caras, sin necesidad de leer),
+// pensada para personas sordas y analfabetas que señalan en vez de escribir o
+// firmar: cinco caras dibujadas con el mismo trazo que el resto de los iconos
+// de la app, en vez de copiar la ilustración de Wong-Baker (con derechos de
+// autor propios). No dependen de `library.json` ni de conexión: se generan
+// como SVG en línea para que funcionen offline desde el primer arranque.
+function painFaceSvg(level) {
+    const mouths = [
+        'M32 62c6 9 16 14 28 14s22-5 28-14', // 0: sonrisa amplia
+        'M34 60c5 6 14 10 26 10s21-4 26-10', // 1: sonrisa leve
+        'M34 64h32',                          // 2: neutral
+        'M34 70c5-7 14-11 26-11s21 4 26 11',  // 3: mueca leve
+        'M32 72c6-10 16-15 28-15s22 5 28 15', // 4: mueca fuerte
+    ];
+    const browRows = level >= 3
+        ? '<path d="M28 40l12 5"/><path d="M80 40 68 45"/>'
+        : '';
+    const tears = level === 4
+        ? '<path d="M30 52c-2 4-2 8 1 10"/><path d="M90 52c2 4 2 8-1 10"/>'
+        : '';
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none" stroke="#2b2b2b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="60" cy="60" r="46" fill="#fff"/>
+        <circle cx="42" cy="52" r="3.4" fill="#2b2b2b" stroke="none"/>
+        <circle cx="78" cy="52" r="3.4" fill="#2b2b2b" stroke="none"/>
+        ${browRows}
+        <path d="${mouths[level]}"/>
+        ${tears}
+    </svg>`;
+    return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
+
+const PAIN_SCALE_ITEMS = [
+    { id: "pain-0", text: "Nada de dolor", color: "#c3e2c0" },
+    { id: "pain-1", text: "Duele poco", color: "#dbe8ab" },
+    { id: "pain-2", text: "Duele algo", color: "#f6e7a8" },
+    { id: "pain-3", text: "Duele mucho", color: "#f7d4a8" },
+    { id: "pain-4", text: "Duele muchísimo", color: "#f5c5c1" },
+].map((item, level) => ({ ...item, category: "Salud", order: 900 + level, image: painFaceSvg(level) }));
+
+// Regiones del cuerpo para el localizador visual de dolor (ver openBodyMap).
+// Cada `text` se busca por nombre entre los ítems ya cargados (biblioteca
+// ilustrada), así que no depende de ids fijos ni de assets nuevos.
+const BODY_MAP_MAIN_REGIONS = [
+    { text: "Cabeza", top: 10, left: 50, sub: ["Cabeza", "Ojo", "Oreja", "Nariz", "Boca", "Diente"] },
+    { text: "Brazo", top: 42, left: 88 },
+    { text: "Estomago", top: 40, left: 50 },
+    { text: "Espalda", top: 55, left: 50 },
+    { text: "Pierna", top: 82, left: 30 },
+    { text: "Pie", top: 97, left: 72 },
+];
+
 // Enhanced Category Metadata with Icons and Colors.
 //
 // The colours are a single tint family held at roughly the same lightness
@@ -131,6 +182,8 @@ const DEFAULT_SETTINGS = {
     pagedMode: false, // fixed-position pages instead of a long scroll (N-1)
     calmMode: false, // strips colour, shadow and secondary labels for sensory load
     simpleMode: false, // hides search/routines/grammar tags/pagination for overwhelmed families
+    visualConfirm: false, // re-shows the built phrase in pictos and waits for Sí/No before speaking
+    deafMode: false, // strips text from the patient-facing tiles/chips, adds hold-to-confirm + flash/vibration feedback
 };
 
 // State Management
@@ -621,6 +674,10 @@ const dom = {
     hapticFeedback: document.getElementById('hapticFeedback'),
     calmMode: document.getElementById('calmMode'),
     simpleMode: document.getElementById('simpleMode'),
+    visualConfirm: document.getElementById('visualConfirm'),
+    deafMode: document.getElementById('deafMode'),
+    btnDeafMode: document.getElementById('btnDeafMode'),
+    deafFlashOverlay: document.getElementById('deafFlashOverlay'),
     // Offline precache
     btnDownloadAll: document.getElementById('btnDownloadAll'),
     downloadProgress: document.getElementById('downloadProgress'),
@@ -640,6 +697,22 @@ const dom = {
     btnSpeakWriting: document.getElementById('btnSpeakWriting'),
     btnClearWriting: document.getElementById('btnClearWriting'),
     btnCloseWriting: document.getElementById('btnCloseWriting'),
+    // Localizador visual de dolor (cuerpo + escala de caras)
+    btnBodyMap: document.getElementById('btnBodyMap'),
+    bodyMapModal: document.getElementById('bodyMapModal'),
+    bodyMapStepMain: document.getElementById('bodyMapStepMain'),
+    bodyMapFigure: document.getElementById('bodyMapFigure'),
+    bodyMapStepSub: document.getElementById('bodyMapStepSub'),
+    bodyMapSubList: document.getElementById('bodyMapSubList'),
+    bodyMapStepScale: document.getElementById('bodyMapStepScale'),
+    bodyMapScaleList: document.getElementById('bodyMapScaleList'),
+    btnBodyMapSubBack: document.getElementById('btnBodyMapSubBack'),
+    btnBodyMapScaleBack: document.getElementById('btnBodyMapScaleBack'),
+    // Confirmación visual de la frase antes de hablarla
+    phraseConfirmModal: document.getElementById('phraseConfirmModal'),
+    phraseConfirmItems: document.getElementById('phraseConfirmItems'),
+    btnPhraseConfirmYes: document.getElementById('btnPhraseConfirmYes'),
+    btnPhraseConfirmNo: document.getElementById('btnPhraseConfirmNo'),
     introModal: document.getElementById('introModal'),
     introCategoryList: document.getElementById('introCategoryList'),
     activeCategoryList: document.getElementById('activeCategoryList'),
@@ -864,6 +937,8 @@ async function init() {
         await ensureLibraryItemsPresent();
     }
 
+    await ensurePainScaleItemsPresent();
+
     ensureActiveCategories();
     initCoreWords();
     renderEmergencyContacts();
@@ -989,6 +1064,12 @@ function attachListeners() {
         }
     };
     dom.btnCloseWriting.onclick = () => dom.writingPanel.classList.add('hidden');
+
+    if (dom.btnBodyMap) dom.btnBodyMap.onclick = openBodyMap;
+    if (dom.btnBodyMapSubBack) dom.btnBodyMapSubBack.onclick = () => showBodyMapStep('main');
+    if (dom.btnBodyMapScaleBack) dom.btnBodyMapScaleBack.onclick = () => showBodyMapStep('main');
+    bindConfirmAction(dom.btnPhraseConfirmYes, () => resolvePhraseConfirm(true));
+    bindConfirmAction(dom.btnPhraseConfirmNo, () => resolvePhraseConfirm(false));
     dom.btnClearWriting.onclick = () => {
         dom.writingInput.value = '';
         dom.writingInput.focus();
@@ -1142,7 +1223,7 @@ function attachListeners() {
     }
 
     // Composer
-    dom.btnSpeak.onclick = speakPhrase;
+    dom.btnSpeak.onclick = requestSpeak;
     dom.btnBackspace.onclick = () => {
         state.phrase.pop();
         renderPhrase();
@@ -1310,6 +1391,28 @@ function attachListeners() {
             applySimpleMode();
             save();
             renderGrid(); // pagination/grammar tags read the effective (overridden) value
+        };
+    }
+
+    if (dom.visualConfirm) {
+        dom.visualConfirm.onchange = (e) => {
+            state.settings.visualConfirm = e.target.checked;
+            save();
+        };
+    }
+
+    if (dom.deafMode) {
+        dom.deafMode.onchange = (e) => {
+            state.settings.deafMode = e.target.checked;
+            applyDeafMode();
+            save();
+        };
+    }
+    if (dom.btnDeafMode) {
+        dom.btnDeafMode.onclick = () => {
+            state.settings.deafMode = !state.settings.deafMode;
+            applyDeafMode();
+            save();
         };
     }
 
@@ -1714,7 +1817,12 @@ function speakWithTTS(text) {
     });
 }
 
-async function speakPhrase() {
+// Entry point for «Hablar Frase». Gated by `visualConfirm` (Ajustes >
+// Accesibilidad): a person who can't hear the phrase back has no way to catch
+// a wrong tap before it reaches a doctor or caregiver, so when that setting is
+// on this shows the built phrase back in pictos first and waits for an
+// explicit Sí/No instead of speaking straight away.
+function requestSpeak() {
     const items = state.phrase
         .map(id => state.items.find(i => i.id === id))
         .filter(Boolean);
@@ -1724,6 +1832,14 @@ async function speakPhrase() {
         return;
     }
 
+    if (state.settings.visualConfirm) {
+        openPhraseConfirm(items);
+    } else {
+        performSpeak(items);
+    }
+}
+
+async function performSpeak(items) {
     if (state.settings.speechMode === 'word') {
         // Word-by-word mode (pedagogical): wait for each word to finish, then a
         // short, deliberate gap - no fixed timeout that could clip long words.
@@ -1738,6 +1854,157 @@ async function speakPhrase() {
     }
 
     logActivity(`Frase completa: ${items.map(i => i.text).join(" ")}`);
+
+    if (state.settings.deafMode) {
+        // Dos vibraciones cortas: "mensaje enviado", el mismo aviso que
+        // tendría sentido si algún día un médico pudiera responder del otro
+        // lado (ver nota sobre sincronización en tiempo real más abajo).
+        haptic([60, 60, 60]);
+        visualAlert();
+    }
+}
+
+// Holds the phrase awaiting a Sí/No while #phraseConfirmModal is open.
+let pendingConfirmItems = [];
+
+function openPhraseConfirm(items) {
+    pendingConfirmItems = items;
+    if (state.settings.deafMode) visualAlert();
+    dom.phraseConfirmItems.innerHTML = '';
+    items.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'phrase-confirm-item';
+        const imgWrap = document.createElement('div');
+        imgWrap.className = 'phrase-confirm-img';
+        if (item.image) {
+            const img = document.createElement('img');
+            img.src = item.image;
+            img.alt = item.text;
+            imgWrap.appendChild(img);
+        } else {
+            imgWrap.textContent = item.text.charAt(0).toUpperCase();
+        }
+        card.appendChild(imgWrap);
+        const label = document.createElement('span');
+        label.textContent = item.text;
+        card.appendChild(label);
+        dom.phraseConfirmItems.appendChild(card);
+    });
+    dom.phraseConfirmModal.showModal();
+}
+
+function resolvePhraseConfirm(confirmed) {
+    if (dom.phraseConfirmModal.open) dom.phraseConfirmModal.close();
+    const items = pendingConfirmItems;
+    pendingConfirmItems = [];
+    if (confirmed) performSpeak(items);
+}
+
+// Localizador visual de dolor: señalar la zona del cuerpo y su intensidad con
+// caras, en dos toques, sin tener que leer ni buscar la palabra en el
+// tablero. Pensado para personas sordas y analfabetas que se comunican
+// señalando (ver docs/diagnostico-y-plan.md).
+function findItemByText(text) {
+    return state.items.find(i => sameWord(i.text, text));
+}
+
+function showBodyMapStep(step) {
+    dom.bodyMapStepMain.classList.toggle('hidden', step !== 'main');
+    dom.bodyMapStepSub.classList.toggle('hidden', step !== 'sub');
+    dom.bodyMapStepScale.classList.toggle('hidden', step !== 'scale');
+}
+
+function bodyMapHotspotContent(button, item, fallbackText) {
+    button.textContent = '';
+    if (item?.image) {
+        const img = document.createElement('img');
+        img.src = item.image;
+        img.alt = '';
+        button.appendChild(img);
+    } else {
+        const span = document.createElement('span');
+        span.textContent = fallbackText.charAt(0).toUpperCase();
+        button.appendChild(span);
+    }
+}
+
+function renderBodyMapMain() {
+    dom.bodyMapFigure.querySelectorAll('.bodymap-hotspot').forEach(el => el.remove());
+    BODY_MAP_MAIN_REGIONS.forEach(region => {
+        const item = findItemByText(region.text);
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'bodymap-hotspot';
+        btn.style.top = `${region.top}%`;
+        btn.style.left = `${region.left}%`;
+        btn.title = region.text;
+        btn.setAttribute('aria-label', region.text);
+        bodyMapHotspotContent(btn, item, region.text);
+        btn.onclick = () => {
+            if (region.sub) {
+                renderBodyMapSub(region.sub);
+                showBodyMapStep('sub');
+            } else {
+                chooseBodyPart(region.text);
+            }
+        };
+        dom.bodyMapFigure.appendChild(btn);
+    });
+}
+
+function renderBodyMapSub(subTexts) {
+    dom.bodyMapSubList.innerHTML = '';
+    subTexts.forEach(text => {
+        const item = findItemByText(text);
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'bodymap-option';
+        const imgWrap = document.createElement('div');
+        imgWrap.className = 'bodymap-option-img';
+        bodyMapHotspotContent(imgWrap, item, text);
+        btn.appendChild(imgWrap);
+        const label = document.createElement('span');
+        label.textContent = text;
+        btn.appendChild(label);
+        btn.title = text;
+        btn.onclick = () => chooseBodyPart(text);
+        dom.bodyMapSubList.appendChild(btn);
+    });
+}
+
+function chooseBodyPart(text) {
+    const item = findItemByText(text);
+    if (item) addItemToPhrase(item);
+    renderPainScaleOptions();
+    showBodyMapStep('scale');
+}
+
+function renderPainScaleOptions() {
+    dom.bodyMapScaleList.innerHTML = '';
+    PAIN_SCALE_ITEMS.forEach(item => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'bodymap-face';
+        const img = document.createElement('img');
+        img.src = item.image;
+        img.alt = item.text;
+        btn.appendChild(img);
+        const label = document.createElement('span');
+        label.textContent = item.text;
+        btn.appendChild(label);
+        btn.onclick = () => {
+            addItemToPhrase(item);
+            if (dom.bodyMapModal.open) dom.bodyMapModal.close();
+            flashStatus('Añadido a la frase');
+        };
+        dom.bodyMapScaleList.appendChild(btn);
+    });
+}
+
+function openBodyMap() {
+    renderBodyMapMain();
+    showBodyMapStep('main');
+    dom.bodyMapModal.showModal();
 }
 
 // Render an image preview safely via the DOM API (never string HTML) so an
@@ -2034,6 +2301,18 @@ async function ensureLibraryItemsPresent() {
         }
     } catch (err) {
         console.error('Error ensuring library items:', err);
+    }
+}
+
+// Adds the five pain-scale faces (see PAIN_SCALE_ITEMS) to every user's board,
+// new or existing, the same additive way ensureLibraryItemsPresent adds new
+// library terms: only what's missing gets written, so nothing already saved
+// (including a user's own edits to these items) is touched.
+async function ensurePainScaleItemsPresent() {
+    for (const item of PAIN_SCALE_ITEMS) {
+        if (state.items.some(existing => existing.id === item.id)) continue;
+        await saveItemDB(item);
+        state.items.push(item);
     }
 }
 
@@ -3054,14 +3333,19 @@ function onTileClick(item) {
         if (item.category === 'Necesidad' || item.category === 'S.O.S') updateCompanion('necesidad');
 
     } else {
-        state.phrase.push(item.id);
-        renderPhrase();
-        save();
-        logActivity(`Añadido a frase: ${item.text}`);
-
-        // Check for complete phrase reaction
+        addItemToPhrase(item);
         if (state.phrase.length === 3) updateCompanion('frase');
     }
+}
+
+// Core "add to the sentence being built" action, shared by tapping a board
+// tile and by guided flows (localizador de dolor) that add a word without
+// going through the tile-click rules above (tutor mode, rutina, hablar-al-tocar).
+function addItemToPhrase(item) {
+    state.phrase.push(item.id);
+    renderPhrase();
+    save();
+    logActivity(`Añadido a frase: ${item.text}`);
 }
 
 function addToRoutine(item) {
@@ -3115,6 +3399,11 @@ function renderPhrase() {
 
         const chip = document.createElement('div');
         chip.className = 'chip';
+        // Same colour-by-category code as the board tiles (see createTile),
+        // now carried into the sentence strip too: in Modo Sordo, with the
+        // word hidden, colour + picto are the only things left saying what
+        // category each piece of the sentence belongs to.
+        if (item.color) chip.style.borderLeft = `6px solid ${item.color}`;
 
         // The sentence bar carries the pictogram, not just the word. Someone who
         // cannot read has no way to check a text-only sentence before speaking
@@ -3872,6 +4161,8 @@ function applySettings() {
     if (dom.hapticFeedback) dom.hapticFeedback.checked = state.settings.hapticFeedback !== false;
     if (dom.calmMode) dom.calmMode.checked = state.settings.calmMode || false;
     if (dom.simpleMode) dom.simpleMode.checked = state.settings.simpleMode || false;
+    if (dom.visualConfirm) dom.visualConfirm.checked = state.settings.visualConfirm || false;
+    applyDeafMode();
     dom.headerSpeakToggle.checked = (state.settings.tapMode === 'speak');
     ensureActiveCategories();
     document.body.classList.toggle('show-grammar', state.settings.showGrammarTags);
@@ -3900,6 +4191,89 @@ function applySimpleMode() {
     document.body.classList.toggle('simple-mode', on);
     [dom.pagedMode, dom.showGrammarTags, dom.showRoutine].forEach((el) => {
         if (el) el.disabled = on;
+    });
+}
+
+// Modo Sordo: quita el texto de las palabras y frases del lado que ve la
+// persona comunicadora (solo pictos + el color de su categoría, que ya
+// codifica el significado — ver el `item.color` que createTile pinta como
+// fondo), y activa la confirmación visual + los avisos hápticos/de pantalla
+// de más abajo. El resto de la app (Ajustes, el editor, lo que ve un
+// cuidador) sigue con texto: la persona sorda-analfabeta nunca necesita
+// entrar ahí.
+function applyDeafMode() {
+    const on = !!state.settings.deafMode;
+    document.body.classList.toggle('deaf-mode', on);
+
+    if (dom.btnDeafMode) {
+        dom.btnDeafMode.classList.toggle('active', on);
+        dom.btnDeafMode.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    if (dom.deafMode) dom.deafMode.checked = on;
+
+    if (on) {
+        // La confirmación visual es lo que reemplaza, para alguien que no
+        // puede escuchar la frase, la posibilidad de detectar un toque
+        // equivocado antes de que llegue a un médico o cuidador.
+        if (!state.settings.visualConfirm) {
+            state.settings.visualConfirm = true;
+            if (dom.visualConfirm) dom.visualConfirm.checked = true;
+        }
+        // Sin el texto de apoyo, un picto pequeño es más difícil de acertar
+        // al señalar con precisión.
+        if ((state.settings.tileSize || 140) < 160) {
+            state.settings.tileSize = 170;
+            if (dom.tileSize) dom.tileSize.value = 170;
+        }
+    }
+
+    renderGrid();
+    renderPhrase();
+}
+
+// Un solo destello breve de pantalla (nunca en bucle: un parpadeo repetido es
+// un riesgo real para personas fotosensibles) para el momento en que alguien
+// que no oye una notificación necesita mirar la pantalla — se sale por
+// completo si el sistema pide menos movimiento.
+function visualAlert() {
+    if (!dom.deafFlashOverlay) return;
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    dom.deafFlashOverlay.classList.remove('flash-pulse');
+    void dom.deafFlashOverlay.offsetWidth; // reinicia la animación si se dispara de nuevo muy rápido
+    dom.deafFlashOverlay.classList.add('flash-pulse');
+}
+
+// Sí/No en #phraseConfirmModal se comportan distinto según el modo: un
+// toque normal en general, pero una pulsación sostenida de 1.5s en Modo
+// Sordo — señalar o que alguien más sostenga el teléfono por la persona
+// hace mucho más fácil un toque accidental, y esta es una confirmación
+// médica. Un solo listener cubre ambos casos sin duplicar botones.
+const HOLD_CONFIRM_MS = 1500;
+function bindConfirmAction(button, action) {
+    if (!button) return;
+    let holdTimer = null;
+
+    function clearHold() {
+        clearTimeout(holdTimer);
+        button.classList.remove('holding');
+    }
+
+    button.addEventListener('pointerdown', (e) => {
+        if (!state.settings.deafMode) return; // el tap normal de abajo se encarga
+        e.preventDefault();
+        button.classList.add('holding');
+        holdTimer = setTimeout(() => {
+            clearHold();
+            haptic([40, 40, 120]);
+            action();
+        }, HOLD_CONFIRM_MS);
+    });
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach((evt) =>
+        button.addEventListener(evt, clearHold));
+
+    button.addEventListener('click', () => {
+        if (state.settings.deafMode) return; // ya se resolvió arriba, por sostener
+        action();
     });
 }
 
