@@ -309,6 +309,11 @@
         <button class="btn btn--labeled" id="btnWriting" aria-label="Abrir teclado para escribir libremente" title="Escribir">
           <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-keyboard"/></svg><span class="btn-label">Escribir</span>
         </button>
+        <!-- Localizador visual de dolor: señalar cuerpo + intensidad en dos
+             toques, sin leer ni buscar en el tablero (ver bodyMapModal). -->
+        <button class="btn btn--labeled" id="btnBodyMap" aria-label="Abrir localizador visual de dolor: señala dónde y cuánto duele" title="Dónde duele">
+          <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-health"/></svg><span class="btn-label">Dolor</span>
+        </button>
       </div>
 
       <!-- Nivel cuidador: agregar contenido, ajustar y editar el tablero.
@@ -743,6 +748,17 @@
           <h3>Accesibilidad</h3>
           <label class="field-row">
             <div class="toggle-wrapper">
+              <input id="visualConfirm" type="checkbox" />
+              <span class="toggle-slider"></span>
+            </div>
+            <div class="text-content">
+              <span class="main">Confirmación visual antes de hablar</span>
+              <span class="sub">Antes de reproducir la frase, la muestra en grande con las mismas imágenes y espera que la persona confirme con Sí o No. Pensado para quien no puede escuchar lo que armó — por ejemplo, alguien sordo — y necesita otra forma de detectar un toque equivocado antes de que llegue a un médico o cuidador.</span>
+            </div>
+          </label>
+
+          <label class="field-row">
+            <div class="toggle-wrapper">
               <input id="simpleMode" type="checkbox" />
               <span class="toggle-slider"></span>
             </div>
@@ -1033,6 +1049,86 @@
       <div class="modal-foot">
         <button type="button" class="btn glass" id="btnConfirmCancel">Cancelar</button>
         <button type="button" class="btn primary" id="btnConfirmOk">Confirmar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- MODAL: Localizador visual de dolor. Pensado para personas sordas y
+       analfabetas que no usan lengua de señas: señalan la zona del cuerpo y
+       la intensidad en dos toques, en vez de tener que buscar la palabra en
+       el tablero o escribirla. Todo el contenido interactivo es imagen. -->
+  <dialog class="modal bodymap-modal" id="bodyMapModal">
+    <form method="dialog" class="modal-card">
+      <div class="modal-head">
+        <div>
+          <h1 class="modal-title">¿Dónde te duele?</h1>
+          <p class="modal-sub">Toca la parte del cuerpo y después cuánto duele</p>
+        </div>
+        <button type="button" class="btn-close" data-close-dialog="bodyMapModal" aria-label="Cerrar localizador de dolor"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-close"/></svg></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="bodymap-step" id="bodyMapStepMain">
+          <div class="bodymap-figure" id="bodyMapFigure" role="group" aria-label="Silueta del cuerpo, toca donde duele">
+            <svg class="bodymap-silhouette" viewBox="0 0 120 260" aria-hidden="true" focusable="false"
+                 fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="60" cy="30" r="22"/>
+              <path d="M60 52v14"/>
+              <rect x="35" y="66" width="50" height="86" rx="16"/>
+              <path d="M40 72 15 148"/>
+              <path d="M80 72l25 76"/>
+              <path d="M48 150 35 248"/>
+              <path d="M72 150l13 98"/>
+              <path d="M35 248 24 254"/>
+              <path d="M85 246 96 254"/>
+            </svg>
+            <!-- Hotspots (una por región de BODY_MAP_MAIN_REGIONS) se agregan aquí por JS. -->
+          </div>
+        </div>
+
+        <div class="bodymap-step hidden" id="bodyMapStepSub">
+          <button type="button" class="editor-back-link" id="btnBodyMapSubBack">
+            <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-chevron-left"/></svg> Volver al cuerpo
+          </button>
+          <div class="bodymap-options" id="bodyMapSubList"></div>
+        </div>
+
+        <div class="bodymap-step hidden" id="bodyMapStepScale">
+          <button type="button" class="editor-back-link" id="btnBodyMapScaleBack">
+            <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-chevron-left"/></svg> Volver al cuerpo
+          </button>
+          <p class="modal-sub">¿Cuánto duele?</p>
+          <div class="bodymap-scale" id="bodyMapScaleList"></div>
+        </div>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- MODAL: Confirmación visual de la frase (Ajustes > Accesibilidad >
+       «Confirmación visual antes de hablar»). Repite la frase armada en
+       pictos grandes y espera Sí/No antes de reproducirla: para alguien que
+       no puede escuchar lo que compuso, es la única forma de detectar un
+       toque equivocado antes de que llegue a un médico o cuidador. -->
+  <dialog class="modal" id="phraseConfirmModal">
+    <form method="dialog" class="modal-card">
+      <div class="modal-head">
+        <div>
+          <h1 class="modal-title">¿Es correcto?</h1>
+          <p class="modal-sub">Revisa la frase antes de hablarla</p>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="phrase-confirm-items" id="phraseConfirmItems"></div>
+      </div>
+      <div class="modal-foot phrase-confirm-actions">
+        <button type="button" class="btn danger phrase-confirm-btn" id="btnPhraseConfirmNo">
+          <img src="assets/pictos/no.png" alt="" class="phrase-confirm-btn-img" />
+          <span>No</span>
+        </button>
+        <button type="button" class="btn primary phrase-confirm-btn" id="btnPhraseConfirmYes">
+          <img src="assets/pictos/si.png" alt="" class="phrase-confirm-btn-img" />
+          <span>Sí</span>
+        </button>
       </div>
     </form>
   </dialog>

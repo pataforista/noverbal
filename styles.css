@@ -4878,3 +4878,188 @@ body.calm-mode.dark-theme .tile-img {
     display: inline;
   }
 }
+
+/* ===================================================================
+   Localizador visual de dolor (bodyMapModal) — modo sordo-analfabeto.
+   Toda la interacción es imagen: silueta + miniaturas de picto, sin
+   depender de texto para saber qué tocar.
+   =================================================================== */
+.bodymap-figure {
+  position: relative;
+  width: min(220px, 60vw);
+  margin: 0 auto;
+  color: var(--md-on-surface-variant);
+}
+
+.bodymap-silhouette {
+  width: 100%;
+  display: block;
+}
+
+.bodymap-hotspot {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  background: var(--md-surface);
+  box-shadow: var(--md-shadow-1);
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.bodymap-hotspot:hover,
+.bodymap-hotspot:focus-visible {
+  box-shadow: 0 0 0 4px var(--accent-glow);
+  outline: none;
+}
+
+.bodymap-hotspot img,
+.bodymap-option-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.bodymap-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: var(--md-spacing-md, 10px);
+  margin-top: var(--md-spacing-md, 10px);
+}
+
+.bodymap-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: var(--md-spacing-md, 10px);
+  border: 1px solid var(--hairline);
+  border-radius: var(--md-radius-md);
+  background: var(--md-surface-container);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.bodymap-option:hover,
+.bodymap-option:focus-visible {
+  box-shadow: 0 0 0 3px var(--accent-glow);
+  outline: none;
+}
+
+.bodymap-option-img {
+  width: 56px;
+  height: 56px;
+}
+
+.bodymap-option span {
+  font-size: 0.85rem;
+  color: var(--md-on-surface);
+  text-align: center;
+}
+
+.bodymap-scale {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: var(--md-spacing-md, 10px);
+  margin-top: var(--md-spacing-md, 10px);
+}
+
+.bodymap-face {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: var(--md-spacing-md, 10px);
+  border: 1px solid var(--hairline);
+  border-radius: var(--md-radius-md);
+  background: var(--md-surface-container);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.bodymap-face:hover,
+.bodymap-face:focus-visible {
+  box-shadow: 0 0 0 3px var(--accent-glow);
+  outline: none;
+}
+
+.bodymap-face img {
+  width: 56px;
+  height: 56px;
+}
+
+.bodymap-face span {
+  font-size: 0.8rem;
+  color: var(--md-on-surface);
+  text-align: center;
+}
+
+/* ===================================================================
+   Confirmación visual de la frase (phraseConfirmModal).
+   =================================================================== */
+.phrase-confirm-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--md-spacing-md, 10px);
+  justify-content: center;
+}
+
+.phrase-confirm-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100px;
+}
+
+.phrase-confirm-img {
+  width: 88px;
+  height: 88px;
+  border-radius: var(--md-radius-md);
+  background: var(--md-surface-container);
+  border: 1px solid var(--hairline);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--md-on-surface);
+}
+
+.phrase-confirm-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.phrase-confirm-item span {
+  font-size: 0.9rem;
+  color: var(--md-on-surface);
+  text-align: center;
+}
+
+.phrase-confirm-actions {
+  display: flex;
+  gap: var(--md-spacing-lg);
+}
+
+.phrase-confirm-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: var(--md-spacing-lg) var(--md-spacing-md);
+}
+
+.phrase-confirm-btn-img {
+  width: 48px;
+  height: 48px;
+}

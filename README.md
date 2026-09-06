@@ -23,6 +23,14 @@ parálisis cerebral y otras necesidades de comunicación, y para los profesional
 - **Accesibilidad.** Modo de barrido (*scanning*) fila-columna para acceso por
   conmutador, feedback háptico y visual, contraste automático de texto, tema
   claro/oscuro que respeta el sistema, y respeto por `prefers-reduced-motion`.
+- **Localizador visual de dolor.** Botón «Dolor» en la barra superior: señalar
+  la zona del cuerpo y la intensidad (escala de caras) en dos toques, sin leer
+  ni buscar la palabra en el tablero — pensado para personas sordas y
+  analfabetas que no usan lengua de señas y se comunican señalando.
+- **Confirmación visual antes de hablar.** Ajuste opcional que repite la frase
+  armada en pictos grandes y espera un Sí/No antes de reproducirla, para que
+  alguien que no puede escuchar lo que compuso tenga una forma de detectar un
+  toque equivocado antes de que llegue a un médico o cuidador.
 - **Modo Tutor (terapeuta).** Oculta/muestra elementos por sesión, protegido por
   un PIN configurable.
 - **Bitácora clínica local.** Registro privado de actividad, almacenado solo en
