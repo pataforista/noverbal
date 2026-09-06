@@ -6,8 +6,22 @@ import { test, expect } from '@playwright/test';
  * on the running app, so it cannot silently come back.
  */
 
+// Each test starts with empty storage so mode changes in one test cannot
+// leak into the next one (Playwright resets the context storage on every test).
+test.use({ storageState: { cookies: [], origins: [] } });
+
 async function boot(page) {
   await page.goto('/index.html', { waitUntil: 'networkidle' });
+  const save = page.locator('#btnSaveIntro');
+  if (await save.isVisible().catch(() => false)) await save.click();
+  await page.waitForTimeout(300);
+}
+
+async function resetModes(page) {
+  // Reload the app from a clean storage state. Storage is already reset by
+  // test.use above, so we just need to make sure the page is on the app.
+  await page.goto('/index.html', { waitUntil: 'networkidle' });
+  await page.reload({ waitUntil: 'networkidle' });
   const save = page.locator('#btnSaveIntro');
   if (await save.isVisible().catch(() => false)) await save.click();
   await page.waitForTimeout(300);
@@ -187,6 +201,11 @@ test.describe('legibilidad', () => {
   test('«Hablar Frase» cumple el contraste AA', async ({ page }) => {
     await boot(page);
     await page.locator('#grid .tile:not([data-id="nav-anchor"])').first().click();
+    const btn = page.locator('#btnSpeak');
+    await expect(btn).toBeEnabled();
+    // The disabled -> enabled switch animates opacity; wait for it to settle
+    // so the measured colours are the final ones, not a transitional blend.
+    await expect(btn).toHaveCSS('opacity', '1');
     const { fg, bg } = await page.evaluate(() => {
       const b = document.getElementById('btnSpeak');
       const cs = getComputedStyle(b);
@@ -298,5 +317,53 @@ test.describe('editor', () => {
     expect(native.opacity).toBe('0');
     expect(native.w).toBeLessThanOrEqual(2);
     expect(native.h).toBeLessThanOrEqual(2);
+  });
+});
+
+test.describe('modos de accesibilidad', () => {
+  // Estos tests activan modos que se guardan en localStorage. Para no dejar
+  // el modo puesto en el worker y afectar tests posteriores, se resetea el
+  // almacenamiento al inicio de cada test de este grupo.
+  test.beforeEach(async ({ page }) => {
+    await resetModes(page);
+  });
+
+  test('los botones de modo tienen nombre accesible y estado presionado', async ({ page }) => {
+    const modes = ['#btnDeafMode', '#btnCalmMode', '#btnSimpleMode'];
+    for (const sel of modes) {
+      const btn = page.locator(sel);
+      await expect(btn).toHaveAttribute('aria-pressed', 'false');
+      await expect(btn).toHaveAttribute('aria-label', /Activar o desactivar/);
+      expect(await btn.evaluate((e) => e.tagName)).toBe('BUTTON');
+    }
+  });
+
+  test('al activar un modo desde la barra superior se actualiza aria-pressed y se anuncia', async ({ page }) => {
+    const btn = page.locator('#btnCalmMode');
+    await btn.click();
+    await expect(btn).toHaveAttribute('aria-pressed', 'true');
+    const bodyHasClass = await page.evaluate(() => document.body.classList.contains('calm-mode'));
+    expect(bodyHasClass).toBe(true);
+    const announcement = await page.locator('#modeStatus').textContent();
+    expect(announcement).toContain('Modo Calma activado');
+  });
+
+  test('el menú de modos funciona en móvil con teclado', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    const toggle = page.locator('#btnModesToggle');
+    await expect(toggle).toBeVisible();
+    await toggle.click();
+    await expect(page.locator('#modesMenu')).toHaveClass(/open/);
+    await expect(page.locator('#btnDeafMode')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#modesMenu')).not.toHaveClass(/open/);
+    await expect(toggle).toBeFocused();
+  });
+
+  test('la sección de Ajustes describe cada modo con aria-describedby', async ({ page }) => {
+    await page.locator('#btnSettings').click();
+    await expect(page.locator('#deafMode')).toHaveAttribute('aria-describedby', 'deafModeDesc');
+    await expect(page.locator('#simpleMode')).toHaveAttribute('aria-describedby', 'simpleModeDesc');
+    await expect(page.locator('#calmMode')).toHaveAttribute('aria-describedby', 'calmModeDesc');
   });
 });

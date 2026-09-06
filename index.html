@@ -250,13 +250,35 @@
       <path d="M14.4 9.3a2.1 2.1 0 0 1 2.7 3.1"/>
       <path d="M3.5 3.5l17 17"/>
     </symbol>
+    <symbol id="i-calm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+            stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 21c4.5-3 8-7.5 8-12a8 8 0 0 0-16 0c0 4.5 3.5 9 8 12Z"/>
+      <path d="M12 21V9"/>
+    </symbol>
+    <symbol id="i-simple" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+            stroke-linecap="round" stroke-linejoin="round">
+      <rect x="4" y="4" width="16" height="16" rx="3"/>
+      <circle cx="12" cy="12" r="2.5"/>
+    </symbol>
+    <symbol id="i-accessibility" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+            stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <path d="M12 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/>
+      <path d="M8.5 9.5h7"/>
+      <path d="M9 9.5v7.5l-1.5 3"/>
+      <path d="M15 9.5v7.5l1.5 3"/>
+      <path d="M10 17h4"/>
+    </symbol>
   </svg>
 
   <a class="skip-link" href="#mainContent">Saltar al contenido principal</a>
   <header class="topbar" role="banner">
     <div class="brand">
-      <img src="icons/icon-192.png" alt="HolAAC! - Comunicación Aumentativa" class="header-logo">
+      <img src="icons/icon-192.png" alt="HolAAC! - Comunicación Aumentativa" class="header-logo" width="32" height="32">
       <div class="subtitle" id="statusText" aria-live="polite" aria-atomic="true">Cargando...</div>
+      <!-- Anuncios accesibles para cambios de modo (Calma, Simple, Auditiva).
+           Se actualiza desde JS cuando el usuario activa/desactiva un modo. -->
+      <div id="modeStatus" class="sr-only" aria-live="polite" aria-atomic="true"></div>
       <!-- Persistente y silencioso mientras el Modo Tutor está activo (Fase 4):
            el toast de activación se desvanece a los 3s, pero el cuidador
            necesita recordar en todo momento que sigue en modo guía. Visible
@@ -321,13 +343,39 @@
         <button class="btn btn--labeled" id="btnBodyMap" aria-label="Abrir localizador visual de dolor: señala dónde y cuánto duele" title="Dónde duele">
           <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-health"/></svg><span class="btn-label">Dolor</span>
         </button>
-        <!-- Modo Sordo: quita el texto de las palabras y frases, deja solo
-             pictos + su color de categoría, y activa confirmación visual,
-             pulsación sostenida en Sí/No y avisos de vibración/pantalla. El
-             resto de la app (Ajustes, editor) no cambia. -->
-        <button class="btn btn--labeled" id="btnDeafMode" aria-label="Activar o desactivar el Modo Sordo: tablero sin texto, con confirmación visual" title="Modo Sordo" aria-pressed="false">
-          <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-deaf"/></svg><span class="btn-label">Sordo</span>
-        </button>
+        <!-- Grupo de modos de acceso. En pantallas anchas los tres botones se
+             ven directamente; en móviles se colapsan en un solo botón «Modos»
+             para no saturar la barra superior. -->
+        <div class="modes-group">
+          <button class="btn btn--labeled modes-toggle" id="btnModesToggle" type="button"
+            aria-label="Abrir menú de modos de accesibilidad" title="Modos"
+            aria-expanded="false" aria-controls="modesMenu">
+            <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-accessibility"/></svg><span class="btn-label">Modos</span>
+          </button>
+          <div class="modes-menu" id="modesMenu" role="group" aria-label="Modos de acceso">
+            <!-- Modo Auditiva: quita el texto de las palabras y frases, deja solo
+                 pictos + su color de categoría, y activa confirmación visual,
+                 pulsación sostenida en Sí/No y avisos de vibración/pantalla. -->
+            <button class="btn btn--labeled mode-btn" id="btnDeafMode" type="button"
+              aria-label="Activar o desactivar el modo Discapacidad Auditiva: tablero sin texto, con confirmación visual" title="Disc. Aud." aria-pressed="false">
+              <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-deaf"/></svg><span class="btn-label">Disc. Aud.</span>
+            </button>
+
+            <!-- Modo Calma: reduce color, sombras y etiquetas secundarias para
+                 personas con sobrecarga sensorial o en crisis. -->
+            <button class="btn btn--labeled mode-btn" id="btnCalmMode" type="button"
+              aria-label="Activar o desactivar el Modo Calma: menos color y menos estímulos visuales" title="Modo Calma" aria-pressed="false">
+              <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-calm"/></svg><span class="btn-label">Calma</span>
+            </button>
+
+            <!-- Modo Simple: oculta búsqueda, rutinas, etiquetas gramaticales y
+                 paginación para familias a las que les abruman las opciones. -->
+            <button class="btn btn--labeled mode-btn" id="btnSimpleMode" type="button"
+              aria-label="Activar o desactivar el Modo Simple: solo tablero, frase y Hablar Frase" title="Modo Simple" aria-pressed="false">
+              <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-simple"/></svg><span class="btn-label">Simple</span>
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- Nivel cuidador: agregar contenido, ajustar y editar el tablero.
@@ -758,49 +806,51 @@
           </div>
         </div>
 
-        <div class="settings-section">
-          <h3>Accesibilidad</h3>
+        <div class="settings-section settings-section--modes">
+          <h3><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-accessibility"/></svg> Modos de acceso</h3>
+          <p class="settings-hint">Cada modo adapta el tablero a una necesidad diferente. Se pueden prender y apagar en cualquier momento desde aquí o desde los botones de la barra superior.</p>
+
+          <label class="field-row field-row--mode" for="deafMode">
+            <div class="toggle-wrapper">
+              <input id="deafMode" type="checkbox" aria-describedby="deafModeDesc" />
+              <span class="toggle-slider"></span>
+            </div>
+            <div class="text-content">
+              <span class="main"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-deaf"/></svg> Modo Disc. Aud.</span>
+              <span class="sub" id="deafModeDesc">Para personas con discapacidad auditiva o que no leen. Quita el texto del tablero y de la frase, dejando solo los pictogramas y su color de categoría. Activa automáticamente la confirmación visual con Sí/No, la pulsación sostenida para responder, y un destello o vibración al enviar la frase. También disponible con el botón «Disc. Aud.» de la barra superior.</span>
+            </div>
+          </label>
+
+          <label class="field-row field-row--mode" for="simpleMode">
+            <div class="toggle-wrapper">
+              <input id="simpleMode" type="checkbox" aria-describedby="simpleModeDesc" />
+              <span class="toggle-slider"></span>
+            </div>
+            <div class="text-content">
+              <span class="main"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-simple"/></svg> Modo Simple</span>
+              <span class="sub" id="simpleModeDesc">Para quienes se sienten abrumados por muchos botones. Oculta la búsqueda, las rutinas, las etiquetas gramaticales y la paginación. Deja solo el tablero, la frase, «Hablar Frase» y «Agregar». También disponible con el botón «Simple» de la barra superior.</span>
+            </div>
+          </label>
+
+          <label class="field-row field-row--mode" for="calmMode">
+            <div class="toggle-wrapper">
+              <input id="calmMode" type="checkbox" aria-describedby="calmModeDesc" />
+              <span class="toggle-slider"></span>
+            </div>
+            <div class="text-content">
+              <span class="main"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-calm"/></svg> Modo Calma</span>
+              <span class="sub" id="calmModeDesc">Para momentos de sobrecarga sensorial, crisis o personas con autismo que necesitan menos estímulos. Reduce el color, las sombras y las etiquetas secundarias, dejando solo los pictogramas. También disponible con el botón «Calma» de la barra superior.</span>
+            </div>
+          </label>
+
           <label class="field-row">
             <div class="toggle-wrapper">
-              <input id="visualConfirm" type="checkbox" />
+              <input id="visualConfirm" type="checkbox" aria-describedby="visualConfirmDesc" />
               <span class="toggle-slider"></span>
             </div>
             <div class="text-content">
               <span class="main">Confirmación visual antes de hablar</span>
-              <span class="sub">Antes de reproducir la frase, la muestra en grande con las mismas imágenes y espera que la persona confirme con Sí o No. Pensado para quien no puede escuchar lo que armó — por ejemplo, alguien sordo — y necesita otra forma de detectar un toque equivocado antes de que llegue a un médico o cuidador.</span>
-            </div>
-          </label>
-
-          <label class="field-row">
-            <div class="toggle-wrapper">
-              <input id="deafMode" type="checkbox" />
-              <span class="toggle-slider"></span>
-            </div>
-            <div class="text-content">
-              <span class="main">Modo Sordo</span>
-              <span class="sub">Quita el texto del tablero y de la frase para la persona que se comunica: quedan solo los pictogramas y su color de categoría. Activa junto con esto la confirmación visual, una pulsación sostenida (en vez de un toque) para responder Sí/No, y un aviso de vibración + destello de pantalla al enviar la frase. También disponible con el botón «Sordo» de la barra superior.</span>
-            </div>
-          </label>
-
-          <label class="field-row">
-            <div class="toggle-wrapper">
-              <input id="simpleMode" type="checkbox" />
-              <span class="toggle-slider"></span>
-            </div>
-            <div class="text-content">
-              <span class="main">Modo Simple</span>
-              <span class="sub">Oculta la búsqueda, las rutinas, las etiquetas gramaticales y la paginación. Deja solo el tablero, la frase y «Agregar» — para familias a las que les abruman las opciones. Sin PIN.</span>
-            </div>
-          </label>
-
-          <label class="field-row">
-            <div class="toggle-wrapper">
-              <input id="calmMode" type="checkbox" />
-              <span class="toggle-slider"></span>
-            </div>
-            <div class="text-content">
-              <span class="main">Modo Calma</span>
-              <span class="sub">Quita el color, las sombras y las etiquetas secundarias, y deja solo los pictogramas. Para momentos de sobrecarga sensorial o crisis</span>
+              <span class="sub" id="visualConfirmDesc">Antes de reproducir la frase, la muestra en grande con las mismas imágenes y espera que la persona confirme con Sí o No. Pensado para quien no puede escuchar lo que armó y necesita detectar un toque equivocado antes de que llegue a un médico o cuidador.</span>
             </div>
           </label>
 
@@ -1176,7 +1226,7 @@
     <span class="status-toast-text" id="statusToastText"></span>
   </div>
 
-  <!-- Modo Sordo: un único destello de pantalla (nunca en bucle) para avisar
+  <!-- Modo Auditiva: un único destello de pantalla (nunca en bucle) para avisar
        de algo que normalmente se anunciaría con un sonido. -->
   <div id="deafFlashOverlay" aria-hidden="true"></div>
 

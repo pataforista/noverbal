@@ -1393,6 +1393,9 @@ body.tutor-active .tutor-indicator {
   align-items: stretch;
   gap: 0;
   cursor: pointer;
+  /* Pull the category tints back so the board feels calmer; the hue stays
+     readable as a Fitzgerald cue without every tile shouting for attention. */
+  filter: saturate(0.75);
   transition:
     transform 0.08s var(--md-easing-emphasized),
     box-shadow 0.2s var(--md-easing-standard);
@@ -2180,6 +2183,32 @@ select:focus {
   text-transform: uppercase;
   margin-bottom: 1rem;
   letter-spacing: 0.09em;
+  color: var(--md-on-surface-variant);
+}
+
+/* Sección de modos de acceso: agrupación visual clara y nombres con icono
+   para que cada modo sea reconocible rápidamente. */
+.settings-section--modes h3 {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-section--modes .settings-hint {
+  margin-top: -0.5rem;
+  margin-bottom: 1rem;
+}
+
+.field-row--mode .main {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+}
+
+.field-row--mode .main .ui-icon {
+  width: 20px;
+  height: 20px;
   color: var(--md-on-surface-variant);
 }
 
@@ -4552,6 +4581,72 @@ input[type="color"]::-moz-color-swatch {
   }
 }
 
+/* ── Header modes group ───────────────────────────────────────────────────
+   En escritorio los tres botones de modo se muestran directamente; en móvil
+   se colapsan bajo un botón «Modos» para no saturar la barra superior. */
+.modes-group {
+  display: flex;
+  align-items: center;
+  gap: var(--md-spacing-sm);
+}
+
+.modes-toggle {
+  display: none;
+}
+
+.modes-menu {
+  display: contents;
+}
+
+@media (max-width: 720px), (max-height: 560px) {
+  .modes-toggle {
+    display: inline-flex;
+  }
+
+  .modes-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 8px;
+    z-index: 60;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px;
+    background: var(--md-surface-container-low);
+    border: 1px solid var(--md-outline-variant);
+    border-radius: var(--md-radius-lg);
+    box-shadow: var(--md-shadow-3);
+    min-width: 180px;
+  }
+
+  .modes-menu.open {
+    display: flex;
+  }
+
+  .modes-menu .mode-btn {
+    justify-content: flex-start;
+    width: 100%;
+    padding: 10px 14px;
+  }
+
+  .modes-menu .mode-btn .btn-label {
+    display: inline;
+  }
+
+  .modes-menu .mode-btn.active {
+    background: var(--md-surface-container-highest);
+    color: var(--md-on-surface);
+    border-color: var(--md-outline);
+  }
+
+  #btnDeafMode.active,
+  #btnCalmMode.active,
+  #btnSimpleMode.active {
+    background: var(--md-surface-container-highest);
+    color: var(--md-on-surface);
+  }
+}
+
 /* ── Core-row labels ────────────────────────────────────────────────────── */
 /* `overflow-wrap: anywhere` broke short words mid-syllable in the narrow core
    tiles — «Ayuda» rendered as «Ayu / da», «Querer» as «Que / rer», which is
@@ -4880,7 +4975,8 @@ body.calm-mode.dark-theme .tile-img {
 }
 
 /* ===================================================================
-   Localizador visual de dolor (bodyMapModal) — modo sordo-analfabeto.
+   Localizador visual de dolor (bodyMapModal) — modo para personas que no
+   leen o tienen discapacidad auditiva.
    Toda la interacción es imagen: silueta + miniaturas de picto, sin
    depender de texto para saber qué tocar.
    =================================================================== */
@@ -5065,13 +5161,70 @@ body.calm-mode.dark-theme .tile-img {
 }
 
 /* ===================================================================
-   Modo Sordo — quita el texto del lado del paciente (queda solo picto +
+   Botones de modo en la barra superior: estado activo claro y accesible.
+   Cada modo conserva su propio acento para que sea fácil de distinguir.
+   =================================================================== */
+.mode-btn {
+  transition:
+    background-color 0.18s var(--md-easing-standard),
+    color 0.18s var(--md-easing-standard),
+    box-shadow 0.18s var(--md-easing-standard),
+    transform 0.09s var(--md-easing-emphasized);
+}
+
+.mode-btn.active {
+  font-weight: 700;
+}
+
+#btnDeafMode.active,
+#btnCalmMode.active,
+#btnSimpleMode.active {
+  background: var(--md-surface-container-highest);
+  color: var(--md-on-surface);
+  border-color: var(--md-outline);
+}
+
+.mode-btn:focus-visible {
+  outline: 3px solid var(--md-primary);
+  outline-offset: 2px;
+}
+
+/* ===================================================================
+   Topbar quiet: secondary controls recede so SOS and the primary action
+   remain the only saturated anchors, reducing overall visual noise.
+   =================================================================== */
+.topbar .btn:not(.sos-btn):not(.primary-action):not(.btn-add) {
+  background: transparent;
+  color: var(--md-on-surface-variant);
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.topbar .btn:not(.sos-btn):not(.primary-action):not(.btn-add):hover {
+  background: var(--md-surface-container-high);
+  color: var(--md-on-surface);
+}
+
+.topbar .btn:not(.sos-btn):not(.primary-action):not(.btn-add):active {
+  transform: scale(0.97);
+}
+
+.topbar .btn-add {
+  background: transparent;
+  color: var(--md-on-surface-variant);
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.topbar .btn-add:hover {
+  background: var(--md-surface-container-high);
+  color: var(--md-on-surface);
+}
+
+/* ===================================================================
+   Modo Auditiva — quita el texto del lado del paciente (queda solo picto +
    color de categoría) y activa la pulsación sostenida en Sí/No.
    =================================================================== */
-#btnDeafMode.active {
-  background: var(--accent);
-  color: #fff;
-}
 
 /* La palabra sigue en el DOM (la necesita cualquier lector de pantalla), solo
    se retira visualmente — igual que .sr-only, para no perder ese texto en

@@ -677,6 +677,11 @@ const dom = {
     visualConfirm: document.getElementById('visualConfirm'),
     deafMode: document.getElementById('deafMode'),
     btnDeafMode: document.getElementById('btnDeafMode'),
+    btnCalmMode: document.getElementById('btnCalmMode'),
+    btnSimpleMode: document.getElementById('btnSimpleMode'),
+    btnModesToggle: document.getElementById('btnModesToggle'),
+    modesMenu: document.getElementById('modesMenu'),
+    modeStatus: document.getElementById('modeStatus'),
     deafFlashOverlay: document.getElementById('deafFlashOverlay'),
     // Offline precache
     btnDownloadAll: document.getElementById('btnDownloadAll'),
@@ -1381,6 +1386,7 @@ function attachListeners() {
             state.settings.calmMode = e.target.checked;
             document.body.classList.toggle('calm-mode', state.settings.calmMode);
             updateThemeColorMeta(); // the browser chrome follows the new surface
+            applyCalmMode();
             save();
         };
     }
@@ -1414,6 +1420,71 @@ function attachListeners() {
             applyDeafMode();
             save();
         };
+    }
+
+    if (dom.btnCalmMode) {
+        dom.btnCalmMode.onclick = () => {
+            state.settings.calmMode = !state.settings.calmMode;
+            applyCalmMode();
+            updateThemeColorMeta();
+            save();
+        };
+    }
+
+    if (dom.btnSimpleMode) {
+        dom.btnSimpleMode.onclick = () => {
+            state.settings.simpleMode = !state.settings.simpleMode;
+            applySimpleMode();
+            save();
+            renderGrid();
+        };
+    }
+
+    // Menú de modos de accesibilidad: en móvil los tres botones se colapsan
+    // bajo «Modos»; en escritorio se muestran directamente.
+    if (dom.btnModesToggle && dom.modesMenu) {
+        const setModesMenu = (open) => {
+            dom.modesMenu.classList.toggle('open', open);
+            dom.btnModesToggle.setAttribute('aria-expanded', String(open));
+            if (open) {
+                dom.modesMenu.querySelector('.mode-btn')?.focus();
+                dom.headerOverflow?.classList.remove('open');
+                dom.btnMore?.setAttribute('aria-expanded', 'false');
+                dom.sosMenu?.classList.remove('open');
+                dom.btnSOS?.setAttribute('aria-expanded', 'false');
+            }
+        };
+        dom.btnModesToggle.onclick = (e) => {
+            e.stopPropagation();
+            setModesMenu(dom.btnModesToggle.getAttribute('aria-expanded') !== 'true');
+        };
+        dom.modesMenu.addEventListener('click', (e) => {
+            if (e.target.closest('.mode-btn')) setModesMenu(false);
+        });
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#modesMenu, #btnModesToggle')) setModesMenu(false);
+        });
+        document.addEventListener('keydown', (e) => {
+            if (dom.btnModesToggle.getAttribute('aria-expanded') !== 'true') return;
+            if (e.key === 'Escape') {
+                setModesMenu(false);
+                dom.btnModesToggle.focus();
+                return;
+            }
+            if (e.key === 'Tab') {
+                const items = [...dom.modesMenu.querySelectorAll('.mode-btn')];
+                if (!items.length) return;
+                const first = items[0];
+                const last = items[items.length - 1];
+                if (e.shiftKey && document.activeElement === first) {
+                    e.preventDefault();
+                    last.focus();
+                } else if (!e.shiftKey && document.activeElement === last) {
+                    e.preventDefault();
+                    first.focus();
+                }
+            }
+        });
     }
 
     dom.btnIntroSelectAll.onclick = () => {
@@ -3400,7 +3471,7 @@ function renderPhrase() {
         const chip = document.createElement('div');
         chip.className = 'chip';
         // Same colour-by-category code as the board tiles (see createTile),
-        // now carried into the sentence strip too: in Modo Sordo, with the
+        // now carried into the sentence strip too: in Modo Auditiva, with the
         // word hidden, colour + picto are the only things left saying what
         // category each piece of the sentence belongs to.
         if (item.color) chip.style.borderLeft = `6px solid ${item.color}`;
@@ -4159,16 +4230,14 @@ function applySettings() {
     dom.speechMode.value = state.settings.speechMode || 'fluent';
     dom.darkMode.checked = state.settings.darkMode || false;
     if (dom.hapticFeedback) dom.hapticFeedback.checked = state.settings.hapticFeedback !== false;
-    if (dom.calmMode) dom.calmMode.checked = state.settings.calmMode || false;
-    if (dom.simpleMode) dom.simpleMode.checked = state.settings.simpleMode || false;
     if (dom.visualConfirm) dom.visualConfirm.checked = state.settings.visualConfirm || false;
-    applyDeafMode();
+    applyDeafMode(true);
     dom.headerSpeakToggle.checked = (state.settings.tapMode === 'speak');
     ensureActiveCategories();
     document.body.classList.toggle('show-grammar', state.settings.showGrammarTags);
     document.body.classList.toggle('dark-theme', state.settings.darkMode);
-    document.body.classList.toggle('calm-mode', state.settings.calmMode);
-    applySimpleMode();
+    applyCalmMode(true);
+    applySimpleMode(true);
     updateThemeToggleIcon();
     updateThemeColorMeta();
 
@@ -4186,23 +4255,58 @@ function isPagedModeActive() {
     return !!state.settings.pagedMode && !state.settings.simpleMode;
 }
 
-function applySimpleMode() {
+// Anuncia cambios de modo a lectores de pantalla mediante una región viva.
+// Se usa tanto desde la barra superior como desde Ajustes.
+function announceModeChange(name, on) {
+    if (!dom.modeStatus) return;
+    dom.modeStatus.textContent = `${name} ${on ? 'activado' : 'desactivado'}`;
+}
+
+// Modo Simple (Fase 4, neuro-accesibilidad): oculta búsqueda, rutinas,
+// etiquetas gramaticales y paginación sin tocar esas preferencias guardadas
+// — solo las deshabilita mientras el interruptor está activo, para que
+// apagarlo devuelva a la familia exactamente lo que tenía configurado.
+// Sin PIN: pensado para que cualquier cuidador lo prenda y apague al vuelo.
+function applySimpleMode(silent = false) {
     const on = !!state.settings.simpleMode;
+    const wasOn = document.body.classList.contains('simple-mode');
     document.body.classList.toggle('simple-mode', on);
     [dom.pagedMode, dom.showGrammarTags, dom.showRoutine].forEach((el) => {
         if (el) el.disabled = on;
     });
+    if (dom.btnSimpleMode) {
+        dom.btnSimpleMode.classList.toggle('active', on);
+        dom.btnSimpleMode.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    if (dom.simpleMode) dom.simpleMode.checked = on;
+    if (!silent && on !== wasOn) announceModeChange('Modo Simple', on);
 }
 
-// Modo Sordo: quita el texto de las palabras y frases del lado que ve la
+// Modo Calma: reduce estímulos visuales para momentos de sobrecarga
+// sensorial. Sincroniza el checkbox de Ajustes, el botón de la barra
+// superior y anuncia el cambio a lectores de pantalla.
+function applyCalmMode(silent = false) {
+    const on = !!state.settings.calmMode;
+    const wasOn = document.body.classList.contains('calm-mode');
+    document.body.classList.toggle('calm-mode', on);
+    if (dom.btnCalmMode) {
+        dom.btnCalmMode.classList.toggle('active', on);
+        dom.btnCalmMode.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    if (dom.calmMode) dom.calmMode.checked = on;
+    if (!silent && on !== wasOn) announceModeChange('Modo Calma', on);
+}
+
+// Modo Auditiva: quita el texto de las palabras y frases del lado que ve la
 // persona comunicadora (solo pictos + el color de su categoría, que ya
 // codifica el significado — ver el `item.color` que createTile pinta como
 // fondo), y activa la confirmación visual + los avisos hápticos/de pantalla
 // de más abajo. El resto de la app (Ajustes, el editor, lo que ve un
-// cuidador) sigue con texto: la persona sorda-analfabeta nunca necesita
-// entrar ahí.
-function applyDeafMode() {
+// cuidador) sigue con texto: la persona con discapacidad auditiva o que no
+// lee nunca necesita entrar ahí.
+function applyDeafMode(silent = false) {
     const on = !!state.settings.deafMode;
+    const wasOn = document.body.classList.contains('deaf-mode');
     document.body.classList.toggle('deaf-mode', on);
 
     if (dom.btnDeafMode) {
@@ -4227,6 +4331,7 @@ function applyDeafMode() {
         }
     }
 
+    if (!silent && on !== wasOn) announceModeChange('Modo Discapacidad Auditiva', on);
     renderGrid();
     renderPhrase();
 }
@@ -4245,7 +4350,7 @@ function visualAlert() {
 
 // Sí/No en #phraseConfirmModal se comportan distinto según el modo: un
 // toque normal en general, pero una pulsación sostenida de 1.5s en Modo
-// Sordo — señalar o que alguien más sostenga el teléfono por la persona
+// Auditiva — señalar o que alguien más sostenga el teléfono por la persona
 // hace mucho más fácil un toque accidental, y esta es una confirmación
 // médica. Un solo listener cubre ambos casos sin duplicar botones.
 const HOLD_CONFIRM_MS = 1500;

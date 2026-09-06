@@ -13,6 +13,9 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${PORT}`,
     trace: 'on-first-retry',
+    // Keep a deterministic light colour scheme so OS dark-mode settings do not
+    // make contrast assertions flip between runs.
+    colorScheme: 'light',
     // Local runs may point at a pre-installed Chromium via PW_CHROME; CI installs
     // the matching browser so this stays undefined there.
     launchOptions: process.env.PW_CHROME ? { executablePath: process.env.PW_CHROME } : {},
