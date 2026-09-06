@@ -243,6 +243,13 @@
             stroke-linecap="round" stroke-linejoin="round">
       <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92Z"/>
     </symbol>
+    <symbol id="i-deaf" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+            stroke-linecap="round" stroke-linejoin="round">
+      <path d="M8.2 15.4c-1.5-1.6-2.3-3.4-2.3-5.4a6.1 6.1 0 0 1 11.6-2.6"/>
+      <path d="M8.2 15.4c.8.9 2 1.5 3.3 1.5a3.6 3.6 0 0 0 3.2-1.9"/>
+      <path d="M14.4 9.3a2.1 2.1 0 0 1 2.7 3.1"/>
+      <path d="M3.5 3.5l17 17"/>
+    </symbol>
   </svg>
 
   <a class="skip-link" href="#mainContent">Saltar al contenido principal</a>
@@ -313,6 +320,13 @@
              toques, sin leer ni buscar en el tablero (ver bodyMapModal). -->
         <button class="btn btn--labeled" id="btnBodyMap" aria-label="Abrir localizador visual de dolor: señala dónde y cuánto duele" title="Dónde duele">
           <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-health"/></svg><span class="btn-label">Dolor</span>
+        </button>
+        <!-- Modo Sordo: quita el texto de las palabras y frases, deja solo
+             pictos + su color de categoría, y activa confirmación visual,
+             pulsación sostenida en Sí/No y avisos de vibración/pantalla. El
+             resto de la app (Ajustes, editor) no cambia. -->
+        <button class="btn btn--labeled" id="btnDeafMode" aria-label="Activar o desactivar el Modo Sordo: tablero sin texto, con confirmación visual" title="Modo Sordo" aria-pressed="false">
+          <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-deaf"/></svg><span class="btn-label">Sordo</span>
         </button>
       </div>
 
@@ -759,6 +773,17 @@
 
           <label class="field-row">
             <div class="toggle-wrapper">
+              <input id="deafMode" type="checkbox" />
+              <span class="toggle-slider"></span>
+            </div>
+            <div class="text-content">
+              <span class="main">Modo Sordo</span>
+              <span class="sub">Quita el texto del tablero y de la frase para la persona que se comunica: quedan solo los pictogramas y su color de categoría. Activa junto con esto la confirmación visual, una pulsación sostenida (en vez de un toque) para responder Sí/No, y un aviso de vibración + destello de pantalla al enviar la frase. También disponible con el botón «Sordo» de la barra superior.</span>
+            </div>
+          </label>
+
+          <label class="field-row">
+            <div class="toggle-wrapper">
               <input id="simpleMode" type="checkbox" />
               <span class="toggle-slider"></span>
             </div>
@@ -1122,10 +1147,12 @@
       </div>
       <div class="modal-foot phrase-confirm-actions">
         <button type="button" class="btn danger phrase-confirm-btn" id="btnPhraseConfirmNo">
+          <span class="hold-fill" aria-hidden="true"></span>
           <img src="assets/pictos/no.png" alt="" class="phrase-confirm-btn-img" />
           <span>No</span>
         </button>
         <button type="button" class="btn primary phrase-confirm-btn" id="btnPhraseConfirmYes">
+          <span class="hold-fill" aria-hidden="true"></span>
           <img src="assets/pictos/si.png" alt="" class="phrase-confirm-btn-img" />
           <span>Sí</span>
         </button>
@@ -1148,6 +1175,10 @@
     <svg class="status-toast-icon" id="statusToastIcon" aria-hidden="true" focusable="false"><use href="#i-check"/></svg>
     <span class="status-toast-text" id="statusToastText"></span>
   </div>
+
+  <!-- Modo Sordo: un único destello de pantalla (nunca en bucle) para avisar
+       de algo que normalmente se anunciaría con un sonido. -->
+  <div id="deafFlashOverlay" aria-hidden="true"></div>
 
   <script type="module" src="app.js"></script>
 </body>

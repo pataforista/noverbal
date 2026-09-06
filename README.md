@@ -31,6 +31,14 @@ parálisis cerebral y otras necesidades de comunicación, y para los profesional
   armada en pictos grandes y espera un Sí/No antes de reproducirla, para que
   alguien que no puede escuchar lo que compuso tenga una forma de detectar un
   toque equivocado antes de que llegue a un médico o cuidador.
+- **Modo Sordo.** Un botón («Sordo» en la barra superior, o el mismo ajuste
+  en Ajustes) que quita el texto del tablero y de la frase para quien se
+  comunica — quedan solo los pictogramas y el color de su categoría — y
+  activa junto con eso la confirmación visual, una pulsación sostenida de
+  1.5s (en vez de un toque) para responder el Sí/No, y un aviso de vibración
+  + destello de pantalla al enviar la frase. El resto de la app (Ajustes,
+  editor) no cambia, así que sigue sirviendo igual para TEA, afasia u otras
+  necesidades sin este modo activado.
 - **Modo Tutor (terapeuta).** Oculta/muestra elementos por sesión, protegido por
   un PIN configurable.
 - **Bitácora clínica local.** Registro privado de actividad, almacenado solo en

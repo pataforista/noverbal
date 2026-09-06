@@ -5063,3 +5063,82 @@ body.calm-mode.dark-theme .tile-img {
   width: 48px;
   height: 48px;
 }
+
+/* ===================================================================
+   Modo Sordo — quita el texto del lado del paciente (queda solo picto +
+   color de categoría) y activa la pulsación sostenida en Sí/No.
+   =================================================================== */
+#btnDeafMode.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* La palabra sigue en el DOM (la necesita cualquier lector de pantalla), solo
+   se retira visualmente — igual que .sr-only, para no perder ese texto en
+   quien de verdad depende de un lector de pantalla en vez de la vista.
+   !important porque .tile-label trae su propio `min-height: 32px` (para que
+   el nombre en dos líneas no se recorte) que, sin esto, gana por encima del
+   `height: 1px` de aquí y el tile no llega a ocultarlo. */
+body.deaf-mode .tile-label,
+body.deaf-mode .chip-text {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  min-height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border-width: 0 !important;
+}
+
+body.deaf-mode .grammar-tag {
+  display: none;
+}
+
+.phrase-confirm-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.phrase-confirm-btn .hold-fill {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.75);
+  transform: scaleX(0);
+  transform-origin: left;
+}
+
+.phrase-confirm-btn.holding .hold-fill {
+  transition: transform 1.5s linear;
+  transform: scaleX(1);
+}
+
+#deafFlashOverlay {
+  position: fixed;
+  inset: 0;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+#deafFlashOverlay.flash-pulse {
+  animation: deaf-flash-pulse 500ms ease-out 1;
+}
+
+@keyframes deaf-flash-pulse {
+  0% { opacity: 0; }
+  15% { opacity: 0.55; }
+  100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #deafFlashOverlay.flash-pulse {
+    animation: none;
+  }
+}
