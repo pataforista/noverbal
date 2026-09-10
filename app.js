@@ -650,6 +650,26 @@ const dom = {
     btnOpenHistory: document.getElementById('btnOpenHistory'),
     historyModal: document.getElementById('historyModal'),
     historyList: document.getElementById('historyList'),
+    // Modo Consulta (profesional)
+    btnConsulta: document.getElementById('btnConsulta'),
+    consultaModal: document.getElementById('consultaModal'),
+    consultaStats: document.getElementById('consultaStats'),
+    consultaQuestions: document.getElementById('consultaQuestions'),
+    consultaWords: document.getElementById('consultaWords'),
+    consultaNote: document.getElementById('consultaNote'),
+    btnSaveConsultaNote: document.getElementById('btnSaveConsultaNote'),
+    btnEndConsulta: document.getElementById('btnEndConsulta'),
+    btnConsultaBodyMap: document.getElementById('btnConsultaBodyMap'),
+    btnConsultaSalud: document.getElementById('btnConsultaSalud'),
+    btnConsultaSOS: document.getElementById('btnConsultaSOS'),
+    btnConsultaMood: document.getElementById('btnConsultaMood'),
+    btnConsultaMeds: document.getElementById('btnConsultaMeds'),
+    moodModal: document.getElementById('moodModal'),
+    moodScaleList: document.getElementById('moodScaleList'),
+    consultaQuestionInput: document.getElementById('consultaQuestionInput'),
+    btnAddConsultaQuestion: document.getElementById('btnAddConsultaQuestion'),
+    consultaManageList: document.getElementById('consultaManageList'),
+    btnRepairPictos: document.getElementById('btnRepairPictos'),
     btnClearHistory: document.getElementById('btnClearHistory'),
     btnExportHistory: document.getElementById('btnExportHistory'),
     // Tutor Mode & Security
@@ -883,6 +903,254 @@ function initTactileFeedback() {
     }, { passive: true });
 }
 
+/* ── Modo Consulta (profesional) ─────────────────────────────────────────
+   Herramienta del doctor durante la consulta: preguntas rápidas que la app
+   enuncia en voz alta, accesos directos al tablero clínico, notas por
+   sesión y un conteo de lo que el paciente usó. La apertura pide el mismo
+   PIN que el Modo Tutor (solo el doctor abre la herramienta clínica), y
+   todo lo registrado se guarda únicamente en este dispositivo. */
+
+// Preguntas por defecto orientadas a la consulta psiquiátrica: adherencia,
+// efectos secundarios, sueño, ánimo y seguridad. El doctor puede agregar o
+// quitar las suyas desde el propio panel (se guardan en este dispositivo).
+const CONSULTA_QUESTIONS_KEY = 'aac_consulta_questions_v1';
+const DEFAULT_CONSULTA_QUESTIONS = [
+    '\u00bfTomaste tu medicamento hoy?',
+    '\u00bfTuviste efectos secundarios?',
+    '\u00bfC\u00f3mo te sientes hoy?',
+    '\u00bfC\u00f3mo dormiste anoche?',
+    '\u00bfTienes dolor o malestar?',
+    '\u00bfTe sientes ansioso o nervioso?',
+    '\u00bfTe sientes triste?',
+    '\u00bfHas tenido pensamientos de hacerte da\u00f1o?',
+    '\u00bfQuieres ajustar la medicaci\u00f3n?',
+    'Estamos terminando',
+];
+
+let consultaQuestions = loadJSON(CONSULTA_QUESTIONS_KEY, [...DEFAULT_CONSULTA_QUESTIONS]);
+if (!Array.isArray(consultaQuestions) || consultaQuestions.length === 0) {
+    consultaQuestions = [...DEFAULT_CONSULTA_QUESTIONS];
+}
+
+function persistConsultaQuestions() {
+    localStorage.setItem(CONSULTA_QUESTIONS_KEY, JSON.stringify(consultaQuestions));
+}
+
+function renderConsultaQuestions() {
+    if (!dom.consultaQuestions) return;
+    dom.consultaQuestions.innerHTML = '';
+    consultaQuestions.forEach(q => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn secondary consulta-question';
+        btn.textContent = q;
+        btn.onclick = () => {
+            speakText(q);
+            logActivity(`Doctor: ${q}`);
+            haptic();
+        };
+        dom.consultaQuestions.appendChild(btn);
+    });
+    if (dom.consultaManageList) {
+        dom.consultaManageList.innerHTML = '';
+        consultaQuestions.forEach((q, idx) => {
+            const row = document.createElement('div');
+            row.className = 'consulta-manage-row';
+            const span = document.createElement('span');
+            span.textContent = q;
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'btn-remove-contact';
+            removeBtn.setAttribute('aria-label', `Quitar pregunta: ${q}`);
+            removeBtn.appendChild(makeIcon('trash'));
+            removeBtn.addEventListener('click', () => {
+                consultaQuestions.splice(idx, 1);
+                persistConsultaQuestions();
+                renderConsultaQuestions();
+                haptic();
+            });
+            row.appendChild(span);
+            row.appendChild(removeBtn);
+            dom.consultaManageList.appendChild(row);
+        });
+    }
+}
+
+// Escala de ánimo de 5 caras: reutiliza los rostros del localizador de dolor
+// invertidos (sonrisa amplia = «Muy bien», mueca fuerte = «Muy mal»), así el
+// paciente responde «¿Cómo te sientes hoy?» señalando, sin necesidad de leer.
+const MOOD_SCALE_ITEMS = [
+    { id: 'mood-0', text: 'Muy mal', color: '#f5c5c1' },
+    { id: 'mood-1', text: 'Mal', color: '#f7d4a8' },
+    { id: 'mood-2', text: 'Regular', color: '#f6e7a8' },
+    { id: 'mood-3', text: 'Bien', color: '#dbe8ab' },
+    { id: 'mood-4', text: 'Muy bien', color: '#c3e2c0' },
+].map((item, i) => ({ ...item, category: 'Emociones', order: 950 + i, image: painFaceSvg(4 - i) }));
+
+function renderMoodScale() {
+    if (!dom.moodScaleList) return;
+    dom.moodScaleList.innerHTML = '';
+    MOOD_SCALE_ITEMS.forEach(item => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'bodymap-face';
+        const img = document.createElement('img');
+        img.src = item.image;
+        img.alt = item.text;
+        btn.appendChild(img);
+        const label = document.createElement('span');
+        label.textContent = item.text;
+        btn.appendChild(label);
+        btn.onclick = () => {
+            addItemToPhrase(item); // también alimenta el seguimiento de la sesión
+            if (dom.moodModal.open) dom.moodModal.close();
+            flashStatus('Añadido a la frase');
+        };
+        dom.moodScaleList.appendChild(btn);
+    });
+}
+
+// Añade la escala de ánimo al tablero con la misma lógica aditiva (y de la
+// misma forma respetuosa con lo guardado) que ensurePainScaleItemsPresent.
+async function ensureMoodItemsPresent() {
+    for (const item of MOOD_SCALE_ITEMS) {
+        if (state.items.some(existing => existing.id === item.id)) continue;
+        await saveItemDB(item);
+        state.items.push(item);
+    }
+}
+
+let consultaSession = null; // {startedAt, words, phrases, wordCounts: Map}
+
+function consultaElapsed() {
+    if (!consultaSession) return '0 min';
+    return `${Math.max(1, Math.round((Date.now() - consultaSession.startedAt) / 60000))} min`;
+}
+
+function renderConsulta() {
+    if (dom.consultaStats) {
+        const s = consultaSession;
+        dom.consultaStats.textContent = s
+            ? `Consulta en curso \u00b7 ${consultaElapsed()} \u00b7 ${s.words} palabras tocadas \u00b7 ${s.phrases} frases habladas`
+            : 'Consulta iniciada \u00b7 0 palabras tocadas \u00b7 0 frases habladas';
+    }
+    if (dom.consultaWords) {
+        dom.consultaWords.innerHTML = '';
+        if (!consultaSession || consultaSession.wordCounts.size === 0) {
+            const p = document.createElement('p');
+            p.className = 'settings-hint';
+            p.textContent = 'A\u00fan no toca palabras.';
+            dom.consultaWords.appendChild(p);
+        } else {
+            [...consultaSession.wordCounts.entries()]
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 15)
+                .forEach(([text, count]) => {
+                    const chipEl = document.createElement('span');
+                    chipEl.className = 'consulta-word-chip';
+                    chipEl.textContent = `${text} \u00d7${count}`;
+                    dom.consultaWords.appendChild(chipEl);
+                });
+        }
+    }
+}
+
+async function openConsulta() {
+    if (!consultaSession) {
+        if (!(await promptPin())) return; // solo el doctor abre la herramienta clínica
+        consultaSession = { startedAt: Date.now(), words: 0, phrases: 0, wordCounts: new Map() };
+        document.body.classList.add('consulta-active');
+        if (dom.modeStatus) dom.modeStatus.textContent = 'Modo Consulta activado';
+        logActivity('--- Inicio de consulta ---');
+        haptic([40, 40, 120]);
+    }
+    renderConsulta();
+    dom.consultaModal.showModal();
+}
+
+function endConsulta() {
+    if (!consultaSession) {
+        if (dom.consultaModal.open) dom.consultaModal.close();
+        return;
+    }
+    const summary = `--- Fin de consulta (${consultaElapsed()}): ${consultaSession.words} palabras, ${consultaSession.phrases} frases ---`;
+    logActivity(summary);
+    consultaSession = null;
+    document.body.classList.remove('consulta-active');
+    if (dom.modeStatus) dom.modeStatus.textContent = 'Modo Consulta desactivado';
+    if (dom.consultaModal.open) dom.consultaModal.close();
+    flashStatus('Consulta guardada en la bitácora');
+}
+
+// Contadores: cada palabra que el paciente toca (incluidas las del
+// localizador de dolor) y cada frase hablada alimentan el seguimiento.
+function consultaTrackWord(item) {
+    if (!consultaSession) return;
+    consultaSession.words += 1;
+    consultaSession.wordCounts.set(item.text, (consultaSession.wordCounts.get(item.text) || 0) + 1);
+    renderConsulta();
+}
+
+function consultaTrackPhrase() {
+    if (!consultaSession) return;
+    consultaSession.phrases += 1;
+    renderConsulta();
+}
+
+function imageExists(src) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve(true);
+        img.onerror = () => resolve(false);
+        img.src = src;
+    });
+}
+
+async function fetchArasaacForWord(text) {
+    try {
+        const query = normalizeWord(text).split(/\s+/)[0];
+        if (!query) return null;
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
+        const response = await fetch(`https://api.arasaac.org/api/pictograms/es/search/${encodeURIComponent(query)}`, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        if (!response.ok) return null;
+        const pictos = await response.json();
+        if (!pictos.length) return null;
+        const id = pictos[0]._id;
+        return await imageUrlToDataURL(`https://static.arasaac.org/pictograms/${id}/${id}_300.png`);
+    } catch (_) {
+        return null;
+    }
+}
+
+async function repairMissingImages({ silent = false } = {}) {
+    const broken = [];
+    for (const item of state.items) {
+        if (!item.image || !item.image.startsWith('assets/')) continue;
+        if (!(await imageExists(item.image))) broken.push(item);
+    }
+    if (broken.length === 0) {
+        if (!silent) flashStatus('Todos los pictogramas están completos');
+        return;
+    }
+    let fixed = 0;
+    for (const item of broken) {
+        const dataUrl = await fetchArasaacForWord(item.text);
+        if (dataUrl) {
+            item.image = dataUrl;
+            await saveItemDB(item);
+            fixed += 1;
+        }
+    }
+    if (fixed > 0) {
+        render();
+        flashStatus(`Se repararon ${fixed} de ${broken.length} pictogramas faltantes`);
+    } else if (!silent) {
+        flashStatus('Sin conexión o sin resultados: se reintentará en el próximo arranque', 'warning');
+    }
+}
+
 // Initialization
 async function init() {
     // On the very first run (no saved preferences yet) honour the OS colour
@@ -943,6 +1211,8 @@ async function init() {
     }
 
     await ensurePainScaleItemsPresent();
+    await ensureMoodItemsPresent();
+    if (navigator.onLine) repairMissingImages({ silent: true });
 
     ensureActiveCategories();
     initCoreWords();
@@ -1611,6 +1881,71 @@ function attachListeners() {
         renderRoutine();
     };
 
+    // Modo Consulta (profesional)
+    if (dom.btnConsulta) dom.btnConsulta.onclick = openConsulta;
+    renderConsultaQuestions();
+    if (dom.btnAddConsultaQuestion) {
+        const addQuestion = () => {
+            const q = (dom.consultaQuestionInput.value || '').trim();
+            if (!q) {
+                flashStatus('Escribe una pregunta primero', 'warning');
+                return;
+            }
+            consultaQuestions.push(q);
+            persistConsultaQuestions();
+            dom.consultaQuestionInput.value = '';
+            dom.consultaQuestionInput.focus();
+            renderConsultaQuestions();
+            haptic();
+        };
+        dom.btnAddConsultaQuestion.onclick = addQuestion;
+        if (dom.consultaQuestionInput) {
+            dom.consultaQuestionInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addQuestion();
+                }
+            });
+        }
+    }
+    if (dom.btnConsultaMood) {
+        dom.btnConsultaMood.onclick = () => {
+            renderMoodScale();
+            dom.moodModal.showModal(); // se apila sobre el panel de consulta
+        };
+    }
+    if (dom.btnConsultaMeds) {
+        dom.btnConsultaMeds.onclick = () => {
+            if (dom.consultaModal.open) dom.consultaModal.close();
+            goToCategory('C. Médica');
+        };
+    }
+    if (dom.btnConsultaBodyMap) dom.btnConsultaBodyMap.onclick = () => {
+        if (dom.consultaModal.open) dom.consultaModal.close();
+        openBodyMap();
+    };
+    if (dom.btnConsultaSalud) dom.btnConsultaSalud.onclick = () => {
+        if (dom.consultaModal.open) dom.consultaModal.close();
+        goToCategory('Salud');
+    };
+    if (dom.btnConsultaSOS) dom.btnConsultaSOS.onclick = () => {
+        if (dom.consultaModal.open) dom.consultaModal.close();
+        goToSOS();
+    };
+    if (dom.btnSaveConsultaNote) {
+        dom.btnSaveConsultaNote.onclick = () => {
+            const note = (dom.consultaNote.value || '').trim();
+            if (!note) {
+                flashStatus('Escribe una nota primero', 'warning');
+                return;
+            }
+            logActivity(`Nota de consulta: ${note}`);
+            dom.consultaNote.value = '';
+            flashStatus('Nota guardada en la bitácora');
+        };
+    }
+    if (dom.btnEndConsulta) dom.btnEndConsulta.onclick = endConsulta;
+
     // Clinical Bitácora
     dom.btnOpenHistory.onclick = () => {
         renderHistory();
@@ -1714,6 +2049,20 @@ function attachListeners() {
         dom.btnDownloadAll.onclick = (e) => {
             e.preventDefault();
             downloadAllForOffline();
+        };
+    }
+
+    if (dom.btnRepairPictos) {
+        dom.btnRepairPictos.onclick = (e) => {
+            e.preventDefault();
+            if (!navigator.onLine) {
+                flashStatus('Necesitas conexión para reparar pictogramas', 'warning');
+                return;
+            }
+            dom.btnRepairPictos.disabled = true;
+            repairMissingImages().finally(() => {
+                dom.btnRepairPictos.disabled = false;
+            });
         };
     }
 
@@ -1925,6 +2274,7 @@ async function performSpeak(items) {
     }
 
     logActivity(`Frase completa: ${items.map(i => i.text).join(" ")}`);
+    consultaTrackPhrase();
 
     if (state.settings.deafMode) {
         // Dos vibraciones cortas: "mensaje enviado", el mismo aviso que
@@ -1953,7 +2303,7 @@ function openPhraseConfirm(items) {
             img.alt = item.text;
             imgWrap.appendChild(img);
         } else {
-            imgWrap.textContent = item.text.charAt(0).toUpperCase();
+            imgWrap.appendChild(makeIcon('image'));
         }
         card.appendChild(imgWrap);
         const label = document.createElement('span');
@@ -3329,10 +3679,9 @@ function createTile(item, onClick, opts = {}) {
         img.loading = 'lazy';
         imgContainer.appendChild(img);
     } else {
-        const span = document.createElement('span');
-        span.className = 'tile-placeholder';
-        span.textContent = item.text.charAt(0).toUpperCase();
-        imgContainer.appendChild(span);
+        const ph = makeIcon('image', 'tile-nav-icon');
+        ph.style.opacity = '0.35';
+        imgContainer.appendChild(ph);
     }
 
     const label = document.createElement('div');
@@ -3353,6 +3702,7 @@ function createTile(item, onClick, opts = {}) {
     tile.oncontextmenu = (e) => {
         e.preventDefault();
         speakText(item.text);
+        if (!isNav) consultaTrackWord(item);
     };
 
     return tile;
@@ -3394,6 +3744,7 @@ function onTileClick(item) {
     if (state.settings.tapMode === 'speak') {
         speakText(item.text);
         logActivity(`Emitido: ${item.text}`);
+        consultaTrackWord(item);
 
         // Companion Reactions
         if (item.category === 'Social') updateCompanion('social');
@@ -3417,6 +3768,7 @@ function addItemToPhrase(item) {
     renderPhrase();
     save();
     logActivity(`Añadido a frase: ${item.text}`);
+    consultaTrackWord(item);
 }
 
 function addToRoutine(item) {

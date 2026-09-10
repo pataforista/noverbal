@@ -269,6 +269,16 @@
       <path d="M15 9.5v7.5l1.5 3"/>
       <path d="M10 17h4"/>
     </symbol>
+    <symbol id="i-brain" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+            stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9.5 4a3.5 3.5 0 0 0-3.5 3.5c0 .5.1 1 .3 1.4A3.5 3.5 0 0 0 5 15.5a3.5 3.5 0 0 0 4.5 3.3V4Z"/>
+      <path d="M14.5 4a3.5 3.5 0 0 1 3.5 3.5c0 .5-.1 1-.3 1.4A3.5 3.5 0 0 1 19 15.5a3.5 3.5 0 0 1-4.5 3.3V4Z"/>
+      <path d="M9.5 12h5"/>
+    </symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+            stroke-linecap="round" stroke-linejoin="round">
+      <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+    </symbol>
   </svg>
 
   <a class="skip-link" href="#mainContent">Saltar al contenido principal</a>
@@ -286,6 +296,12 @@
       <span class="tutor-indicator" role="status">
         <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-lock"/></svg>
         Modo guía activo
+      </span>
+      <!-- Persistente mientras dura la consulta: el doctor ve de un vistazo
+           que la sesión sigue abierta y contando, aunque cierre el panel. -->
+      <span class="consulta-indicator" role="status">
+        <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-health"/></svg>
+        Consulta en curso
       </span>
     </div>
 
@@ -322,6 +338,7 @@
             <option value="default">General</option>
             <option value="home">Casa</option>
             <option value="school">Escuela</option>
+            <option value="psych">Consulta Médica</option>
             <option value="sos">Emergencias</option>
           </select>
         </label>
@@ -391,9 +408,8 @@
           <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-plus"/></svg><span class="btn-label">Agregar</span>
         </button>
 
-        <!-- On a phone, Tema/Ajustes/Editar collapse behind «Más» so the header
-             stays one row. On wider screens `display: contents` lays them out
-             inline exactly as before and the toggle button is hidden. -->
+        <!-- Tema/Ajustes/Editar/Ayuda se agrupan detrás de «Más» para mantener
+             el encabezado despejado tanto en móvil como en escritorio. -->
         <button class="btn btn--labeled header-more-btn" id="btnMore" aria-label="Más herramientas"
           aria-expanded="false" aria-controls="headerOverflow" title="Más">
           <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-more"/></svg><span class="btn-label">Más</span>
@@ -413,6 +429,12 @@
                forma de volver a consultarlo. -->
           <button class="btn btn--labeled" id="btnHelp" aria-label="Ver la guía de uso" title="Ayuda">
             <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-help"/></svg><span class="btn-label">Ayuda</span>
+          </button>
+          <!-- Modo Consulta: herramienta del doctor durante la consulta
+               (preguntas rápidas, notas, seguimiento). Pide PIN al abrir y
+               vive junto a las demás herramientas de cuidador. -->
+          <button class="btn btn--labeled" id="btnConsulta" aria-label="Abrir el modo consulta del doctor" title="Consulta">
+            <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-health"/></svg><span class="btn-label">Consulta</span>
           </button>
         </div>
       </div>
@@ -773,6 +795,7 @@
                 <option value="default">General</option>
                 <option value="home">Casa</option>
                 <option value="school">Escuela / Terapia</option>
+                <option value="psych">Consulta Médica / Psiquiátrica</option>
                 <option value="sos">Emergencias</option>
               </select>
             </label>
@@ -924,6 +947,10 @@
             <div class="download-bar"><div class="download-bar-fill" id="downloadBarFill"></div></div>
             <span class="download-progress-text" id="downloadProgressText">0%</span>
           </div>
+          <button type="button" class="btn glass full-width" id="btnRepairPictos" style="margin-top:10px;">
+            <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-image"/></svg>
+            Reparar pictogramas faltantes
+          </button>
         </div>
 
         <div class="settings-section">
@@ -1087,6 +1114,86 @@
         <button type="button" class="btn secondary" id="btnExportHistory"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-download"/></svg> Exportar CSV</button>
         <button class="btn glass danger" id="btnClearHistory">Borrar Historial</button>
         <button class="btn primary" value="cancel">Cerrar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- MODAL: Modo Consulta (profesional)
+       Herramienta del doctor durante la consulta: preguntas rápidas que la
+       app enuncia, accesos directos al tablero clínico, notas por sesión y
+       un conteo de lo que el paciente usó. Apertura protegida con el mismo
+       PIN del Modo Tutor. Todo se guarda solo en este dispositivo. -->
+  <dialog class="modal" id="consultaModal">
+    <form method="dialog" class="modal-card">
+      <div class="modal-head">
+        <div>
+          <h1 class="modal-title">Modo Consulta</h1>
+          <p class="modal-sub">Preguntas rápidas, notas y seguimiento de la sesión</p>
+        </div>
+        <button type="button" class="btn-close" data-close-dialog="consultaModal" aria-label="Cerrar modo consulta"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-close"/></svg></button>
+      </div>
+      <div class="modal-body">
+        <div class="consulta-stats" id="consultaStats" aria-live="polite">Consulta iniciada</div>
+
+        <div class="settings-section">
+          <h3>Preguntas rápidas</h3>
+          <p class="settings-hint">Toca una pregunta y la app la dice por ti. El paciente responde con el tablero, la escala de ánimo, Sí/No o el localizador de dolor.</p>
+          <div class="consulta-questions" id="consultaQuestions"></div>
+          <details class="intro-more" style="margin-top:10px;">
+            <summary>Editar preguntas</summary>
+            <div class="add-question-row">
+              <input id="consultaQuestionInput" class="glass-input" maxlength="80" placeholder="Escribe una pregunta nueva…" aria-label="Nueva pregunta rápida para la consulta">
+              <button type="button" class="btn glass" id="btnAddConsultaQuestion"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-plus"/></svg> Agregar</button>
+            </div>
+            <div class="consulta-manage-list" id="consultaManageList"></div>
+          </details>
+        </div>
+
+        <div class="settings-section">
+          <h3>Accesos directos</h3>
+          <div class="row compact">
+            <button type="button" class="btn secondary flex-grow" id="btnConsultaBodyMap"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-health"/></svg> ¿Dónde duele?</button>
+            <button type="button" class="btn secondary flex-grow" id="btnConsultaSalud"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-grid"/></svg> Tablero de salud</button>
+            <button type="button" class="btn secondary flex-grow" id="btnConsultaSOS"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-sos"/></svg> Emergencias</button>
+            <button type="button" class="btn secondary flex-grow" id="btnConsultaMood"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-calm"/></svg> ¿Cómo te sientes?</button>
+            <button type="button" class="btn secondary flex-grow" id="btnConsultaMeds"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-book"/></svg> Medicación</button>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>Palabras usadas en esta consulta</h3>
+          <div class="consulta-words" id="consultaWords"></div>
+        </div>
+
+        <div class="settings-section">
+          <h3>Nota de la consulta</h3>
+          <textarea id="consultaNote" class="writing-textarea" rows="3" placeholder="Ej. Reporta dolor de cabeza desde ayer, refiere tomar la medicación…" aria-label="Nota clínica de la consulta"></textarea>
+          <div class="row compact" style="margin-top:8px; justify-content:flex-end;">
+            <button type="button" class="btn primary" id="btnSaveConsultaNote"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-save"/></svg> Guardar nota</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn glass danger" id="btnEndConsulta">Terminar consulta</button>
+        <button class="btn primary" value="cancel">Cerrar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- MODAL: Escala de ánimo — el paciente responde «¿Cómo te sientes hoy?»
+       tocando una cara, sin necesidad de leer. Las caras se reutilizan del
+       localizador de dolor, invertidas (sonrisa = muy bien, mueca = muy mal). -->
+  <dialog class="modal" id="moodModal">
+    <form method="dialog" class="modal-card">
+      <div class="modal-head">
+        <div>
+          <h1 class="modal-title">¿Cómo te sientes hoy?</h1>
+          <p class="modal-sub">Toca la cara que mejor te representa</p>
+        </div>
+        <button type="button" class="btn-close" data-close-dialog="moodModal" aria-label="Cerrar escala de ánimo"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-close"/></svg></button>
+      </div>
+      <div class="modal-body">
+        <div class="bodymap-scale" id="moodScaleList"></div>
       </div>
     </form>
   </dialog>

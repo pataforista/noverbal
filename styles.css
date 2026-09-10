@@ -4524,61 +4524,51 @@ input[type="color"]::-moz-color-swatch {
   }
 }
 
-/* ── Header overflow menu ───────────────────────────────────────────────── */
-
-/* Wide screens: the caregiver tools are laid out inline, exactly as before —
-   `display: contents` makes the wrapper disappear from the layout. */
-.header-overflow {
-  display: contents;
-}
-
+/* ── Header overflow menu ─────────────────────────────────────────────────
+   Tanto en móvil como en escritorio, las herramientas secundarias de cuidador
+   (Tema, Ajustes, Editar, Ayuda) se agrupan dentro de «Más» para mantener
+   la cabecera despejada y enfocada en la persona comunicadora. */
 .header-more-btn {
-  display: none;
+  display: inline-flex;
 }
 
-@media (max-width: 720px), (max-height: 560px) {
-  .header-more-btn {
-    display: inline-flex;
-  }
+.header-overflow {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 8px;
+  z-index: 60;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  background: var(--md-surface-container-low);
+  border: 1px solid var(--md-outline-variant);
+  border-radius: var(--md-radius-lg);
+  box-shadow: var(--md-shadow-3);
+  min-width: 180px;
+}
 
-  .header-overflow {
-    display: none;
-    position: absolute;
-    top: calc(100% + 6px);
-    right: 8px;
-    z-index: 60;
-    flex-direction: column;
-    gap: 6px;
-    padding: 8px;
-    background: var(--md-surface-container-low);
-    border: 1px solid var(--md-outline-variant);
-    border-radius: var(--md-radius-lg);
-    box-shadow: var(--md-shadow-3);
-    min-width: 180px;
-  }
+.header-overflow.open {
+  display: flex;
+}
 
-  .header-overflow.open {
-    display: flex;
-  }
+/* Inside the menu there is room for words again. */
+.header-overflow .btn--labeled .btn-label {
+  display: inline;
+}
 
-  /* Inside the menu there is room for words again. */
-  .header-overflow .btn--labeled .btn-label {
-    display: inline;
-  }
+.header-overflow .btn--labeled {
+  justify-content: flex-start;
+  width: 100%;
+  padding: 10px 14px;
+}
 
-  .header-overflow .btn--labeled {
-    justify-content: flex-start;
-    width: 100%;
-    padding: 10px 14px;
-  }
+.topbar {
+  position: sticky;
+}
 
-  .topbar {
-    position: sticky;
-  }
-
-  .actions {
-    position: relative;
-  }
+.actions {
+  position: relative;
 }
 
 /* ── Header modes group ───────────────────────────────────────────────────
@@ -5294,4 +5284,110 @@ body.deaf-mode .grammar-tag {
   #deafFlashOverlay.flash-pulse {
     animation: none;
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Modo Consulta (profesional) — panel del doctor durante la consulta
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* Mismo lenguaje que el indicador del Modo Tutor: una píldora silenciosa en
+   la marca del header que dice "la sesión sigue abierta" sin ocupar espacio
+   ni pedir nada. */
+.consulta-indicator {
+  display: none;
+  align-items: center;
+  gap: var(--md-spacing-xs);
+  padding: 4px var(--md-spacing-sm);
+  border-radius: var(--radius-full);
+  background: var(--md-tertiary-container, #eaddff);
+  color: var(--md-on-tertiary-container, #21005e);
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.consulta-indicator .ui-icon {
+  width: 14px;
+  height: 14px;
+}
+
+body.consulta-active .consulta-indicator {
+  display: inline-flex;
+}
+
+.consulta-stats {
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--md-surface-container);
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--md-on-surface);
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 4px;
+}
+
+.consulta-questions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.consulta-question {
+  min-height: 44px;
+}
+
+.consulta-words {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.consulta-word-chip {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--md-surface-container);
+  border: 1px solid var(--hairline);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--md-on-surface);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Modo Consulta · editor de preguntas rápidas
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.add-question-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.add-question-row input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.consulta-manage-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 12px;
+}
+
+.consulta-manage-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  border-radius: var(--md-radius-md);
+  background: var(--md-surface-container-low);
+}
+
+.consulta-manage-row span {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--md-on-surface);
+  overflow-wrap: break-word;
 }
