@@ -1152,6 +1152,7 @@
         <div class="settings-section">
           <h3>Accesos directos</h3>
           <div class="row compact">
+            <button type="button" class="btn secondary flex-grow" id="btnConsultaPsychSymptoms"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-brain"/></svg> Síntomas</button>
             <button type="button" class="btn secondary flex-grow" id="btnConsultaBodyMap"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-health"/></svg> ¿Dónde duele?</button>
             <button type="button" class="btn secondary flex-grow" id="btnConsultaSalud"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-grid"/></svg> Tablero de salud</button>
             <button type="button" class="btn secondary flex-grow" id="btnConsultaSOS"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-sos"/></svg> Emergencias</button>
@@ -1281,6 +1282,41 @@
           </button>
           <p class="modal-sub">¿Cuánto duele?</p>
           <div class="bodymap-scale" id="bodyMapScaleList"></div>
+        </div>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- MODAL: Explorador de Síntomas Psiquiátricos (Talking Mats / PECS style)
+       Herramienta para que el paciente evalúe dimensiones psiquiátricas en 3 niveles de intensidad. -->
+  <dialog class="modal" id="psychSymptomsModal">
+    <form method="dialog" class="modal-card">
+      <div class="modal-head">
+        <div>
+          <h1 class="modal-title">Explorador de Síntomas</h1>
+          <p class="modal-sub">¿Cómo te has sentido últimamente?</p>
+        </div>
+        <button type="button" class="btn-close" data-close-dialog="psychSymptomsModal" aria-label="Cerrar síntomas"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-close"/></svg></button>
+      </div>
+      <div class="modal-body" style="padding-top:0;">
+        <div class="psych-dim-tabs" role="tablist">
+          <button type="button" class="psych-tab active" data-dim="cog" role="tab" aria-selected="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-brain"/></svg> Lo que pienso / oigo</button>
+          <button type="button" class="psych-tab" data-dim="aff" role="tab" aria-selected="false"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-heart"/></svg> Lo que siento</button>
+          <button type="button" class="psych-tab" data-dim="som" role="tab" aria-selected="false"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-health"/></svg> Mi cuerpo</button>
+        </div>
+        
+        <div class="psych-symptoms-grid" id="psychSymptomsGrid" role="tabpanel">
+          <!-- Los síntomas de la dimensión activa se inyectan aquí -->
+        </div>
+
+        <div class="psych-frequency-panel hidden" id="psychFreqPanel">
+          <p class="psych-freq-prompt" id="psychFreqPrompt"></p>
+          <div class="psych-frequency-options">
+            <button type="button" class="psych-freq-btn freq-1" data-val="1">Poco / A veces</button>
+            <button type="button" class="psych-freq-btn freq-2" data-val="2">Mucho / Frecuente</button>
+            <button type="button" class="psych-freq-btn freq-3" data-val="3">Insoportable / Siempre</button>
+          </div>
+          <button type="button" class="btn glass psych-freq-cancel" id="btnPsychFreqCancel">Cancelar</button>
         </div>
       </div>
     </form>
