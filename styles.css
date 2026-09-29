@@ -5542,3 +5542,5 @@ body.consulta-active .consulta-indicator {
   margin-top: 8px;
   align-self: center;
 }
+
+.psych-frequency-panel.hidden { display: none !important; }

@@ -4736,15 +4736,15 @@ function bindConfirmAction(button, action) {
     });
 }
 
-// --- Explorador de S�ntomas Psiqui�tricos ---
+// --- Explorador de Síntomas Psiquiátricos ---
 const PSYCH_SYMPTOMS_CATEGORIES = {
     cog: [
         { id: 'psych-cog-1', text: 'Voces', category: 'Mente+', img: 'assets/pictos/voces.png' },
-        { id: 'psych-cog-2', text: 'Pensamiento r�pido', category: 'Mente+', img: 'assets/pictos/pensamiento.png' },
-        { id: 'psych-cog-3', text: 'Obsesi�n', category: 'Mente+', img: 'assets/pictos/obsesion.png' },
-        { id: 'psych-cog-4', text: 'Confusi�n', category: 'Mente+', img: 'assets/pictos/duda.png' },
+        { id: 'psych-cog-2', text: 'Pensamiento rápido', category: 'Mente+', img: 'assets/pictos/pensamiento.png' },
+        { id: 'psych-cog-3', text: 'Obsesión', category: 'Mente+', img: 'assets/pictos/obsesion.png' },
+        { id: 'psych-cog-4', text: 'Confusión', category: 'Mente+', img: 'assets/pictos/duda.png' },
         { id: 'psych-cog-5', text: 'Miedo / Sospecha', category: 'Mente+', img: 'assets/pictos/asustado.png' },
-        { id: 'psych-cog-6', text: 'Ganas de hacerme da�o', category: 'Mente+', img: 'assets/pictos/dolor.png' },
+        { id: 'psych-cog-6', text: 'Ganas de hacerme daño', category: 'Mente+', img: 'assets/pictos/dolor.png' },
         { id: 'psych-cog-7', text: 'Olvidos', category: 'Mente+', img: 'assets/pictos/cabeza.png' },
         { id: 'psych-cog-8', text: 'Pesadillas', category: 'Mente+', img: 'assets/pictos/insomnio.png' }
     ],
@@ -4759,11 +4759,11 @@ const PSYCH_SYMPTOMS_CATEGORIES = {
         { id: 'psych-aff-8', text: 'Soledad', category: 'Emociones', img: 'assets/pictos/culpa.png' }
     ],
     som: [
-        { id: 'psych-som-1', text: 'Opresi�n en pecho', category: 'Salud', img: 'assets/pictos/dolor.png' },
+        { id: 'psych-som-1', text: 'Opresión en pecho', category: 'Salud', img: 'assets/pictos/dolor.png' },
         { id: 'psych-som-2', text: 'Taquicardia', category: 'Salud', img: 'assets/pictos/taquicardia.png' },
         { id: 'psych-som-3', text: 'Temblor', category: 'Salud', img: 'assets/pictos/temblor.png' },
         { id: 'psych-som-4', text: 'Insomnio', category: 'Salud', img: 'assets/pictos/insomnio.png' },
-        { id: 'psych-som-5', text: 'Mucho sue�o', category: 'Salud', img: 'assets/pictos/enfermo.png' },
+        { id: 'psych-som-5', text: 'Mucho sueño', category: 'Salud', img: 'assets/pictos/enfermo.png' },
         { id: 'psych-som-6', text: 'Mareo', category: 'Salud', img: 'assets/pictos/mareo.png' },
         { id: 'psych-som-7', text: 'Dolor de cabeza', category: 'Salud', img: 'assets/pictos/cabeza.png' },
         { id: 'psych-som-8', text: 'Inquietud', category: 'Salud', img: 'assets/pictos/nervioso.png' }
@@ -4828,7 +4828,7 @@ function showPsychFrequency(symptom) {
     if (!panel || !prompt) return;
     
     document.getElementById('psychSymptomsGrid').classList.add('hidden');
-    prompt.textContent = "�Qu� tanto sientes: " + symptom.text + "?";
+    prompt.textContent = "�Qué tanto sientes: " + symptom.text + "?";
     panel.classList.remove('hidden');
 }
 
@@ -4876,7 +4876,7 @@ function initPsychModal() {
                 });
                 renderConsulta();
             }
-            logActivity("S�ntoma reportado: " + activePsychSymptom.text + " - " + freqText);
+            logActivity("Síntoma reportado: " + activePsychSymptom.text + " - " + freqText);
             
             hidePsychFrequency();
             if (modal) modal.close();
