@@ -41,7 +41,7 @@ self.addEventListener("install", (event) => {
         // so one hiccup can't leave the app permanently un-installable.
         try {
             await cache.addAll(SHELL);
-        } catch (err) {
+        } catch {
             await Promise.allSettled(SHELL.map((url) => cache.add(url)));
         }
         // Core pictos are best-effort: never let a 404 fail the whole install.

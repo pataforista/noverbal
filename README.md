@@ -41,6 +41,14 @@ parálisis cerebral y otras necesidades de comunicación, y para los profesional
   necesidades sin este modo activado.
 - **Modo Tutor (terapeuta).** Oculta/muestra elementos por sesión, protegido por
   un PIN configurable.
+- **Modo Consulta (profesional).** En «Más › Consulta», protegido por el PIN
+  del Modo Tutor: preguntas rápidas que la app dice en voz alta, accesos a la
+  escala de ánimo, al localizador de dolor y al tablero clínico, notas de la
+  sesión y un conteo de las palabras que usó el paciente.
+- **Explorador de Síntomas.** Dentro del Modo Consulta, al estilo Talking
+  Mats: el paciente elige un síntoma por picto (lo que pienso/oigo, lo que
+  siento, mi cuerpo) y luego cuánto lo siente en una escala de tres colores
+  con caras, sin necesidad de leer.
 - **Bitácora clínica local.** Registro privado de actividad, almacenado solo en
   el dispositivo.
 - **PWA offline-first.** Instalable, funciona sin conexión y sin enviar datos a

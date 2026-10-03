@@ -305,7 +305,7 @@ async function getStoredPinHash() {
 async function verifyPinValue(pin) {
     try {
         return (await hashPin(pin)) === (await getStoredPinHash());
-    } catch (_) {
+    } catch {
         // crypto.subtle needs a secure context (https/localhost). In the rare
         // insecure case, accept the default PIN so the user is never locked out.
         return String(pin) === '0000';
@@ -835,7 +835,7 @@ function haptic(pattern = 12) {
     if (!CAN_VIBRATE || !state.settings.hapticFeedback) return;
     try {
         navigator.vibrate(pattern);
-    } catch (_) {
+    } catch {
         /* vibrate can throw if the gesture context is lost — ignore */
     }
 }
@@ -1120,21 +1120,12 @@ async function fetchArasaacForWord(text) {
         if (!pictos.length) return null;
         const id = pictos[0]._id;
         return await imageUrlToDataURL(`https://static.arasaac.org/pictograms/${id}/${id}_300.png`);
-    } catch (_) {
+    } catch {
         return null;
     }
 }
 
-async function repairMissingImages({ silent = false } = {}) {
-    const broken = [];
-    for (const item of state.items) {
-        if (!item.image || !item.image.startsWith('assets/')) continue;
-        if (!(await imageExists(item.image))) broken.push(item);
-    }
-    if (broken.length === 0) {
-        if (!silent) flashStatus('Todos los pictogramas están completos');
-        return;
-    }
+async function repairItems(broken) {
     let fixed = 0;
     for (const item of broken) {
         const dataUrl = await fetchArasaacForWord(item.text);
@@ -1144,12 +1135,51 @@ async function repairMissingImages({ silent = false } = {}) {
             fixed += 1;
         }
     }
+    return fixed;
+}
+
+// Revisión completa, solo bajo demanda (Ajustes › «Reparar pictogramas»).
+// Antes corría en cada arranque con conexión: pedía uno por uno los ~330
+// pictos (≈4 MB) aunque el tablero no los mostrara, lo que en datos móviles
+// salía caro y retrasaba la primera carga. Ahora el arranque solo repara lo
+// que de verdad falla al pintarse (ver queueImageRepair).
+async function repairMissingImages({ silent = false } = {}) {
+    const candidates = state.items.filter(item => item.image && item.image.startsWith('assets/'));
+    const broken = [];
+    const BATCH = 12;
+    for (let i = 0; i < candidates.length; i += BATCH) {
+        const slice = candidates.slice(i, i + BATCH);
+        const ok = await Promise.all(slice.map(item => imageExists(item.image)));
+        slice.forEach((item, j) => { if (!ok[j]) broken.push(item); });
+    }
+    if (broken.length === 0) {
+        if (!silent) flashStatus('Todos los pictogramas están completos');
+        return;
+    }
+    const fixed = await repairItems(broken);
     if (fixed > 0) {
         render();
         flashStatus(`Se repararon ${fixed} de ${broken.length} pictogramas faltantes`);
     } else if (!silent) {
-        flashStatus('Sin conexión o sin resultados: se reintentará en el próximo arranque', 'warning');
+        flashStatus('Sin conexión o sin resultados en ARASAAC: inténtalo más tarde', 'warning');
     }
+}
+
+// Reparación perezosa: una ficha cuyo picto local no carga se apunta aquí
+// y, con conexión, se busca su reemplazo en ARASAAC en segundo plano.
+const pendingImageRepairs = new Map();
+let imageRepairTimer = null;
+
+function queueImageRepair(item) {
+    if (!item || !item.image || !item.image.startsWith('assets/')) return;
+    pendingImageRepairs.set(item.id, item);
+    clearTimeout(imageRepairTimer);
+    imageRepairTimer = setTimeout(async () => {
+        if (!navigator.onLine || pendingImageRepairs.size === 0) return;
+        const batch = [...pendingImageRepairs.values()];
+        pendingImageRepairs.clear();
+        if (await repairItems(batch)) render();
+    }, 1500);
 }
 
 // Initialization
@@ -1214,7 +1244,6 @@ async function init() {
     await ensurePainScaleItemsPresent();
     await ensureMoodItemsPresent();
     await ensurePsychItemsPresent();
-    if (navigator.onLine) repairMissingImages({ silent: true });
 
     ensureActiveCategories();
     initCoreWords();
@@ -1299,7 +1328,7 @@ async function init() {
                 await ensureLibraryItemsPresent();
                 libraryPending = false;
                 render();
-            } catch (_) { /* still offline: try again next time */ }
+            } catch { /* still offline: try again next time */ }
         };
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible') retryLibrary();
@@ -3025,7 +3054,7 @@ async function selectArasaacPictogram(id, label) {
 
         // Hide results after selection
         dom.arasaacResults.classList.add('hidden');
-    } catch (err) {
+    } catch {
         flashStatus("Error al cargar imagen de ARASAAC", "warning");
         dom.preview.textContent = "Error";
     }
@@ -3419,7 +3448,7 @@ function getVisibleItems() {
         const isHidden = state.tutorMode.hiddenTags.has(item.id);
         const hiddenOk = state.tutorMode.active || !isHidden;
         return matchesCat && matchesSearch && matchesContext && hiddenOk;
-    }).sort(compareItems);
+    }).sort(state.currentCategory === "Todas" ? compareItemsScalesLast : compareItems);
 }
 
 function makeNavAnchor() {
@@ -3604,6 +3633,17 @@ function compareItems(a, b) {
     return String(a.id).localeCompare(String(b.id), undefined, { numeric: true });
 }
 
+// En «Todas», las escalas (dolor, ánimo) llevan un `order` explícito para
+// quedar juntas y en orden dentro de su categoría; con compareItems a secas
+// eso las ponía delante de todo el vocabulario, y el tablero general abría
+// con diez caras. Aquí van al final, sin perder su orden interno.
+function compareItemsScalesLast(a, b) {
+    const sa = Number.isFinite(a.order);
+    const sb = Number.isFinite(b.order);
+    if (sa !== sb) return sa ? 1 : -1;
+    return compareItems(a, b);
+}
+
 function createTile(item, onClick, opts = {}) {
     const isNav = item.id === "nav-anchor";
 
@@ -3679,6 +3719,16 @@ function createTile(item, onClick, opts = {}) {
         img.src = item.image;
         img.alt = item.text;
         img.loading = 'lazy';
+        // Un picto que no carga (archivo faltante, foto dañada) deja un hueco
+        // con el icono roto del navegador; mejor el marcador neutro de las
+        // fichas sin imagen, y si era un picto local, buscarle reemplazo.
+        img.onerror = () => {
+            img.onerror = null;
+            const ph = makeIcon('image', 'tile-nav-icon');
+            ph.style.opacity = '0.35';
+            img.replaceWith(ph);
+            queueImageRepair(item);
+        };
         imgContainer.appendChild(img);
     } else {
         const ph = makeIcon('image', 'tile-nav-icon');
@@ -4736,163 +4786,246 @@ function bindConfirmAction(button, action) {
     });
 }
 
-// --- Explorador de Síntomas Psiquiátricos ---
+/* ── Explorador de Síntomas (Modo Consulta) ──────────────────────────────
+   Estilo Talking Mats: el paciente elige un síntoma por picto dentro de tres
+   dimensiones (lo que pienso/oigo, lo que siento, mi cuerpo) y después cuánto
+   lo siente en una escala de tres colores con caras. La app lo dice en voz
+   alta, lo apunta en la bitácora y lo suma al seguimiento de la consulta. */
 const PSYCH_SYMPTOMS_CATEGORIES = {
     cog: [
-        { id: 'psych-cog-1', text: 'Voces', category: 'Mente+', img: 'assets/pictos/voces.png' },
-        { id: 'psych-cog-2', text: 'Pensamiento rápido', category: 'Mente+', img: 'assets/pictos/pensamiento.png' },
+        { id: 'psych-cog-1', text: 'Voces', category: 'Mente+', img: 'assets/pictos/escuchar.png' },
+        { id: 'psych-cog-2', text: 'Pensamiento rápido', category: 'Mente+', img: 'assets/pictos/pensar.png' },
         { id: 'psych-cog-3', text: 'Obsesión', category: 'Mente+', img: 'assets/pictos/obsesion.png' },
         { id: 'psych-cog-4', text: 'Confusión', category: 'Mente+', img: 'assets/pictos/duda.png' },
         { id: 'psych-cog-5', text: 'Miedo / Sospecha', category: 'Mente+', img: 'assets/pictos/asustado.png' },
         { id: 'psych-cog-6', text: 'Ganas de hacerme daño', category: 'Mente+', img: 'assets/pictos/dolor.png' },
         { id: 'psych-cog-7', text: 'Olvidos', category: 'Mente+', img: 'assets/pictos/cabeza.png' },
-        { id: 'psych-cog-8', text: 'Pesadillas', category: 'Mente+', img: 'assets/pictos/insomnio.png' }
+        { id: 'psych-cog-8', text: 'Pesadillas', category: 'Mente+', img: 'assets/pictos/insomnio.png' },
     ],
     aff: [
         { id: 'psych-aff-1', text: 'Angustia', category: 'Emociones', img: 'assets/pictos/abrumado.png' },
         { id: 'psych-aff-2', text: 'Tristeza', category: 'Emociones', img: 'assets/pictos/triste.png' },
-        { id: 'psych-aff-3', text: 'Ganas de llorar', category: 'Emociones', img: 'assets/pictos/triste.png' },
-        { id: 'psych-aff-4', text: 'Sin energ�a', category: 'Emociones', img: 'assets/pictos/depresion.png' },
+        { id: 'psych-aff-3', text: 'Ganas de llorar', category: 'Emociones', img: 'assets/pictos/llorar.png' },
+        { id: 'psych-aff-4', text: 'Sin energía', category: 'Emociones', img: 'assets/pictos/cansado.png' },
         { id: 'psych-aff-5', text: 'Ansiedad', category: 'Emociones', img: 'assets/pictos/nervioso.png' },
-        { id: 'psych-aff-6', text: 'P�nico', category: 'Emociones', img: 'assets/pictos/asustado.png' },
-        { id: 'psych-aff-7', text: 'Irritabilidad', category: 'Emociones', img: 'assets/pictos/odio.png' },
-        { id: 'psych-aff-8', text: 'Soledad', category: 'Emociones', img: 'assets/pictos/culpa.png' }
+        { id: 'psych-aff-6', text: 'Pánico', category: 'Emociones', img: 'assets/pictos/asustado.png' },
+        // Sin picto local de enojo: la cara de cejas fruncidas de la escala
+        // de dolor lo dice mejor que el «odio» de ARASAAC (un podio).
+        { id: 'psych-aff-7', text: 'Irritabilidad', category: 'Emociones', img: painFaceSvg(3) },
+        { id: 'psych-aff-8', text: 'Soledad', category: 'Emociones', img: 'assets/pictos/soledad.png' },
     ],
     som: [
-        { id: 'psych-som-1', text: 'Opresión en pecho', category: 'Salud', img: 'assets/pictos/dolor.png' },
+        { id: 'psych-som-1', text: 'Opresión en pecho', category: 'Salud', img: 'assets/pictos/taquicardia.png' },
         { id: 'psych-som-2', text: 'Taquicardia', category: 'Salud', img: 'assets/pictos/taquicardia.png' },
-        { id: 'psych-som-3', text: 'Temblor', category: 'Salud', img: 'assets/pictos/temblor.png' },
+        // «temblor» en ARASAAC es un terremoto; la cara con líneas de
+        // vibración comunica el temblor del cuerpo.
+        { id: 'psych-som-3', text: 'Temblor', category: 'Salud', img: 'assets/pictos/nervioso.png' },
         { id: 'psych-som-4', text: 'Insomnio', category: 'Salud', img: 'assets/pictos/insomnio.png' },
-        { id: 'psych-som-5', text: 'Mucho sueño', category: 'Salud', img: 'assets/pictos/enfermo.png' },
+        { id: 'psych-som-5', text: 'Mucho sueño', category: 'Salud', img: 'assets/pictos/dormir.png' },
         { id: 'psych-som-6', text: 'Mareo', category: 'Salud', img: 'assets/pictos/mareo.png' },
         { id: 'psych-som-7', text: 'Dolor de cabeza', category: 'Salud', img: 'assets/pictos/cabeza.png' },
-        { id: 'psych-som-8', text: 'Inquietud', category: 'Salud', img: 'assets/pictos/nervioso.png' }
-    ]
+        { id: 'psych-som-8', text: 'Inquietud', category: 'Salud', img: 'assets/pictos/nervioso.png' },
+    ],
+};
+
+// Intensidad en tres pasos, con cara y color (verde → ámbar → rojo) para que
+// se pueda responder sin leer. `spoken` es lo que dice la voz.
+const PSYCH_FREQUENCIES = [
+    { level: 1, label: 'Poco / A veces', spoken: 'poco, a veces', face: 1 },
+    { level: 2, label: 'Mucho / Frecuente', spoken: 'mucho, con frecuencia', face: 3 },
+    { level: 3, label: 'Insoportable / Siempre', spoken: 'insoportable, siempre', face: 4 },
+];
+
+// Imágenes y textos que la primera versión del explorador guardó en el
+// tablero de quien ya la usó (pictos equivocados y acentos rotos por una
+// conversión de codificación). Solo se corrige lo que sigue igual a ese
+// valor de fábrica: una edición hecha por la familia nunca se pisa.
+const PSYCH_LEGACY_IMAGES = {
+    'psych-cog-1': 'assets/pictos/voces.png',
+    'psych-cog-2': 'assets/pictos/pensamiento.png',
+    'psych-aff-3': 'assets/pictos/triste.png',
+    'psych-aff-4': 'assets/pictos/depresion.png',
+    'psych-aff-7': 'assets/pictos/odio.png',
+    'psych-aff-8': 'assets/pictos/culpa.png',
+    'psych-som-1': 'assets/pictos/dolor.png',
+    'psych-som-3': 'assets/pictos/temblor.png',
+    'psych-som-5': 'assets/pictos/enfermo.png',
 };
 
 async function ensurePsychItemsPresent() {
-    for (const dim in PSYCH_SYMPTOMS_CATEGORIES) {
+    for (const dim of Object.keys(PSYCH_SYMPTOMS_CATEGORIES)) {
         for (const item of PSYCH_SYMPTOMS_CATEGORIES[dim]) {
-            if (state.items.some(existing => existing.id === item.id)) continue;
-            const newItem = { id: item.id, text: item.text, category: item.category, image: item.img };
-            await saveItemDB(newItem);
-            state.items.push(newItem);
+            const existing = state.items.find(x => x.id === item.id);
+            if (!existing) {
+                const newItem = { id: item.id, text: item.text, category: item.category, image: item.img };
+                await saveItemDB(newItem);
+                state.items.push(newItem);
+                continue;
+            }
+            let changed = false;
+            if (typeof existing.text === 'string' && existing.text.includes('�')) {
+                existing.text = item.text;
+                changed = true;
+            }
+            if (PSYCH_LEGACY_IMAGES[item.id] && existing.image === PSYCH_LEGACY_IMAGES[item.id]) {
+                existing.image = item.img;
+                changed = true;
+            }
+            if (changed) await saveItemDB(existing);
         }
     }
 }
 
 let activePsychSymptom = null;
+let activePsychDim = 'cog';
 
-function renderPsychSymptoms(dim = 'cog') {
-    const grid = document.getElementById('psychSymptomsGrid');
+function psychEls() {
+    return {
+        modal: document.getElementById('psychSymptomsModal'),
+        grid: document.getElementById('psychSymptomsGrid'),
+        panel: document.getElementById('psychFreqPanel'),
+        prompt: document.getElementById('psychFreqPrompt'),
+        promptImg: document.getElementById('psychFreqImg'),
+        tabs: [...document.querySelectorAll('.psych-tab')],
+    };
+}
+
+function renderPsychSymptoms(dim = activePsychDim) {
+    const { grid, tabs } = psychEls();
     if (!grid) return;
-    
-    document.querySelectorAll('.psych-tab').forEach(t => {
+    activePsychDim = dim;
+
+    tabs.forEach(t => {
         const isActive = t.dataset.dim === dim;
         t.classList.toggle('active', isActive);
-        t.setAttribute('aria-selected', isActive);
+        t.setAttribute('aria-selected', String(isActive));
+        t.tabIndex = isActive ? 0 : -1;
+        if (isActive) grid.setAttribute('aria-labelledby', t.id);
     });
 
     grid.innerHTML = '';
-    const items = PSYCH_SYMPTOMS_CATEGORIES[dim] || [];
-    
-    items.forEach(item => {
-        const stored = state.items.find(x => x.id === item.id) || item;
-        const btn = document.createElement('div');
+    (PSYCH_SYMPTOMS_CATEGORIES[dim] || []).forEach(item => {
+        // La copia guardada manda: si la familia renombró o cambió el picto
+        // en el editor, el explorador muestra lo mismo que el tablero.
+        const stored = state.items.find(x => x.id === item.id) || { ...item, image: item.img };
+        const btn = document.createElement('button');
+        btn.type = 'button';
         btn.className = 'psych-symptom-card';
-        btn.setAttribute('role', 'button');
-        btn.setAttribute('tabindex', '0');
-        
+
         const img = document.createElement('img');
         img.src = stored.image || item.img;
         img.alt = '';
-        
+        img.loading = 'lazy';
+
         const span = document.createElement('span');
         span.textContent = stored.text;
-        
-        btn.appendChild(img);
-        btn.appendChild(span);
-        
+
+        btn.append(img, span);
         btn.addEventListener('click', () => {
-            activePsychSymptom = stored;
+            haptic();
             showPsychFrequency(stored);
         });
-        
         grid.appendChild(btn);
     });
 }
 
 function showPsychFrequency(symptom) {
-    const panel = document.getElementById('psychFreqPanel');
-    const prompt = document.getElementById('psychFreqPrompt');
+    const { grid, panel, prompt, promptImg } = psychEls();
     if (!panel || !prompt) return;
-    
-    document.getElementById('psychSymptomsGrid').classList.add('hidden');
-    prompt.textContent = "�Qué tanto sientes: " + symptom.text + "?";
+    activePsychSymptom = symptom;
+    grid.classList.add('hidden');
+    prompt.textContent = `¿Cuánto sientes «${symptom.text}»?`;
+    if (promptImg) {
+        promptImg.src = symptom.image || '';
+        promptImg.alt = symptom.text;
+    }
     panel.classList.remove('hidden');
+    panel.querySelector('.psych-freq-btn')?.focus();
 }
 
 function hidePsychFrequency() {
-    const panel = document.getElementById('psychFreqPanel');
+    const { grid, panel } = psychEls();
     if (panel) panel.classList.add('hidden');
-    const grid = document.getElementById('psychSymptomsGrid');
     if (grid) grid.classList.remove('hidden');
     activePsychSymptom = null;
 }
 
-function initPsychModal() {
-    const btnOpen = document.getElementById('btnConsultaPsychSymptoms');
-    const modal = document.getElementById('psychSymptomsModal');
-    if (btnOpen && modal) {
-        btnOpen.addEventListener('click', () => {
-            renderPsychSymptoms('cog');
-            hidePsychFrequency();
-            modal.showModal();
-        });
+function reportPsychSymptom(freq) {
+    const symptom = activePsychSymptom;
+    if (!symptom) return;
+    const sentence = `${symptom.text}: ${freq.spoken}`;
+    speakText(sentence);
+    logActivity(`Síntoma reportado: ${symptom.text} (${freq.label})`);
+    // Cuenta como una palabra y una frase de la consulta, con la intensidad
+    // a la vista para el resumen del doctor.
+    consultaTrackWord({ text: `${symptom.text} (${freq.label.split(' / ')[0].toLowerCase()})` });
+    consultaTrackPhrase();
+    if (state.settings.deafMode) {
+        haptic([60, 60, 60]);
+        visualAlert();
+    } else {
+        haptic();
     }
-    
-    document.querySelectorAll('.psych-tab').forEach(t => {
+    hidePsychFrequency();
+    const { modal } = psychEls();
+    if (modal?.open) modal.close();
+    flashStatus(`Anotado: ${symptom.text}`);
+}
+
+function openPsychSymptoms() {
+    const { modal } = psychEls();
+    if (!modal) return;
+    hidePsychFrequency();
+    renderPsychSymptoms('cog');
+    modal.showModal();
+}
+
+function initPsychModal() {
+    const { modal, tabs } = psychEls();
+    const btnOpen = document.getElementById('btnConsultaPsychSymptoms');
+    if (btnOpen && modal) btnOpen.addEventListener('click', openPsychSymptoms);
+
+    tabs.forEach((t, i) => {
         t.addEventListener('click', () => {
-            if (activePsychSymptom) hidePsychFrequency();
+            hidePsychFrequency();
             renderPsychSymptoms(t.dataset.dim);
         });
-    });
-    
-    const btnCancel = document.getElementById('btnPsychFreqCancel');
-    if (btnCancel) btnCancel.addEventListener('click', hidePsychFrequency);
-    
-    document.querySelectorAll('.psych-freq-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            if (!activePsychSymptom) return;
-            const freqText = btn.textContent;
-            
-            const sentence = "Siento: " + activePsychSymptom.text + " (" + freqText + ")";
-            if (consultaSession) {
-                const arr = sentence.split(/\s+/);
-                consultaSession.words += arr.length;
-                arr.forEach(w => {
-                    const clean = w.toLowerCase().replace(/[^a-z�������]/g, '');
-                    if (clean) consultaSession.wordCounts.set(clean, (consultaSession.wordCounts.get(clean) || 0) + 1);
-                });
-                renderConsulta();
-            }
-            logActivity("Síntoma reportado: " + activePsychSymptom.text + " - " + freqText);
-            
-            hidePsychFrequency();
-            if (modal) modal.close();
-            flashStatus("Guardado: " + activePsychSymptom.text, 'i-check');
-            
-            performSpeak(sentence, { log: false }); 
+        // Patrón ARIA de pestañas: flechas para moverse entre dimensiones.
+        t.addEventListener('keydown', (e) => {
+            const delta = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+            if (!delta) return;
+            e.preventDefault();
+            const next = tabs[(i + delta + tabs.length) % tabs.length];
+            next.focus();
+            next.click();
         });
     });
+
+    document.getElementById('btnPsychFreqCancel')?.addEventListener('click', hidePsychFrequency);
+
+    document.querySelectorAll('.psych-freq-btn').forEach(btn => {
+        const freq = PSYCH_FREQUENCIES.find(f => String(f.level) === btn.dataset.val);
+        if (!freq) return;
+        // La cara va antes del texto: quien no lee elige por color y gesto.
+        if (!btn.querySelector('img')) {
+            const face = document.createElement('img');
+            face.src = painFaceSvg(freq.face);
+            face.alt = '';
+            face.className = 'psych-freq-face';
+            btn.prepend(face);
+        }
+        btn.addEventListener('click', () => reportPsychSymptom(freq));
+    });
+
+    // Cerrar con Esc o con la X deja el explorador listo para la próxima vez.
+    modal?.addEventListener('close', hidePsychFrequency);
 }
-// Init immediately
+
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initPsychModal);
 } else {
     initPsychModal();
 }
-
 
 // Last-ditch guard: if anything in init() throws before we render, surface a
 // clear message instead of leaving the user stuck on "Cargando..." (P0-1).

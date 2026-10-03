@@ -17,3 +17,9 @@ Thumbs.db
 # Local env
 .env
 .env.local
+
+# Scratch scripts and ad-hoc screenshots made while debugging (keep them out
+# of the repo root; real tests live in tests/)
+/scratch*.js
+/test_ui*.cjs
+/*.png

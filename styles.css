@@ -5392,75 +5392,128 @@ body.consulta-active .consulta-indicator {
   overflow-wrap: break-word;
 }
 
-/* ==========================================================================
-   PSYCHIATRIC SYMPTOMS EXPLORER
-   ========================================================================== */
+/* ═══════════════════════════════════════════════════════════════════════
+   Modo Consulta · accesos directos
+   Rejilla de botones iguales: en fila flexible los seis se aplastaban y
+   cortaban sus etiquetas («Emergenci», «Medicació»).
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.consulta-shortcuts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+}
+
+.consulta-shortcut {
+  justify-content: flex-start;
+  gap: 10px;
+  min-height: 52px;
+  padding: 10px 14px;
+  text-align: left;
+  line-height: 1.2;
+}
+
+.consulta-shortcut .btn-icon {
+  flex: 0 0 auto;
+}
+
+.consulta-stats {
+  margin-bottom: 12px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Explorador de Síntomas (Talking Mats)
+   ═══════════════════════════════════════════════════════════════════════ */
 
 .psych-dim-tabs {
-  display: flex;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
   background: var(--md-surface-container-low);
-  padding: 8px;
+  padding: 6px;
   border-radius: var(--md-radius-lg);
   margin-bottom: 16px;
-  overflow-x: auto;
 }
 
 .psych-tab {
-  flex: 1 1 0;
-  min-width: 120px;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  padding: 12px 8px;
+  gap: 6px;
+  padding: 10px 6px;
   background: transparent;
   border: none;
   border-radius: var(--md-radius-md);
   font-family: inherit;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
   color: var(--md-on-surface-variant);
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+  transition: background-color 0.2s cubic-bezier(0.2, 0, 0, 1), color 0.2s cubic-bezier(0.2, 0, 0, 1);
 }
 
 .psych-tab .ui-icon {
-  width: 28px;
-  height: 28px;
-  margin-bottom: 4px;
-  fill: currentColor;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 auto;
+}
+
+.psych-tab:hover {
+  background: var(--md-surface-container-high);
 }
 
 .psych-tab[aria-selected="true"] {
   background: var(--md-primary-container);
   color: var(--md-on-primary-container);
-  box-shadow: var(--md-shadow-sm);
+  box-shadow: var(--md-shadow-2);
+}
+
+.psych-tab:focus-visible,
+.psych-symptom-card:focus-visible,
+.psych-freq-btn:focus-visible {
+  outline: 3px solid var(--md-primary);
+  outline-offset: 2px;
 }
 
 .psych-symptoms-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
   gap: 12px;
-  padding-bottom: 16px;
+  padding-bottom: 8px;
+}
+
+/* La regla de arriba fija `display: grid` con la misma especificidad que la
+   utilidad `.hidden`, y por ir después ganaba: el panel de intensidad
+   aparecía debajo de la rejilla en lugar de reemplazarla. */
+.psych-symptoms-grid.hidden,
+.psych-frequency-panel.hidden {
+  display: none;
 }
 
 .psych-symptom-card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 16px 8px;
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 14px 8px 12px;
   background: var(--md-surface-container);
   border: 2px solid transparent;
   border-radius: var(--md-radius-lg);
+  font-family: inherit;
   cursor: pointer;
   text-align: center;
-  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+  transition: transform 0.15s, border-color 0.15s, background-color 0.15s;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
+}
+
+.psych-symptom-card:hover {
+  border-color: var(--md-outline-variant);
 }
 
 .psych-symptom-card:active {
@@ -5468,10 +5521,15 @@ body.consulta-active .consulta-indicator {
   background: var(--md-surface-container-high);
 }
 
+/* El picto vive en una placa blanca: el trazo negro de ARASAAC se pierde
+   sobre la superficie oscura del tema nocturno. */
 .psych-symptom-card img {
-  width: 72px;
-  height: 72px;
+  width: 76px;
+  height: 76px;
+  padding: 6px;
   object-fit: contain;
+  background: #fff;
+  border-radius: var(--md-radius-md);
   pointer-events: none;
 }
 
@@ -5480,9 +5538,9 @@ body.consulta-active .consulta-indicator {
   font-weight: 700;
   line-height: 1.2;
   color: var(--md-on-surface);
-  pointer-events: none;
   display: -webkit-box;
   -webkit-line-clamp: 3;
+  line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -5495,52 +5553,186 @@ body.consulta-active .consulta-indicator {
   background: var(--md-surface-container-lowest);
   border-radius: var(--md-radius-lg);
   border: 2px solid var(--md-primary);
-  margin-top: 16px;
-  animation: fadeInDown 0.3s cubic-bezier(0.2, 0, 0, 1) forwards;
+  animation: slideDown 0.25s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.psych-freq-head {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+
+.psych-freq-img {
+  width: 64px;
+  height: 64px;
+  padding: 4px;
+  flex: 0 0 auto;
+  object-fit: contain;
+  background: #fff;
+  border-radius: var(--md-radius-md);
 }
 
 .psych-freq-prompt {
-  font-size: 1.2rem;
+  font-size: 1.15rem;
   font-weight: 800;
-  text-align: center;
   color: var(--md-on-surface);
   margin: 0;
+  overflow-wrap: anywhere;
 }
 
 .psych-frequency-options {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
+/* Colores fijos de semáforo con tinta oscura fija: en tema oscuro el texto
+   heredaba el tono claro de `--md-on-surface` y desaparecía sobre el fondo
+   pastel. */
 .psych-freq-btn {
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 20px;
+  justify-content: flex-start;
+  gap: 14px;
+  min-height: 64px;
+  padding: 10px 18px;
   font-family: inherit;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   font-weight: 800;
-  border: none;
+  text-align: left;
+  border: 2px solid rgba(0, 0, 0, 0.08);
   border-radius: var(--md-radius-md);
-  color: var(--md-on-surface);
+  color: #1d1b20;
   cursor: pointer;
-  box-shadow: var(--md-shadow-sm);
+  box-shadow: var(--md-shadow-2);
   transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.psych-freq-btn:hover {
+  box-shadow: var(--md-shadow-3);
 }
 
 .psych-freq-btn:active {
   transform: scale(0.98);
 }
 
-/* Talking Mats colors */
+.psych-freq-face {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+}
+
 .psych-freq-btn.freq-1 { background-color: #c3e2c0; }
 .psych-freq-btn.freq-2 { background-color: #f6e7a8; }
 .psych-freq-btn.freq-3 { background-color: #f5c5c1; }
 
 .psych-freq-cancel {
-  margin-top: 8px;
   align-self: center;
 }
 
-.psych-frequency-panel.hidden { display: none !important; }
+@media (max-width: 420px) {
+  .psych-tab {
+    font-size: 0.8rem;
+  }
+
+  .psych-symptoms-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .psych-frequency-panel {
+    animation: none;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Casilla Inicio/Volver en tema oscuro
+   La regla genérica `.tile:not(.tile-dark-bg) .tile-text` pinta la tinta
+   casi negra pensada para fichas pastel, y la casilla de navegación no
+   tiene fondo pastel: en tema oscuro «Inicio» quedaba negro sobre negro.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.tile.tile-nav .tile-text {
+  color: var(--md-on-surface-variant);
+}
+
+.tile.tile-nav .tile-label {
+  background: transparent;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Encabezado en portátiles
+   Con Tema/Ajustes/Editar/Ayuda ya dentro de «Más», el encabezado seguía
+   partiéndose en dos filas por debajo de ~1600px y robaba 56px de alto
+   (fijos) al tablero. En ese rango los tres modos de acceso se agrupan bajo
+   «Modos», como ya ocurría en el teléfono, y el menú se abre junto a su
+   botón en lugar de en el borde derecho.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+@media (min-width: 721px) and (max-width: 1599px) and (min-height: 561px) {
+  .modes-group {
+    position: relative;
+  }
+
+  .modes-toggle {
+    display: inline-flex;
+  }
+
+  .modes-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: 60;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px;
+    background: var(--md-surface-container-low);
+    border: 1px solid var(--md-outline-variant);
+    border-radius: var(--md-radius-lg);
+    box-shadow: var(--md-shadow-3);
+    min-width: 200px;
+  }
+
+  .modes-menu.open {
+    display: flex;
+  }
+
+  .modes-menu .mode-btn {
+    justify-content: flex-start;
+    width: 100%;
+    padding: 10px 14px;
+  }
+
+  .modes-menu .mode-btn .btn-label {
+    display: inline;
+  }
+
+  .actions {
+    flex-wrap: nowrap;
+  }
+}
+
+/* Con un modo encendido, el botón «Modos» lo deja ver con un punto: si no,
+   el modo activo queda escondido tras un menú cerrado. */
+body.calm-mode .modes-toggle,
+body.simple-mode .modes-toggle,
+body.deaf-mode .modes-toggle {
+  position: relative;
+}
+
+body.calm-mode .modes-toggle::after,
+body.simple-mode .modes-toggle::after,
+body.deaf-mode .modes-toggle::after {
+  content: "";
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--md-primary);
+  box-shadow: 0 0 0 2px var(--md-surface);
+}
