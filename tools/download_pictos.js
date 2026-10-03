@@ -56,7 +56,7 @@ const descargarPictograma = async (palabra) => {
                 let data = '';
                 res.on('data', (chunk) => data += chunk);
                 res.on('end', () => {
-                    try { resolve(JSON.parse(data)); } catch (e) { resolve([]); }
+                    try { resolve(JSON.parse(data)); } catch { resolve([]); }
                 });
             }).on('error', reject);
         });

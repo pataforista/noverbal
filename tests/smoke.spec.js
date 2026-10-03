@@ -6,6 +6,18 @@ async function dismissIntro(page) {
   if (await save.isVisible().catch(() => false)) await save.click();
 }
 
+// Tema/Ajustes/Editar/Ayuda/Consulta viven dentro de «Más»; los modos de
+// acceso, dentro de «Modos» por debajo de 1600px. Abre el menú que haga
+// falta antes de tocar el botón.
+async function clickHeaderTool(page, selector) {
+  const target = page.locator(selector);
+  if (!(await target.isVisible())) {
+    const inModes = await target.evaluate((e) => !!e.closest('#modesMenu'));
+    await page.locator(inModes ? '#btnModesToggle' : '#btnMore').click();
+  }
+  await target.click();
+}
+
 test.beforeEach(async ({ page }) => {
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
@@ -49,7 +61,7 @@ test('SOS button opens a menu, and its board item jumps to the emergency profile
 });
 
 test('SOS menu lists configured emergency contacts as tel: links', async ({ page }) => {
-  await page.locator('#btnSettings').click();
+  await clickHeaderTool(page, '#btnSettings');
   await page.locator('#newContactName').fill('Mamá');
   await page.locator('#newContactPhone').fill('+52 55 1234 5678');
   await page.locator('#btnAddContact').click();

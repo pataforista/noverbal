@@ -17,6 +17,18 @@ async function boot(page) {
   await page.waitForTimeout(300);
 }
 
+// Tema/Ajustes/Editar/Ayuda/Consulta viven dentro de «Más»; los modos de
+// acceso, dentro de «Modos» por debajo de 1600px. Abre el menú que haga
+// falta antes de tocar el botón.
+async function clickHeaderTool(page, selector) {
+  const target = page.locator(selector);
+  if (!(await target.isVisible())) {
+    const inModes = await target.evaluate((e) => !!e.closest('#modesMenu'));
+    await page.locator(inModes ? '#btnModesToggle' : '#btnMore').click();
+  }
+  await target.click();
+}
+
 async function resetModes(page) {
   // Reload the app from a clean storage state. Storage is already reset by
   // test.use above, so we just need to make sure the page is on the app.
@@ -305,7 +317,7 @@ test.describe('editor', () => {
   // next to the styled «Subir Archivo» button.
   test('el input de archivo nativo no se muestra junto al botón', async ({ page }) => {
     await boot(page);
-    await page.locator('#btnEdit').click();
+    await clickHeaderTool(page, '#btnEdit');
     await page.locator('#cardCreateWord').click();
     await page.locator('#itemText').fill('Prueba');
     await page.locator('#btnWizardNext1').click();
@@ -340,7 +352,7 @@ test.describe('modos de accesibilidad', () => {
 
   test('al activar un modo desde la barra superior se actualiza aria-pressed y se anuncia', async ({ page }) => {
     const btn = page.locator('#btnCalmMode');
-    await btn.click();
+    await clickHeaderTool(page, '#btnCalmMode');
     await expect(btn).toHaveAttribute('aria-pressed', 'true');
     const bodyHasClass = await page.evaluate(() => document.body.classList.contains('calm-mode'));
     expect(bodyHasClass).toBe(true);
@@ -361,7 +373,7 @@ test.describe('modos de accesibilidad', () => {
   });
 
   test('la sección de Ajustes describe cada modo con aria-describedby', async ({ page }) => {
-    await page.locator('#btnSettings').click();
+    await clickHeaderTool(page, '#btnSettings');
     await expect(page.locator('#deafMode')).toHaveAttribute('aria-describedby', 'deafModeDesc');
     await expect(page.locator('#simpleMode')).toHaveAttribute('aria-describedby', 'simpleModeDesc');
     await expect(page.locator('#calmMode')).toHaveAttribute('aria-describedby', 'calmModeDesc');

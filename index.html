@@ -271,9 +271,25 @@
     </symbol>
     <symbol id="i-brain" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
             stroke-linecap="round" stroke-linejoin="round">
-      <path d="M9.5 4a3.5 3.5 0 0 0-3.5 3.5c0 .5.1 1 .3 1.4A3.5 3.5 0 0 0 5 15.5a3.5 3.5 0 0 0 4.5 3.3V4Z"/>
-      <path d="M14.5 4a3.5 3.5 0 0 1 3.5 3.5c0 .5-.1 1-.3 1.4A3.5 3.5 0 0 1 19 15.5a3.5 3.5 0 0 1-4.5 3.3V4Z"/>
-      <path d="M9.5 12h5"/>
+      <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/>
+      <path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/>
+      <path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/>
+      <path d="M17.6 6.5a3 3 0 0 0 .4-1.4"/>
+      <path d="M6 5.1a3 3 0 0 0 .4 1.4"/>
+    </symbol>
+    <symbol id="i-stethoscope" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+            stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5 3H4v5a5 5 0 0 0 10 0V3h-1"/>
+      <path d="M9 13v2a5 5 0 0 0 10 0v-2"/>
+      <circle cx="19" cy="11" r="2"/>
+    </symbol>
+    <symbol id="i-body" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+            stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="4.5" r="2.25"/>
+      <path d="M5 9h14"/>
+      <path d="M12 9v5.5"/>
+      <path d="M12 14.5 8.5 21"/>
+      <path d="M12 14.5 15.5 21"/>
     </symbol>
     <symbol id="i-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
             stroke-linecap="round" stroke-linejoin="round">
@@ -300,7 +316,7 @@
       <!-- Persistente mientras dura la consulta: el doctor ve de un vistazo
            que la sesión sigue abierta y contando, aunque cierre el panel. -->
       <span class="consulta-indicator" role="status">
-        <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-health"/></svg>
+        <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-stethoscope"/></svg>
         Consulta en curso
       </span>
     </div>
@@ -333,7 +349,7 @@
             <!-- No emoji: a native <select> renders its options with the OS
                  popup, where the glyphs came out at a different size and style
                  from every other icon in the header and could not be styled.
-                 The same four profiles are also listed, without emoji, in
+                 The same five profiles are also listed, without emoji, in
                  Ajustes. -->
             <option value="default">General</option>
             <option value="home">Casa</option>
@@ -434,7 +450,7 @@
                (preguntas rápidas, notas, seguimiento). Pide PIN al abrir y
                vive junto a las demás herramientas de cuidador. -->
           <button class="btn btn--labeled" id="btnConsulta" aria-label="Abrir el modo consulta del doctor" title="Consulta">
-            <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-health"/></svg><span class="btn-label">Consulta</span>
+            <svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-stethoscope"/></svg><span class="btn-label">Consulta</span>
           </button>
         </div>
       </div>
@@ -1151,13 +1167,13 @@
 
         <div class="settings-section">
           <h3>Accesos directos</h3>
-          <div class="row compact">
-            <button type="button" class="btn secondary flex-grow" id="btnConsultaPsychSymptoms"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-brain"/></svg> Síntomas</button>
-            <button type="button" class="btn secondary flex-grow" id="btnConsultaBodyMap"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-health"/></svg> ¿Dónde duele?</button>
-            <button type="button" class="btn secondary flex-grow" id="btnConsultaSalud"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-grid"/></svg> Tablero de salud</button>
-            <button type="button" class="btn secondary flex-grow" id="btnConsultaSOS"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-sos"/></svg> Emergencias</button>
-            <button type="button" class="btn secondary flex-grow" id="btnConsultaMood"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-calm"/></svg> ¿Cómo te sientes?</button>
-            <button type="button" class="btn secondary flex-grow" id="btnConsultaMeds"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-book"/></svg> Medicación</button>
+          <div class="consulta-shortcuts">
+            <button type="button" class="btn secondary consulta-shortcut" id="btnConsultaMood"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-calm"/></svg><span>¿Cómo te sientes?</span></button>
+            <button type="button" class="btn secondary consulta-shortcut" id="btnConsultaPsychSymptoms"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-brain"/></svg><span>Síntomas</span></button>
+            <button type="button" class="btn secondary consulta-shortcut" id="btnConsultaBodyMap"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-health"/></svg><span>¿Dónde duele?</span></button>
+            <button type="button" class="btn secondary consulta-shortcut" id="btnConsultaMeds"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-book"/></svg><span>Medicación</span></button>
+            <button type="button" class="btn secondary consulta-shortcut" id="btnConsultaSalud"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-grid"/></svg><span>Tablero de salud</span></button>
+            <button type="button" class="btn secondary consulta-shortcut" id="btnConsultaSOS"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-sos"/></svg><span>Emergencias</span></button>
           </div>
         </div>
 
@@ -1298,25 +1314,28 @@
         </div>
         <button type="button" class="btn-close" data-close-dialog="psychSymptomsModal" aria-label="Cerrar síntomas"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-close"/></svg></button>
       </div>
-      <div class="modal-body" style="padding-top:0;">
-        <div class="psych-dim-tabs" role="tablist">
-          <button type="button" class="psych-tab active" data-dim="cog" role="tab" aria-selected="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-brain"/></svg> Lo que pienso / oigo</button>
-          <button type="button" class="psych-tab" data-dim="aff" role="tab" aria-selected="false"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-heart"/></svg> Lo que siento</button>
-          <button type="button" class="psych-tab" data-dim="som" role="tab" aria-selected="false"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-health"/></svg> Mi cuerpo</button>
+      <div class="modal-body">
+        <div class="psych-dim-tabs" role="tablist" aria-label="Tipo de síntoma">
+          <button type="button" class="psych-tab active" id="psychTabCog" data-dim="cog" role="tab" aria-selected="true" aria-controls="psychSymptomsGrid"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-brain"/></svg><span>Lo que pienso / oigo</span></button>
+          <button type="button" class="psych-tab" id="psychTabAff" data-dim="aff" role="tab" aria-selected="false" aria-controls="psychSymptomsGrid" tabindex="-1"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-heart"/></svg><span>Lo que siento</span></button>
+          <button type="button" class="psych-tab" id="psychTabSom" data-dim="som" role="tab" aria-selected="false" aria-controls="psychSymptomsGrid" tabindex="-1"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-body"/></svg><span>Mi cuerpo</span></button>
         </div>
-        
-        <div class="psych-symptoms-grid" id="psychSymptomsGrid" role="tabpanel">
+
+        <div class="psych-symptoms-grid" id="psychSymptomsGrid" role="tabpanel" aria-labelledby="psychTabCog">
           <!-- Los síntomas de la dimensión activa se inyectan aquí -->
         </div>
 
         <div class="psych-frequency-panel hidden" id="psychFreqPanel">
-          <p class="psych-freq-prompt" id="psychFreqPrompt"></p>
-          <div class="psych-frequency-options">
-            <button type="button" class="psych-freq-btn freq-1" data-val="1">Poco / A veces</button>
-            <button type="button" class="psych-freq-btn freq-2" data-val="2">Mucho / Frecuente</button>
-            <button type="button" class="psych-freq-btn freq-3" data-val="3">Insoportable / Siempre</button>
+          <div class="psych-freq-head">
+            <img class="psych-freq-img" id="psychFreqImg" src="data:," alt="">
+            <p class="psych-freq-prompt" id="psychFreqPrompt" aria-live="polite"></p>
           </div>
-          <button type="button" class="btn glass psych-freq-cancel" id="btnPsychFreqCancel">Cancelar</button>
+          <div class="psych-frequency-options">
+            <button type="button" class="psych-freq-btn freq-1" data-val="1"><span>Poco / A veces</span></button>
+            <button type="button" class="psych-freq-btn freq-2" data-val="2"><span>Mucho / Frecuente</span></button>
+            <button type="button" class="psych-freq-btn freq-3" data-val="3"><span>Insoportable / Siempre</span></button>
+          </div>
+          <button type="button" class="btn glass psych-freq-cancel" id="btnPsychFreqCancel"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-chevron-left"/></svg> Elegir otro síntoma</button>
         </div>
       </div>
     </form>
