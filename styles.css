@@ -133,6 +133,8 @@
 
 /* Material Design 3 Dark Theme */
 .dark-theme {
+  /* Native controls (select popups, scrollbars, date pickers) follow the theme. */
+  color-scheme: dark;
   --md-primary: #e8a5a0;
   --md-on-primary: #4a1512;
   --md-primary-container: #6b2a26;
@@ -208,7 +210,7 @@
   top: -48px;
   left: 12px;
   z-index: 1000;
-  background: var(--md-primary);
+  background: var(--md-primary-strong); /* white on --md-primary was 3.4:1 */
   color: var(--md-on-primary);
   padding: 10px 14px;
   border-radius: var(--md-radius-md);
@@ -1009,6 +1011,7 @@ body.tutor-active .tutor-indicator {
 }
 
 .btn-close {
+  flex-shrink: 0; /* a long modal title squeezed it to 31px wide on a phone */
   background: var(--md-surface-container-highest);
   border: none;
   border-radius: var(--md-radius-lg);
@@ -1111,6 +1114,12 @@ body.tutor-active .tutor-indicator {
   .toolbar .search-icon {
     left: 12px;
   }
+
+  /* The wrapper clips (overflow: hidden, for the collapse animation), which
+     cut the outset focus ring down to square red corners. Draw it inside. */
+  .toolbar .search-input:focus-visible {
+    outline-offset: -3px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1156,6 +1165,27 @@ body.tutor-active .tutor-indicator {
     padding: 8px;
     min-width: 44px;
     justify-content: center;
+  }
+}
+
+/* On a phone the ‹ › arrows took 104px of a ~300px strip and left one and a
+   half categories readable. A finger scrolls the strip directly, so on touch
+   screens the arrows go and the pills get that room back; a fade on the right
+   edge says there is more to swipe to. Mouse and keyboard keep the arrows. */
+@media (max-width: 600px) and (pointer: coarse) {
+  .category-menu {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .category-menu .pill-nav {
+    display: none;
+  }
+
+  .pill-container {
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+    /* as wide as the fade, so the last pill is fully readable at the end */
+    padding-right: 28px;
   }
 }
 
@@ -1783,6 +1813,10 @@ body.tutor-active .grid .tile-cat {
   margin: auto;
   box-shadow: var(--md-shadow-4);
   background: var(--md-surface);
+  /* <dialog> gets `color: CanvasText` from the browser, which stayed black in
+     the dark theme: plain text such as the PIN prompt or a confirmation
+     message read at 1.3:1 on the dark card. */
+  color: var(--md-on-surface);
 }
 
 .modal::backdrop {
@@ -2619,12 +2653,25 @@ input:checked+.toggle-slider:before {
 
 .coachmark-close {
   display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+  /* 44px hit area (WCAG 2.5.5) around the small icon; the negative margin
+     keeps the one-line hint from growing taller because of it. */
+  width: 44px;
+  height: 44px;
+  margin: -10px -10px -10px 0;
   background: none;
   border: none;
-  padding: 2px;
+  border-radius: var(--md-radius-sm);
+  padding: 0;
   color: inherit;
   cursor: pointer;
+}
+
+.coachmark-close:focus-visible {
+  outline: 3px solid var(--md-primary);
+  outline-offset: -3px;
 }
 
 .coachmark-close .ui-icon {
@@ -3053,7 +3100,7 @@ input:checked+.toggle-slider:before {
 }
 
 .disclaimer-item a {
-  color: var(--md-primary);
+  color: var(--md-primary-strong); /* --md-primary read 3:1 on the light card */
   text-underline-offset: 2px;
 }
 
@@ -3411,7 +3458,7 @@ input:checked+.toggle-slider:before {
 /* Automatic text contrast on tiles painted with an arbitrary colour (P1-18).
    The item colour decides the label background + ink, so words stay legible
    whatever colour the user picked, in light and dark themes alike. */
-.tile { --tile-ink: #141218; }
+.tile { --tile-ink: var(--md-on-surface); } /* themed; colored tiles override it inline */
 
 /* Both variants shade the band *away* from their own ink, so the label always
    gains contrast rather than losing it: a dark card darkens (white ink), a
@@ -3435,8 +3482,12 @@ input:checked+.toggle-slider:before {
   background: rgba(25, 22, 18, 0.07);
   border-top-color: rgba(25, 22, 18, 0.08);
 }
+/* --tile-ink is set by applyReadableText() on tiles that carry their own
+   colour. Tiles without one (the clinical symptom set, for instance) sit on
+   the theme surface and keep the themed default — a fixed #141218 here made
+   them unreadable (1.1:1) in the dark theme. */
 .tile:not(.tile-dark-bg) .tile-text,
-.tile:not(.tile-dark-bg) .tile-cat { color: #141218; }
+.tile:not(.tile-dark-bg) .tile-cat { color: var(--tile-ink); }
 .tile-placeholder { color: var(--tile-ink); }
 
 /* Fixed core-vocabulary row (N-2): always visible, horizontally scrollable.
@@ -3819,6 +3870,14 @@ body.paged-mode .grid {
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ── The pinned cockpit ─────────────────────────────────────────────────── */
+
+/* Keyboard, switch-scanning and in-page links scroll the focused control into
+   view — by default to the very top, which is under the pinned stack below,
+   so the category tabs could take focus while hidden behind the header
+   (WCAG 2.4.11). The heights are measured by updateStickyOffsets(). */
+html {
+  scroll-padding-top: calc(var(--topbar-h, 72px) + var(--composer-h, 132px) + var(--core-h, 0px) + 8px);
+}
 
 .topbar {
   position: sticky;
