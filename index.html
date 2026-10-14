@@ -805,6 +805,18 @@
               </select>
             </label>
 
+            <!-- Ver «Palabras básicas fijas» en styles.css: en un teléfono bajo,
+                 cabecera + frase + núcleo fijos dejaban ~1 fila de tablero. -->
+            <label class="field">
+              <span>Palabras básicas al desplazar</span>
+              <select id="coreRowPin" class="glass-input" aria-describedby="coreRowPinHint">
+                <option value="auto">Automático (recomendado)</option>
+                <option value="always">Siempre fijas</option>
+                <option value="never">Se desplazan con el tablero</option>
+              </select>
+              <small class="settings-hint" id="coreRowPinHint">Automático: quedan fijas arriba, salvo en teléfonos pequeños o en horizontal, donde se desplazan para dejar más tablero a la vista.</small>
+            </label>
+
             <label class="field">
               <span>Lugar</span>
               <select id="boardProfile" class="glass-input">

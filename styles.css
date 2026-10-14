@@ -3910,6 +3910,22 @@ html {
   border-bottom: 1px solid var(--hairline);
 }
 
+/* Palabras básicas fijas (Ajustes › «Palabras básicas al desplazar»).
+   On a short phone the pinned header, sentence and core row took 419 of 640px
+   and left about one row of board. «auto» — the default — lets the core row
+   scroll with the board on short portrait phones and on any screen under
+   560px tall (landscape phones, mounted tablets); laptops are not matched.
+   A therapist can force either behaviour for a given user. */
+@media (max-width: 720px) and (max-height: 700px), (max-height: 560px) {
+  body:not(.core-pin-always) .core-row {
+    position: static;
+  }
+}
+
+body.core-pin-never .core-row {
+  position: static;
+}
+
 /* The star was a decorative ::before pushed into the scroll flow, stealing a
    slot and misaligning the first word. */
 .core-row::before {
@@ -4407,54 +4423,78 @@ input[type="color"]::-moz-color-swatch {
   align-items: center;
 }
 
-/* On a phone there is not enough width for strip + edit controls + speak on one
-   line: the sentence strip was squeezed to ~140px, wrapping its own hint over
-   four lines, and «Hablar Frase» became a 96px square with 0.72rem type. Two
-   lines instead — the strip gets the full width, and the controls sit beneath
-   it with the speak button taking all the room the others leave. */
+/* Phone: one line again, at a fixed height. The two-line layout (strip on
+   top, controls beneath) stood 140px tall while empty and grew to 172px with
+   the first word, because the strip only made room for a pictogram once there
+   was one — so the first tap pushed the whole board 32px down under the
+   finger that was about to tap again. Now the strip is always sized for a
+   pictogram chip, Borrar and Limpiar stack in a 44px column beside it, and
+   «Hablar Frase» is a tall button at the end: 112px, empty or full.
+   The strip scrolls; the newest word is always the one in view. */
 @media (max-width: 720px) {
   .composer-row {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 6px;
   }
 
   .composer-row .chips {
-    flex: 1 0 100%;
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 92px;
+    min-height: 0;
   }
 
   .composer-actions {
-    flex: 0 0 auto;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 4px;
   }
 
-  .composer-row .speak-btn {
-    flex: 1 1 auto;
-    min-width: 0;
-    width: auto;
-    padding: 12px 16px;
-  }
-
-  .composer-row .speak-btn .text {
-    font-size: 0.95rem;
-    white-space: nowrap;
-  }
-}
-
-/* At 320px the two-line composer quietly became three: the edit controls take
-   116px, which leaves «Hablar Frase» 150px against a 154px minimum, so it
-   dropped to a line of its own and spent ~54px — on the narrowest screen,
-   directly above the board. Trimming the button's own padding and type by a
-   few pixels is enough to keep it beside the controls, and it stays well over
-   the 44px target. */
-@media (max-width: 359px) {
-  .composer-row .speak-btn {
-    padding: 12px 10px;
-  }
-
-  .composer-row .speak-btn .text {
-    font-size: 0.9rem;
+  /* Each pair stacks: Borrar over Limpiar, and while speaking, Pausa over
+     Detener in a second column. */
+  .composer-actions .utility-actions,
+  body.is-speaking .composer-actions .speech-controls {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 4px;
+    width: auto; /* a tablet rule sets 100%, which overlapped the strip */
   }
 
   .composer-actions .btn--labeled {
-    padding: 10px 8px;
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  /* #btnSpeak carries flex-grow: 1 elsewhere; spare width goes to the strip. */
+  .composer-row .speak-btn,
+  .composer-row #btnSpeak {
+    flex: 0 0 auto;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    width: 84px;
+    min-width: 84px;
+    padding: 8px 6px;
+    white-space: normal;
+  }
+
+  .composer-row .speak-btn .text {
+    font-size: 0.85rem;
+    line-height: 1.15;
+    white-space: normal;
+    text-align: center;
+  }
+
+  /* The hint wraps to two lines in the narrower strip; keep it centred. */
+  .composer-row .chips:empty::before {
+    margin: auto;
   }
 }
 

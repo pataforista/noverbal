@@ -4,7 +4,9 @@ import { test, expect } from '@playwright/test';
 // medido en la app real: duplicados que aparecían al volver a abrirla,
 // palabras de la biblioteca sin tilde, texto invisible en tema oscuro, una
 // tira de categorías que en el teléfono dejaba leer una sola píldora y un
-// barrido que escondía la ficha resaltada bajo la cabecera fija.
+// barrido que escondía la ficha resaltada bajo la cabecera fija. Después:
+// la frase en una línea fija en el teléfono y el ajuste «Palabras básicas
+// al desplazar».
 
 test.use({ storageState: { cookies: [], origins: [] } });
 
@@ -113,5 +115,64 @@ test.describe('teléfono táctil', () => {
       return tile.contains(document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2));
     });
     expect(onTop).toBe(true);
+  });
+});
+
+test.describe('espacio para el tablero en el teléfono', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+  // La frase ocupaba dos líneas: 140px vacía y 172px con la primera palabra,
+  // así que el primer toque empujaba el tablero 32px bajo el dedo.
+  test('la frase cabe en una línea y no crece con la primera palabra', async ({ page }) => {
+    await boot(page);
+    const height = () => page.locator('.composer').evaluate((e) => e.getBoundingClientRect().height);
+    const empty = await height();
+    await page.locator('#grid .tile:not(.tile-nav)').first().click();
+    await expect(page.locator('#chips .chip')).toHaveCount(1);
+    expect(await height()).toBe(empty);
+    expect(empty).toBeLessThanOrEqual(120);
+    // Borrar, Limpiar y Hablar Frase en la misma línea que la frase.
+    const tops = await page.evaluate(() => ['#chips', '#btnBackspace', '#btnSpeak']
+      .map((s) => Math.round(document.querySelector(s).getBoundingClientRect().top / 10)));
+    expect(new Set(tops).size).toBe(1);
+    // Mientras habla aparecen Pausa y Detener en otra columna, sin pisar la frase.
+    await page.evaluate(() => document.body.classList.add('is-speaking'));
+    const [chipsRight, pauseLeft] = await page.evaluate(() => [
+      document.querySelector('#chips').getBoundingClientRect().right,
+      document.querySelector('#btnPause').getBoundingClientRect().left,
+    ]);
+    expect(pauseLeft).toBeGreaterThanOrEqual(chipsRight);
+  });
+
+  async function setCorePin(page, mode) {
+    await page.locator('#btnMore').click();
+    await page.locator('#btnSettings').click();
+    await page.locator('#coreRowPin').selectOption(mode);
+    await page.keyboard.press('Escape');
+  }
+
+  const corePosition = (page) => page.locator('.core-row').evaluate((e) => getComputedStyle(e).position);
+
+  test('«Automático» suelta las palabras básicas en un teléfono bajo', async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 640 });
+    await boot(page);
+    expect(await corePosition(page)).toBe('static');
+    await setCorePin(page, 'always');
+    expect(await corePosition(page)).toBe('sticky');
+  });
+
+  test('«Automático» las mantiene fijas en un teléfono alto', async ({ page }) => {
+    await boot(page);
+    expect(await corePosition(page)).toBe('sticky');
+  });
+
+  test('«Se desplazan con el tablero» se aplica y se recuerda', async ({ page }) => {
+    await boot(page);
+    await setCorePin(page, 'never');
+    expect(await corePosition(page)).toBe('static');
+    await page.reload({ waitUntil: 'networkidle' });
+    await expect(page.locator('#statusText')).toHaveText(/Listo/);
+    expect(await corePosition(page)).toBe('static');
+    await expect(page.locator('#coreRowPin')).toHaveValue('never');
   });
 });

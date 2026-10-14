@@ -175,6 +175,7 @@ const DEFAULT_SETTINGS = {
     rate: 1.0,
     tileSize: 140,
     tapMode: "add", // add | speak
+    coreRowPin: "auto", // auto | always | never — keep the core row pinned while scrolling
     lockEdit: false,
     scanningEnabled: false,
     scanSpeed: 2, // seconds per step in scanning mode
@@ -637,6 +638,7 @@ const dom = {
     rate: document.getElementById('rate'),
     tileSize: document.getElementById('tileSize'),
     tapMode: document.getElementById('tapMode'),
+    coreRowPin: document.getElementById('coreRowPin'),
     lockEdit: document.getElementById('lockEdit'),
     scanningEnabled: document.getElementById('scanningEnabled'),
     scanSpeed: document.getElementById('scanSpeed'),
@@ -887,6 +889,18 @@ function updateStickyOffsets() {
     const core = document.querySelector('.core-row');
     const pinned = core && getComputedStyle(core).position === 'sticky';
     root.setProperty('--core-h', `${pinned ? Math.round(core.getBoundingClientRect().height) : 0}px`);
+}
+
+// Whether the core row stays pinned while the board scrolls. «auto» leaves it
+// to styles.css (pinned, except on short screens); the other two force it.
+function applyCoreRowPin() {
+    const mode = ['auto', 'always', 'never'].includes(state.settings.coreRowPin)
+        ? state.settings.coreRowPin : 'auto';
+    if (dom.coreRowPin) dom.coreRowPin.value = mode;
+    document.body.classList.toggle('core-pin-always', mode === 'always');
+    document.body.classList.toggle('core-pin-never', mode === 'never');
+    // Pinning changes what scroll-padding-top must clear; no resize fires.
+    updateStickyOffsets();
 }
 
 function initStickyOffsets() {
@@ -1638,6 +1652,11 @@ function attachListeners() {
     dom.tapMode.onchange = (e) => {
         state.settings.tapMode = e.target.value;
         dom.headerSpeakToggle.checked = (state.settings.tapMode === 'speak');
+        save();
+    };
+    if (dom.coreRowPin) dom.coreRowPin.onchange = (e) => {
+        state.settings.coreRowPin = e.target.value;
+        applyCoreRowPin();
         save();
     };
     dom.lockEdit.onchange = async (e) => {
@@ -4655,6 +4674,7 @@ function applySettings() {
     dom.rate.value = state.settings.rate;
     dom.tileSize.value = state.settings.tileSize;
     dom.tapMode.value = state.settings.tapMode;
+    applyCoreRowPin();
     dom.lockEdit.checked = state.settings.lockEdit;
     dom.scanningEnabled.checked = state.settings.scanningEnabled || false;
     if (dom.pagedMode) dom.pagedMode.checked = state.settings.pagedMode || false;

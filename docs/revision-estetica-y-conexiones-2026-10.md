@@ -26,11 +26,30 @@ falta. Lo que sí apareció, y se corrigió:
 Cada defecto tiene su prueba en `tests/navegacion.spec.js`; las seis fallan
 con el código anterior y pasan con el actual.
 
-## Pendiente de decisión (no se cambió)
+## Espacio para el tablero en teléfonos (decidido después)
 
-En un teléfono de 360×640, al desplazar el tablero, la cabecera, la frase y
-la fila de núcleo fijas ocupan 419 de 640 px: queda poco más de una fila de
-tablero visible. Mantener el núcleo siempre a la vista fue una decisión
-deliberada (como Proloquo2Go o TD Snap), así que no se tocó. Opciones si se
-quiere ganar espacio en pantallas bajas: dejar de fijar el núcleo por debajo
-de ~700 px de alto, o compactar el compositor vacío a una sola línea.
+En un teléfono de 360×640, al desplazar el tablero, la cabecera, la frase y la
+fila de palabras básicas fijas ocupaban 419 de 640 px: quedaba poco más de una
+fila de tablero. Se aplicaron las dos opciones propuestas:
+
+1. **Frase en una sola línea, de altura fija.** En el teléfono, la tira de la
+   frase, Borrar/Limpiar (apilados) y «Hablar Frase» comparten una línea de
+   112 px. Antes eran dos líneas: 140 px vacía y 172 px con la primera
+   palabra, de modo que el primer toque empujaba el tablero 32 px bajo el
+   dedo. Mientras suena la voz, Pausa y Detener ocupan una segunda columna.
+   La tira se desliza y siempre muestra la palabra más reciente.
+2. **Ajuste «Palabras básicas al desplazar»** (Ajustes › Interfaz y estilo):
+   - *Automático (recomendado)*: fijas arriba, salvo en teléfonos verticales
+     de menos de 700 px de alto y en pantallas de menos de 560 px de alto
+     (teléfono en horizontal, tableta en soporte). No afecta a portátiles.
+   - *Siempre fijas*: el comportamiento anterior, para quien las necesita a
+     mano en todo momento.
+   - *Se desplazan con el tablero*: en cualquier pantalla.
+
+Tablero visible tras desplazar, en px:
+
+| Pantalla | Antes | Automático | Siempre fijas |
+| --- | --- | --- | --- |
+| 360×640 | 221 | 419 | 249 |
+| 390×844 | 413 | 441 | 441 |
+| 844×390 (horizontal) | — | 271 | 193 |
