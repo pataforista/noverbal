@@ -78,35 +78,35 @@
   },
   {
     "id": "lib-12",
-    "text": "Accion",
+    "text": "Acción",
     "category": "Acciones",
     "color": "#c3e2c0",
     "image": "assets/pictos/accion.png"
   },
   {
     "id": "lib-13",
-    "text": "Acido",
+    "text": "Ácido",
     "category": "Sensorial",
     "color": "#f7d4a8",
     "image": "assets/pictos/acido.png"
   },
   {
     "id": "lib-14",
-    "text": "Acompanante",
+    "text": "Acompañante",
     "category": "Personas",
     "color": "#f6e7a8",
     "image": "assets/pictos/acompanante.png"
   },
   {
     "id": "lib-15",
-    "text": "Adios",
+    "text": "Adiós",
     "category": "Social",
     "color": "#f6c6d7",
     "image": "assets/pictos/adios.png"
   },
   {
     "id": "lib-16",
-    "text": "Admiracion",
+    "text": "Admiración",
     "category": "Emociones",
     "color": "#bcd9f5",
     "image": "assets/pictos/admiracion.png"
@@ -127,7 +127,7 @@
   },
   {
     "id": "lib-19",
-    "text": "Alli",
+    "text": "Allí",
     "category": "General",
     "color": "#f7d4a8",
     "image": "assets/pictos/alli.png"
@@ -169,14 +169,14 @@
   },
   {
     "id": "lib-25",
-    "text": "Analisis",
+    "text": "Análisis",
     "category": "C. Médica",
     "color": "#f7d4a8",
     "image": "assets/pictos/analisis.png"
   },
   {
     "id": "lib-26",
-    "text": "Animacion",
+    "text": "Animación",
     "category": "General",
     "color": "#f7d4a8",
     "image": "assets/pictos/animacion.png"
@@ -190,7 +190,7 @@
   },
   {
     "id": "lib-28",
-    "text": "Aqui",
+    "text": "Aquí",
     "category": "General",
     "color": "#f7d4a8",
     "image": "assets/pictos/aqui.png"
@@ -211,7 +211,7 @@
   },
   {
     "id": "lib-31",
-    "text": "Aspero",
+    "text": "Áspero",
     "category": "Sensorial",
     "color": "#f7d4a8",
     "image": "assets/pictos/aspero.png"
@@ -225,7 +225,7 @@
   },
   {
     "id": "lib-33",
-    "text": "Autobus",
+    "text": "Autobús",
     "category": "Objetos",
     "color": "#f7d4a8",
     "image": "assets/pictos/autobus.png"
@@ -344,7 +344,7 @@
   },
   {
     "id": "lib-51",
-    "text": "Cafe",
+    "text": "Café",
     "category": "Comida",
     "color": "#f7d4a8",
     "image": "assets/pictos/cafe.png"
@@ -414,7 +414,7 @@
   },
   {
     "id": "lib-61",
-    "text": "Carino",
+    "text": "Cariño",
     "category": "Comida",
     "color": "#f7d4a8",
     "image": "assets/pictos/carino.png"
@@ -470,7 +470,7 @@
   },
   {
     "id": "lib-69",
-    "text": "Clinica",
+    "text": "Clínica",
     "category": "Lugares",
     "color": "#f7d4a8",
     "image": "assets/pictos/clinica.png"
@@ -512,7 +512,7 @@
   },
   {
     "id": "lib-75",
-    "text": "Comodo",
+    "text": "Cómodo",
     "category": "Comida",
     "color": "#f7d4a8",
     "image": "assets/pictos/comodo.png"
@@ -617,7 +617,7 @@
   },
   {
     "id": "lib-90",
-    "text": "Debil",
+    "text": "Débil",
     "category": "Sensorial",
     "color": "#f7d4a8",
     "image": "assets/pictos/debil.png"
@@ -631,7 +631,7 @@
   },
   {
     "id": "lib-92",
-    "text": "Depresion",
+    "text": "Depresión",
     "category": "Mente+",
     "color": "#bcd9f5",
     "image": "assets/pictos/depresion.png"
@@ -652,14 +652,14 @@
   },
   {
     "id": "lib-95",
-    "text": "Despues",
+    "text": "Después",
     "category": "Comida",
     "color": "#f7d4a8",
     "image": "assets/pictos/despues.png"
   },
   {
     "id": "lib-96",
-    "text": "Dia",
+    "text": "Día",
     "category": "General",
     "color": "#f7d4a8",
     "image": "assets/pictos/dia.png"
@@ -743,7 +743,7 @@
   },
   {
     "id": "lib-108",
-    "text": "El",
+    "text": "Él",
     "category": "Varios",
     "color": "#f7d4a8",
     "image": "assets/pictos/el.png"
@@ -771,14 +771,14 @@
   },
   {
     "id": "lib-112",
-    "text": "Emocion",
+    "text": "Emoción",
     "category": "Emociones",
     "color": "#bcd9f5",
     "image": "assets/pictos/emocion.png"
   },
   {
     "id": "lib-113",
-    "text": "Empatia",
+    "text": "Empatía",
     "category": "Mente+",
     "color": "#bcd9f5",
     "image": "assets/pictos/empatia.png"
@@ -883,7 +883,7 @@
   },
   {
     "id": "lib-128",
-    "text": "Estomago",
+    "text": "Estómago",
     "category": "Salud",
     "color": "#f7d4a8",
     "image": "assets/pictos/estomago.png"
@@ -925,7 +925,7 @@
   },
   {
     "id": "lib-134",
-    "text": "Frio",
+    "text": "Frío",
     "category": "Sensorial",
     "color": "#f7d4a8",
     "image": "assets/pictos/frio.png"
@@ -995,7 +995,7 @@
   },
   {
     "id": "lib-144",
-    "text": "Guia",
+    "text": "Guía",
     "category": "General",
     "color": "#f7d4a8",
     "image": "assets/pictos/guia.png"
@@ -1009,7 +1009,7 @@
   },
   {
     "id": "lib-146",
-    "text": "Habitacion",
+    "text": "Habitación",
     "category": "Lugares",
     "color": "#f7d4a8",
     "image": "assets/pictos/habitacion.png"
@@ -1093,7 +1093,7 @@
   },
   {
     "id": "lib-158",
-    "text": "Incomodo",
+    "text": "Incómodo",
     "category": "Emociones",
     "color": "#bcd9f5",
     "image": "assets/pictos/incomodo.png"
@@ -1107,7 +1107,7 @@
   },
   {
     "id": "lib-160",
-    "text": "Inyeccion",
+    "text": "Inyección",
     "category": "C. Médica",
     "color": "#f7d4a8",
     "image": "assets/pictos/inyeccion.png"
@@ -1240,7 +1240,7 @@
   },
   {
     "id": "lib-179",
-    "text": "Mama",
+    "text": "Mamá",
     "category": "Personas",
     "color": "#f6e7a8",
     "image": "assets/pictos/mama.png"
@@ -1275,7 +1275,7 @@
   },
   {
     "id": "lib-184",
-    "text": "Mas",
+    "text": "Más",
     "category": "General",
     "color": "#f7d4a8",
     "image": "assets/pictos/mas.png"
@@ -1310,7 +1310,7 @@
   },
   {
     "id": "lib-189",
-    "text": "Menstruacion",
+    "text": "Menstruación",
     "category": "Salud",
     "color": "#f7d4a8",
     "image": "assets/pictos/menstruacion.png"
@@ -1324,7 +1324,7 @@
   },
   {
     "id": "lib-191",
-    "text": "Mio",
+    "text": "Mío",
     "category": "General",
     "color": "#f7d4a8",
     "image": "assets/pictos/mio.png"
@@ -1366,7 +1366,7 @@
   },
   {
     "id": "lib-197",
-    "text": "Musica",
+    "text": "Música",
     "category": "Sensorial",
     "color": "#f7d4a8",
     "image": "assets/pictos/musica.png"
@@ -1436,7 +1436,7 @@
   },
   {
     "id": "lib-207",
-    "text": "Obsesion",
+    "text": "Obsesión",
     "category": "Mente+",
     "color": "#bcd9f5",
     "image": "assets/pictos/obsesion.png"
@@ -1492,14 +1492,14 @@
   },
   {
     "id": "lib-215",
-    "text": "Pantalon",
+    "text": "Pantalón",
     "category": "Comida",
     "color": "#f7d4a8",
     "image": "assets/pictos/pantalon.png"
   },
   {
     "id": "lib-216",
-    "text": "Papa",
+    "text": "Papá",
     "category": "Personas",
     "color": "#f6e7a8",
     "image": "assets/pictos/papa.png"
@@ -1555,7 +1555,7 @@
   },
   {
     "id": "lib-224",
-    "text": "Pelicula",
+    "text": "Película",
     "category": "S.O.S",
     "color": "#f7d4a8",
     "image": "assets/pictos/pelicula.png"
@@ -1590,7 +1590,7 @@
   },
   {
     "id": "lib-229",
-    "text": "Pequeno",
+    "text": "Pequeño",
     "category": "Sensorial",
     "color": "#f7d4a8",
     "image": "assets/pictos/pequeno.png"
@@ -1674,7 +1674,7 @@
   },
   {
     "id": "lib-241",
-    "text": "Platano",
+    "text": "Plátano",
     "category": "Comida",
     "color": "#f7d4a8",
     "image": "assets/pictos/platano.png"
@@ -1688,7 +1688,7 @@
   },
   {
     "id": "lib-243",
-    "text": "Policia",
+    "text": "Policía",
     "category": "Personas",
     "color": "#f6e7a8",
     "image": "assets/pictos/policia.png"
@@ -1723,7 +1723,7 @@
   },
   {
     "id": "lib-248",
-    "text": "Presion",
+    "text": "Presión",
     "category": "General",
     "color": "#f7d4a8",
     "image": "assets/pictos/presion.png"
@@ -1744,7 +1744,7 @@
   },
   {
     "id": "lib-251",
-    "text": "Psicologo",
+    "text": "Psicólogo",
     "category": "Personas",
     "color": "#f6e7a8",
     "image": "assets/pictos/psicologo.png"
@@ -1793,7 +1793,7 @@
   },
   {
     "id": "lib-258",
-    "text": "Rapido",
+    "text": "Rápido",
     "category": "Sensorial",
     "color": "#f7d4a8",
     "image": "assets/pictos/rapido.png"
@@ -1821,7 +1821,7 @@
   },
   {
     "id": "lib-262",
-    "text": "Reir",
+    "text": "Reír",
     "category": "Acciones",
     "color": "#c3e2c0",
     "image": "assets/pictos/reir.png"
@@ -1835,7 +1835,7 @@
   },
   {
     "id": "lib-264",
-    "text": "Revision",
+    "text": "Revisión",
     "category": "C. Médica",
     "color": "#f7d4a8",
     "image": "assets/pictos/revision.png"
@@ -1919,7 +1919,7 @@
   },
   {
     "id": "lib-276",
-    "text": "Si",
+    "text": "Sí",
     "category": "Varios",
     "color": "#f7d4a8",
     "image": "assets/pictos/si.png"
@@ -1947,7 +1947,7 @@
   },
   {
     "id": "lib-280",
-    "text": "Sintoma",
+    "text": "Síntoma",
     "category": "Salud",
     "color": "#f7d4a8",
     "image": "assets/pictos/sintoma.png"
@@ -2010,7 +2010,7 @@
   },
   {
     "id": "lib-289",
-    "text": "Sueno",
+    "text": "Sueño",
     "category": "Necesidad",
     "color": "#f7d4a8",
     "image": "assets/pictos/sueno.png"
@@ -2052,14 +2052,14 @@
   },
   {
     "id": "lib-295",
-    "text": "Telefono",
+    "text": "Teléfono",
     "category": "Objetos",
     "color": "#f7d4a8",
     "image": "assets/pictos/telefono.png"
   },
   {
     "id": "lib-296",
-    "text": "Television",
+    "text": "Televisión",
     "category": "Objetos",
     "color": "#f7d4a8",
     "image": "assets/pictos/television.png"
@@ -2150,7 +2150,7 @@
   },
   {
     "id": "lib-309",
-    "text": "Tu",
+    "text": "Tú",
     "category": "Varios",
     "color": "#f7d4a8",
     "image": "assets/pictos/tu.png"
@@ -2171,7 +2171,7 @@
   },
   {
     "id": "lib-312",
-    "text": "Vacio",
+    "text": "Vacío",
     "category": "General",
     "color": "#f7d4a8",
     "image": "assets/pictos/vacio.png"
@@ -2213,7 +2213,7 @@
   },
   {
     "id": "lib-318",
-    "text": "Verguenza",
+    "text": "Vergüenza",
     "category": "Comida",
     "color": "#f7d4a8",
     "image": "assets/pictos/verguenza.png"

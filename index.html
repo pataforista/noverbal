@@ -321,7 +321,7 @@
       </span>
     </div>
 
-    <nav class="actions" role="toolbar" aria-label="Controles principales">
+    <div class="actions" role="toolbar" aria-label="Controles principales">
       <!-- Nivel usuario: lo que usa la persona comunicadora para hablar y
            pedir ayuda. Nada aquí abre un menú ni requiere PIN. -->
       <div class="header-group header-group--communicator">
@@ -454,7 +454,7 @@
           </button>
         </div>
       </div>
-    </nav>
+    </div>
   </header>
 
   <main class="layout" id="mainContent">
@@ -529,7 +529,7 @@
     </section>
 
     <section class="toolbar" aria-label="Filtros de categoría y búsqueda">
-      <nav class="category-menu" role="group" aria-label="Navegación de categorías">
+      <div class="category-menu" role="group" aria-label="Navegación de categorías">
         <button class="pill-nav" id="categoryPrev" type="button"
           aria-label="Mostrar categorías anteriores"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-chevron-left"/></svg></button>
         <!-- Outside the tablist on purpose: a `role="tablist"` may only contain
@@ -543,7 +543,7 @@
         <div class="pill-container" id="categoryBar" role="tablist" aria-label="Categorías disponibles"></div>
         <button class="pill-nav" id="categoryNext" type="button"
           aria-label="Mostrar categorías siguientes"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-chevron-right"/></svg></button>
-      </nav>
+      </div>
       <div class="search-wrapper" role="search">
         <svg class="search-icon" aria-hidden="true" focusable="false"><use href="#i-search"/></svg>
         <input class="search-input" id="searchBox" type="search"
@@ -767,7 +767,7 @@
 
       <div class="modal-body">
         <div class="settings-section">
-          <h3>Voz y Lectura</h3>
+          <h2>Voz y Lectura</h2>
           <div class="row">
             <label class="field">
               <span>Voz</span>
@@ -790,7 +790,7 @@
         </div>
 
         <div class="settings-section">
-          <h3>Interfaz y Estilo</h3>
+          <h2>Interfaz y Estilo</h2>
           <div class="row">
             <label class="field">
               <span>Tamaño de botones</span>
@@ -803,6 +803,18 @@
                 <option value="add">1 toque = añadir a frase</option>
                 <option value="speak">1 toque = hablar ítem</option>
               </select>
+            </label>
+
+            <!-- Ver «Palabras básicas fijas» en styles.css: en un teléfono bajo,
+                 cabecera + frase + núcleo fijos dejaban ~1 fila de tablero. -->
+            <label class="field">
+              <span>Palabras básicas al desplazar</span>
+              <select id="coreRowPin" class="glass-input" aria-describedby="coreRowPinHint">
+                <option value="auto">Automático (recomendado)</option>
+                <option value="always">Siempre fijas</option>
+                <option value="never">Se desplazan con el tablero</option>
+              </select>
+              <small class="settings-hint" id="coreRowPinHint">Automático: quedan fijas arriba, salvo en teléfonos pequeños o en horizontal, donde se desplazan para dejar más tablero a la vista.</small>
             </label>
 
             <label class="field">
@@ -823,8 +835,8 @@
               <span class="toggle-slider"></span>
             </div>
             <div class="text-content">
-              <span class="main">Tema Obscuro (Moomins Style)</span>
-              <span class="sub">Activa una paleta relajante y premium</span>
+              <span class="main">Tema oscuro</span>
+              <span class="sub">Colores oscuros y suaves: cansan menos la vista de noche</span>
             </div>
           </label>
 
@@ -835,7 +847,7 @@
         </div>
 
         <div class="settings-section">
-          <h3>Contactos de emergencia (SOS)</h3>
+          <h2>Contactos de emergencia (SOS)</h2>
           <p class="settings-hint">Aparecen dentro del menú del botón SOS para llamar con un toque. Solo funciona en un dispositivo que pueda hacer llamadas telefónicas.</p>
           <div id="emergencyContactsList" class="emergency-contacts-list"></div>
           <div class="add-contact-row">
@@ -846,7 +858,7 @@
         </div>
 
         <div class="settings-section settings-section--modes">
-          <h3><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-accessibility"/></svg> Modos de acceso</h3>
+          <h2><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-accessibility"/></svg> Modos de acceso</h2>
           <p class="settings-hint">Cada modo adapta el tablero a una necesidad diferente. Se pueden prender y apagar en cualquier momento desde aquí o desde los botones de la barra superior.</p>
 
           <label class="field-row field-row--mode" for="deafMode">
@@ -956,7 +968,7 @@
         </div>
 
         <div class="settings-section">
-          <h3>Uso sin conexión</h3>
+          <h2>Uso sin conexión</h2>
           <p class="settings-hint">Descarga todos los pictogramas y audios al dispositivo para que la app funcione completa sin internet.</p>
           <button type="button" class="btn primary-action full-width" id="btnDownloadAll"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-download"/></svg> Descargar todo para uso sin conexión</button>
           <div class="download-progress hidden" id="downloadProgress" role="status" aria-live="polite">
@@ -970,7 +982,7 @@
         </div>
 
         <div class="settings-section">
-          <h3>Seguridad</h3>
+          <h2>Seguridad</h2>
           <label class="field-row">
             <div class="toggle-wrapper">
               <input id="lockEdit" type="checkbox" />
@@ -1004,7 +1016,7 @@
         </div>
 
         <div class="settings-section">
-          <h3>Acerca de HolAAC!</h3>
+          <h2>Acerca de HolAAC!</h2>
           <div class="about-card">
             <div class="about-author-row">
               <div class="about-author-info">
@@ -1028,7 +1040,7 @@
         </div>
 
         <div class="settings-section">
-          <h3><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-warning"/></svg> Aviso Legal</h3>
+          <h2><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="#i-warning"/></svg> Aviso Legal</h2>
           <div class="disclaimer-card" role="note" aria-label="Aviso legal y condiciones de uso">
             <div class="disclaimer-item disclaimer-clinical">
               <svg class="disclaimer-icon" aria-hidden="true" focusable="false"><use href="#i-health"/></svg>
@@ -1062,7 +1074,7 @@
         </div>
 
         <div class="settings-section">
-          <h3>Clínico</h3>
+          <h2>Clínico</h2>
           <button type="button" class="btn glass warning full-width" id="btnOpenHistory"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-chart"/></svg> Ver historial de uso</button>
         </div>
 
@@ -1070,7 +1082,7 @@
              llano, cada uno con una captura real de la app, siempre a mano
              dentro de Ajustes en vez de solo en el onboarding inicial. -->
         <div class="settings-section">
-          <h3>Guía rápida</h3>
+          <h2>Guía rápida</h2>
           <p class="settings-hint">Los 5 pasos más buscados, explicados con una imagen de la app.</p>
 
           <details class="help-flow">
@@ -1152,7 +1164,7 @@
         <div class="consulta-stats" id="consultaStats" aria-live="polite">Consulta iniciada</div>
 
         <div class="settings-section">
-          <h3>Preguntas rápidas</h3>
+          <h2>Preguntas rápidas</h2>
           <p class="settings-hint">Toca una pregunta y la app la dice por ti. El paciente responde con el tablero, la escala de ánimo, Sí/No o el localizador de dolor.</p>
           <div class="consulta-questions" id="consultaQuestions"></div>
           <details class="intro-more" style="margin-top:10px;">
@@ -1166,7 +1178,7 @@
         </div>
 
         <div class="settings-section">
-          <h3>Accesos directos</h3>
+          <h2>Accesos directos</h2>
           <div class="consulta-shortcuts">
             <button type="button" class="btn secondary consulta-shortcut" id="btnConsultaMood"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-calm"/></svg><span>¿Cómo te sientes?</span></button>
             <button type="button" class="btn secondary consulta-shortcut" id="btnConsultaPsychSymptoms"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-brain"/></svg><span>Síntomas</span></button>
@@ -1178,12 +1190,12 @@
         </div>
 
         <div class="settings-section">
-          <h3>Palabras usadas en esta consulta</h3>
+          <h2>Palabras usadas en esta consulta</h2>
           <div class="consulta-words" id="consultaWords"></div>
         </div>
 
         <div class="settings-section">
-          <h3>Nota de la consulta</h3>
+          <h2>Nota de la consulta</h2>
           <textarea id="consultaNote" class="writing-textarea" rows="3" placeholder="Ej. Reporta dolor de cabeza desde ayer, refiere tomar la medicación…" aria-label="Nota clínica de la consulta"></textarea>
           <div class="row compact" style="margin-top:8px; justify-content:flex-end;">
             <button type="button" class="btn primary" id="btnSaveConsultaNote"><svg class="btn-icon" aria-hidden="true" focusable="false"><use href="#i-save"/></svg> Guardar nota</button>

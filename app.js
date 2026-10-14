@@ -175,6 +175,7 @@ const DEFAULT_SETTINGS = {
     rate: 1.0,
     tileSize: 140,
     tapMode: "add", // add | speak
+    coreRowPin: "auto", // auto | always | never — keep the core row pinned while scrolling
     lockEdit: false,
     scanningEnabled: false,
     scanSpeed: 2, // seconds per step in scanning mode
@@ -246,6 +247,11 @@ function normalizeWord(text) {
         .trim()
         .normalize("NFD")
         .replace(/[̀-ͯ]/g, "");
+}
+
+// Accents removed, case kept: «Mamá» → «Mama».
+function stripAccents(text) {
+    return String(text || "").normalize("NFD").replace(/[̀-ͯ]/g, "").normalize("NFC");
 }
 
 function sameWord(a, b) {
@@ -632,6 +638,7 @@ const dom = {
     rate: document.getElementById('rate'),
     tileSize: document.getElementById('tileSize'),
     tapMode: document.getElementById('tapMode'),
+    coreRowPin: document.getElementById('coreRowPin'),
     lockEdit: document.getElementById('lockEdit'),
     scanningEnabled: document.getElementById('scanningEnabled'),
     scanSpeed: document.getElementById('scanSpeed'),
@@ -877,13 +884,30 @@ function updateStickyOffsets() {
     if (composer && !composer.classList.contains('hidden')) {
         root.setProperty('--composer-h', `${Math.round(composer.getBoundingClientRect().height)}px`);
     }
+    // Only counts while the core row is actually pinned (it is hidden or
+    // static in some modes); feeds scroll-padding-top in styles.css.
+    const core = document.querySelector('.core-row');
+    const pinned = core && getComputedStyle(core).position === 'sticky';
+    root.setProperty('--core-h', `${pinned ? Math.round(core.getBoundingClientRect().height) : 0}px`);
+}
+
+// Whether the core row stays pinned while the board scrolls. «auto» leaves it
+// to styles.css (pinned, except on short screens); the other two force it.
+function applyCoreRowPin() {
+    const mode = ['auto', 'always', 'never'].includes(state.settings.coreRowPin)
+        ? state.settings.coreRowPin : 'auto';
+    if (dom.coreRowPin) dom.coreRowPin.value = mode;
+    document.body.classList.toggle('core-pin-always', mode === 'always');
+    document.body.classList.toggle('core-pin-never', mode === 'never');
+    // Pinning changes what scroll-padding-top must clear; no resize fires.
+    updateStickyOffsets();
 }
 
 function initStickyOffsets() {
     updateStickyOffsets();
     if (typeof ResizeObserver === 'function') {
         const ro = new ResizeObserver(() => updateStickyOffsets());
-        document.querySelectorAll('.topbar, .composer').forEach(el => ro.observe(el));
+        document.querySelectorAll('.topbar, .composer, .core-row').forEach(el => ro.observe(el));
     }
     window.addEventListener('resize', updateStickyOffsets, { passive: true });
     window.addEventListener('orientationchange', updateStickyOffsets);
@@ -1628,6 +1652,11 @@ function attachListeners() {
     dom.tapMode.onchange = (e) => {
         state.settings.tapMode = e.target.value;
         dom.headerSpeakToggle.checked = (state.settings.tapMode === 'speak');
+        save();
+    };
+    if (dom.coreRowPin) dom.coreRowPin.onchange = (e) => {
+        state.settings.coreRowPin = e.target.value;
+        applyCoreRowPin();
         save();
     };
     dom.lockEdit.onchange = async (e) => {
@@ -2721,10 +2750,35 @@ async function ensureLibraryItemsPresent() {
         let addedCount = 0;
         let repairedCount = 0;
         const byId = new Map(libraryItems.map(item => [item.id, item]));
+        const defaultIds = new Set(DEFAULT_ITEMS.map(item => item.id));
+
+        // Earlier versions matched only by id here, so every reload after the
+        // first run re-added the library twins of the built-in words that the
+        // first run had de-duplicated by text («Sí»/«Si», «Hola», «Agua»…), and
+        // those words showed up twice on the board. Remove the twins this code
+        // added, but only while they are still untouched library copies.
+        // Runs before initCoreWords(), so read the pinned core row from storage.
+        const storedCore = loadJSON(LS_KEYS.coreWords, []);
+        const pinned = new Set(Array.isArray(storedCore) ? storedCore : []);
+        for (const existing of [...state.items]) {
+            const libItem = byId.get(existing.id);
+            if (!libItem || pinned.has(existing.id)) continue;
+            const twinOfDefault = state.items.some(other =>
+                defaultIds.has(other.id) && sameWord(other.text, existing.text));
+            const untouched = sameWord(existing.text, libItem.text) && !existing.isFavorite &&
+                existing.image === libItem.image && existing.category === libItem.category;
+            if (twinOfDefault && untouched) {
+                await deleteItemDB(existing.id);
+                state.items.splice(state.items.indexOf(existing), 1);
+            }
+        }
 
         for (const item of libraryItems) {
             const existing = state.items.find(saved => saved.id === item.id);
             if (!existing) {
+                // Same rule as the first run: a word already on the board under
+                // another id is not added again.
+                if (state.items.some(saved => sameWord(saved.text, item.text))) continue;
                 await saveItemDB(item);
                 state.items.push(item);
                 addedCount += 1;
@@ -2737,8 +2791,15 @@ async function ensureLibraryItemsPresent() {
                 color: existing.color || fallback?.color || '#c6e6c8',
                 image: existing.image || fallback?.image || null
             };
+            // The library once shipped without accents («Mama», «Papa», «Mas»),
+            // which the voice reads as other words. Restore them only where the
+            // saved text is still exactly that unaccented factory value, so a
+            // family's own edit is never overwritten.
+            if (existing.text !== item.text && existing.text === stripAccents(item.text)) {
+                repaired.text = item.text;
+            }
 
-            if (repaired.color !== existing.color || repaired.image !== existing.image) {
+            if (repaired.color !== existing.color || repaired.image !== existing.image || repaired.text !== existing.text) {
                 await saveItemDB(repaired);
                 Object.assign(existing, repaired);
                 repairedCount += 1;
@@ -3717,7 +3778,9 @@ function createTile(item, onClick, opts = {}) {
     } else if (item.image) {
         const img = document.createElement('img');
         img.src = item.image;
-        img.alt = item.text;
+        // The tile's aria-label already names the word; a repeated alt made
+        // screen readers say it twice («Sí, Sí»).
+        img.alt = '';
         img.loading = 'lazy';
         // Un picto que no carga (archivo faltante, foto dañada) deja un hueco
         // con el icono roto del navegador; mejor el marcador neutro de las
@@ -4613,6 +4676,7 @@ function applySettings() {
     dom.rate.value = state.settings.rate;
     dom.tileSize.value = state.settings.tileSize;
     dom.tapMode.value = state.settings.tapMode;
+    applyCoreRowPin();
     dom.lockEdit.checked = state.settings.lockEdit;
     dom.scanningEnabled.checked = state.settings.scanningEnabled || false;
     if (dom.pagedMode) dom.pagedMode.checked = state.settings.pagedMode || false;
