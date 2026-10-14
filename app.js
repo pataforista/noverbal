@@ -3778,7 +3778,9 @@ function createTile(item, onClick, opts = {}) {
     } else if (item.image) {
         const img = document.createElement('img');
         img.src = item.image;
-        img.alt = item.text;
+        // The tile's aria-label already names the word; a repeated alt made
+        // screen readers say it twice («Sí, Sí»).
+        img.alt = '';
         img.loading = 'lazy';
         // Un picto que no carga (archivo faltante, foto dañada) deja un hueco
         // con el icono roto del navegador; mejor el marcador neutro de las

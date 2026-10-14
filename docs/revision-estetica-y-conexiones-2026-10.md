@@ -53,3 +53,29 @@ Tablero visible tras desplazar, en px:
 | 360×640 | 221 | 419 | 249 |
 | 390×844 | 413 | 441 | 441 |
 | 844×390 (horizontal) | — | 271 | 193 |
+
+## Auditoría WCAG 2.2 AA
+
+axe-core 4.10 sobre la vista principal y los 12 diálogos, en teléfono y
+escritorio, tema claro y oscuro, más pruebas manuales de lo que axe no mide.
+Ahora corre en cada push desde `tests/wcag.spec.js`.
+
+| Criterio | Antes | Arreglo |
+| --- | --- | --- |
+| 1.4.3 Contraste | Línea de estado a 3.3:1 (opacidad 0.7). | Sin opacidad: 6.8:1. |
+| 1.4.12 Espaciado de texto | Con interlineado 1.5, la 2.ª línea de las etiquetas quedaba cortada. | Alto de la etiqueta en `lh`, no en `em`. |
+| Etiquetas completas | En teléfono, «Ganas de hacerme daño» se leía «Ganas de hacerme»; en 320 px también «Pensamiento rápido» y «Duele muchísimo». | Hasta 3 líneas por etiqueta. Costo: en esas fichas el picto se achica. |
+| 2.4.7 Foco visible | «Limpiar búsqueda» recibía el foco estando invisible. | Oculto también para Tab mientras no hay búsqueda. |
+| 1.3.1 Estructura | Ajustes y Consulta saltaban de h1 a h3. | Secciones como h2. |
+| Lector de pantalla | Cada ficha se anunciaba dos veces («Sí, Sí»). | El picto lleva `alt=""`; el botón ya tiene nombre. |
+| ARIA | `<nav>` con rol toolbar/group. | `<div>` con ese rol. |
+| Preferencia «más contraste» | Ignorada. | `prefers-contrast: more`: texto secundario y bordes reforzados. |
+
+Ya cumplían: idioma `es`, zoom sin bloquear, sin bloqueo de orientación,
+reflujo a 320 px sin desplazamiento horizontal (1.4.10), movimiento reducido,
+modo de alto contraste de Windows, objetivos táctiles de 44 px (2.5.8 pide 24),
+foco nunca tapado (2.4.11), mensajes de estado con `aria-live` (4.1.3) y PIN
+que admite pegar (3.3.8).
+
+Lo automático no sustituye una prueba con lector de pantalla (TalkBack,
+VoiceOver) ni con usuarios de SAAC; eso sigue pendiente.

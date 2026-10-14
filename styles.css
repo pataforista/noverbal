@@ -658,7 +658,7 @@ body.tutor-active .tutor-indicator {
   font-size: 0.75rem;
   color: var(--md-on-surface-variant);
   font-weight: 500;
-  opacity: 0.7;
+  /* No opacity: at 0.7 the status line read 3.3:1, under WCAG AA. */
 }
 
 .actions {
@@ -1338,6 +1338,8 @@ body.tutor-active .tutor-indicator {
   cursor: pointer;
   opacity: 0;
   pointer-events: none;
+  /* Hidden from Tab too: it was an invisible focus stop (WCAG 2.4.7). */
+  visibility: hidden;
   transition: var(--transition);
 }
 
@@ -1349,6 +1351,7 @@ body.tutor-active .tutor-indicator {
 .search-clear.visible {
   opacity: 1;
   pointer-events: auto;
+  visibility: visible;
 }
 
 .search-clear:focus-visible {
@@ -1513,13 +1516,20 @@ body.tutor-active .tutor-indicator {
 
 .tile-text {
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  /* Three lines, not two: on a phone «Ganas de hacerme daño» — the one label
+     on the board that flags self-harm — was cut to «Ganas de hacerme», and at
+     320px «Pensamiento rápido» and «Duele muchísimo» lost their second word.
+     Short words still take one or two lines; only long labels use the third. */
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
   font-weight: 600; /* Bajado de 800: menos gritón */
   font-size: 0.88rem; /* Ligeramente más pequeño */
   line-height: 1.15;
-  max-height: 2.3em;
+  max-height: 3.45em;
+  /* Lines at whatever line-height is in force: a fixed em height clipped the
+     last line once a reader's own text spacing raised it (WCAG 1.4.12). */
+  max-height: 3lh;
   margin-bottom: 1px;
   word-break: break-word;
   overflow-wrap: anywhere;
@@ -1953,7 +1963,7 @@ body.tutor-active .grid .tile-cat {
    setting to read, applied to the text that explains what each control does,
    in an app whose audience includes people with reading and processing
    difficulties. Caps now survive only where a word is a section marker rather
-   than something to read (`.settings-section h3`). */
+   than something to read (`.settings-section h2`). */
 .field span {
   font-weight: 600;
   font-size: 0.9rem;
@@ -2211,8 +2221,9 @@ select:focus {
   margin-bottom: 2rem;
 }
 
-.settings-section h3 {
+.settings-section h2 {
   font-size: 0.72rem;
+  line-height: 1.4;
   font-weight: 700;
   text-transform: uppercase;
   margin-bottom: 1rem;
@@ -2222,7 +2233,7 @@ select:focus {
 
 /* Sección de modos de acceso: agrupación visual clara y nombres con icono
    para que cada modo sea reconocible rápidamente. */
-.settings-section--modes h3 {
+.settings-section--modes h2 {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -5834,4 +5845,31 @@ body.deaf-mode .modes-toggle::after {
   border-radius: 50%;
   background: var(--md-primary);
   box-shadow: 0 0 0 2px var(--md-surface);
+}
+
+/* ── Más contraste (prefers-contrast: more) ─────────────────────────────
+   iOS, macOS, Windows and Android expose an "increase contrast" setting.
+   Honour it without a separate theme: secondary text goes nearly to full
+   ink and the faint hairlines that separate cards become real borders.
+   Repeated for body.calm-mode so the calm palette does not undo it. */
+@media (prefers-contrast: more) {
+  :root,
+  body.calm-mode {
+    --md-on-surface-variant: #34323a;
+    --md-outline-variant: #77747d;
+    --hairline: #77747d;
+  }
+
+  .dark-theme,
+  body.calm-mode.dark-theme {
+    --md-on-surface-variant: #dcd8d3;
+    --md-outline-variant: #9a968f;
+    --hairline: #9a968f;
+  }
+
+  .tile,
+  .pill,
+  .chip {
+    border-width: 2px;
+  }
 }
