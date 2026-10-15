@@ -1837,16 +1837,19 @@ function attachListeners() {
         dom.routineBar.classList.toggle('hidden', !state.settings.showRoutine);
         save();
     };
-    dom.boardProfile.onchange = (e) => {
+    // A category the new place does not include would leave a blank board with
+    // only «Volver» on it, so changing place returns to «Todas» in that case.
+    const onProfileChange = (e) => {
         setBoardProfile(e.target.value);
-        render();
-    };
-    if (dom.headerProfile) {
-        dom.headerProfile.onchange = (e) => {
-            setBoardProfile(e.target.value);
+        const cat = state.currentCategory;
+        if (cat !== 'Todas' && cat !== '⭐ Favoritos' && !itemPassesContext(cat)) {
+            goToCategory('Todas');
+        } else {
             render();
-        };
-    }
+        }
+    };
+    dom.boardProfile.onchange = onProfileChange;
+    if (dom.headerProfile) dom.headerProfile.onchange = onProfileChange;
     // SOS now opens a menu instead of navigating immediately: the emergency
     // board is still the first, one-tap item, right above tel: shortcuts to
     // whoever the family configured in Ajustes → Contactos de emergencia.
@@ -2500,7 +2503,49 @@ function setPreviewImage(src) {
 }
 
 const ALLOWED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/svg+xml'];
-const MAX_IMAGE_BYTES = 3 * 1024 * 1024; // keep local uploads well under IndexedDB/localStorage quotas
+// Phone cameras routinely produce 3–8 MB photos, so the raw file may be large;
+// what gets stored is the downscaled copy below, a few dozen KB per tile. That
+// keeps IndexedDB/localStorage small and a backup with many photos importable.
+const MAX_IMAGE_BYTES = 20 * 1024 * 1024;
+const MAX_TILE_IMAGE_SIDE = 512;
+
+// Redraw a raster image at most MAX_TILE_IMAGE_SIDE px on its longest side.
+// SVG (already tiny) and GIF (may be animated) pass through untouched, as does
+// anything the canvas cannot decode — the original is still a valid image.
+function downscaleImage(dataUrl, type) {
+    if (type === 'image/svg+xml' || type === 'image/gif') return Promise.resolve(dataUrl);
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+            const scale = Math.min(1, MAX_TILE_IMAGE_SIDE / Math.max(img.naturalWidth, img.naturalHeight));
+            const w = Math.max(1, Math.round(img.naturalWidth * scale));
+            const h = Math.max(1, Math.round(img.naturalHeight * scale));
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return resolve(dataUrl);
+            ctx.drawImage(img, 0, 0, w, h);
+            // JPEG for photos; PNG keeps the transparency of drawn pictograms.
+            const out = type === 'image/jpeg'
+                ? canvas.toDataURL('image/jpeg', 0.85)
+                : canvas.toDataURL('image/png');
+            resolve(out.length < dataUrl.length ? out : dataUrl);
+        };
+        img.onerror = () => resolve(dataUrl);
+        img.src = dataUrl;
+    });
+}
+
+// A word saved under a brand-new category must show up on the board. The
+// active-categories filter is a snapshot of the categories that existed when
+// it was set, so a new one would otherwise be filtered out on arrival.
+function activateNewCategory(category, excludeId) {
+    const active = state.settings.activeCategories;
+    if (!Array.isArray(active) || active.length === 0 || active.includes(category)) return;
+    const exists = state.items.some(i => i.id !== excludeId && i.category === category);
+    if (!exists) active.push(category);
+}
 
 function handleImageSelect(e) {
     const file = e.target.files[0];
@@ -2512,20 +2557,20 @@ function handleImageSelect(e) {
         return;
     }
     if (file.size > MAX_IMAGE_BYTES) {
-        flashStatus('La imagen supera el límite de 3 MB', 'warning');
+        flashStatus('La imagen supera el límite de 20 MB', 'warning');
         e.target.value = '';
         return;
     }
 
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    reader.onload = async (ev) => {
         const dataUrl = sanitizeImage(ev.target.result);
         if (!dataUrl) {
             flashStatus('Imagen no válida', 'warning');
             e.target.value = '';
             return;
         }
-        state.pendingImage = dataUrl;
+        state.pendingImage = await downscaleImage(dataUrl, file.type);
         setPreviewImage(state.pendingImage);
     };
     reader.readAsDataURL(file);
@@ -2548,6 +2593,7 @@ function addItem() {
         image: state.pendingImage
     };
 
+    activateNewCategory(item.category);
     state.items.unshift(item);
     saveItemDB(item);
     save();
@@ -2573,6 +2619,7 @@ function updateItem() {
 
     item.text = dom.itemText.value.trim();
     item.category = dom.itemCategory.value.trim() || "Varios";
+    activateNewCategory(item.category, item.id);
     item.color = dom.itemColor.value;
     if (state.pendingImage) item.image = state.pendingImage;
 
@@ -2901,8 +2948,10 @@ async function importData(e) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-        flashStatus('El archivo supera el límite de 5 MB', 'warning');
+    // Generous: backups made before photos were downscaled can carry several
+    // multi-megabyte images, and they must still restore.
+    if (file.size > 50 * 1024 * 1024) {
+        flashStatus('El archivo supera el límite de 50 MB', 'warning');
         dom.importFile.value = '';
         return;
     }
